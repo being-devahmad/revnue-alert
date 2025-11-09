@@ -4,7 +4,6 @@ import axios from "axios";
 // Get API URL from environment
 const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || "https://development.renewalert.com/api";
 
-console.log('🔧 Axios Init - API URL:', API_BASE_URL);
 
 const axiosInstance = axios.create({
   baseURL: API_BASE_URL,
@@ -21,20 +20,12 @@ axiosInstance.interceptors.request.use(
       // Get FULL token from AsyncStorage (including the 26| prefix)
       const token = await AsyncStorage.getItem("authToken");
       
-      console.log('📤 Request Interceptor:', {
-        url: config.url,
-        method: config.method,
-        hasToken: !!token,
-        tokenPreview: token ? token.substring(0, 30) + '...' : 'NONE',
-        tokenFormat: token ? (token.includes('|') ? 'Laravel Sanctum ✅' : 'Other') : 'NONE',
-      });
+
 
       // If token exists, add it to headers
       // For Laravel Sanctum: use the FULL token including 26| prefix
       if (token) {
         config.headers.Authorization = `Bearer ${token}`;
-        console.log('✅ Sanctum Token added to headers');
-        console.log('   Full header value:', `Bearer ${token}`);
       } else {
         console.warn('⚠️ No token found in AsyncStorage');
       }
@@ -53,18 +44,13 @@ axiosInstance.interceptors.request.use(
 // ✅ RESPONSE INTERCEPTOR - Handle errors globally
 axiosInstance.interceptors.response.use(
   (response) => {
-    console.log('📥 Response Success:', {
-      status: response.status,
-      url: response.config.url,
-      hasData: !!response.data,
-    });
+;
     return response;
   },
   (error) => {
     // Handle 401 (Unauthorized) errors
     if (error.response?.status === 401) {
       console.error('🔐 401 Unauthorized');
-      console.log('   Message:', error.response?.data?.message);
       
       // Clear auth data
       AsyncStorage.removeItem("authToken");

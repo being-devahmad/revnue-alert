@@ -44,17 +44,8 @@ interface DashboardResponse {
 
 const fetchDashboardData = async (): Promise<DashboardData> => {
   try {
-    console.log('🔄 Fetching dashboard data...');
-    
     const response = await axiosInstance.get<DashboardResponse>("/dashboard");
-    
-    console.log('✅ Dashboard API Response received:', {
-      status: response.status,
-      hasData: !!response.data,
-      responseStatus: response.data?.status,
-    });
-    
-    console.log('📊 Full Response:', response.data);
+
 
     // Validate response structure
     if (!response.data) {
@@ -71,11 +62,6 @@ const fetchDashboardData = async (): Promise<DashboardData> => {
 
     const dashboardData = response.data.data;
     
-    console.log('✅ Dashboard data extracted successfully:', {
-      hasCards: !!dashboardData.cards,
-      hasTables: !!dashboardData.tables,
-      cardsCount: dashboardData.cards?.reminders,
-    });
 
     return dashboardData;
   } catch (error: any) {

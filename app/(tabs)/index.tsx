@@ -1,6 +1,6 @@
 import { useDashboard } from '@/api/dashboard/useDashboard';
+import { TabHeader } from '@/components/TabHeader';
 import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { ActivityIndicator, RefreshControl, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
@@ -136,21 +136,7 @@ const DashboardHome = () => {
   if (isLoading) {
     return (
       <View style={styles.container}>
-        <View style={styles.headerContainer}>
-          <LinearGradient
-            colors={['#9A1B2B', '#6B1420']}
-            style={styles.headerGradient}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-          >
-            <View style={styles.headerContent}>
-              <View>
-                <Text style={styles.headerTitle}>Dashboard</Text>
-                <Text style={styles.headerSubtitle}>Contract Overview</Text>
-              </View>
-            </View>
-          </LinearGradient>
-        </View>
+        <TabHeader title='Dashboard' subtitle='Contract Overview' />
 
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color="#9A1B2B" />
@@ -164,21 +150,7 @@ const DashboardHome = () => {
   if (error) {
     return (
       <View style={styles.container}>
-        <View style={styles.headerContainer}>
-          <LinearGradient
-            colors={['#9A1B2B', '#6B1420']}
-            style={styles.headerGradient}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-          >
-            <View style={styles.headerContent}>
-              <View>
-                <Text style={styles.headerTitle}>Dashboard</Text>
-                <Text style={styles.headerSubtitle}>Contract Overview</Text>
-              </View>
-            </View>
-          </LinearGradient>
-        </View>
+        <TabHeader title='Dashboard' subtitle='Contract Overview' />
 
         <View style={styles.errorContainer}>
           <Ionicons name="alert-circle-outline" size={48} color="#EF4444" />
@@ -196,21 +168,7 @@ const DashboardHome = () => {
   if (!dashboardData) {
     return (
       <View style={styles.container}>
-        <View style={styles.headerContainer}>
-          <LinearGradient
-            colors={['#9A1B2B', '#6B1420']}
-            style={styles.headerGradient}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-          >
-            <View style={styles.headerContent}>
-              <View>
-                <Text style={styles.headerTitle}>Dashboard</Text>
-                <Text style={styles.headerSubtitle}>Contract Overview</Text>
-              </View>
-            </View>
-          </LinearGradient>
-        </View>
+        <TabHeader title='Dashboard' subtitle='Contract Overview' />
 
         <View style={styles.errorContainer}>
           <Ionicons name="folder-open-outline" size={48} color="#9A1B2B" />
@@ -232,21 +190,7 @@ const DashboardHome = () => {
   return (
     <View style={styles.container}>
       {/* Header with Gradient */}
-      <View style={styles.headerContainer}>
-        <LinearGradient
-          colors={['#9A1B2B', '#6B1420']}
-          style={styles.headerGradient}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-        >
-          <View style={styles.headerContent}>
-            <View>
-              <Text style={styles.headerTitle}>Dashboard</Text>
-              <Text style={styles.headerSubtitle}>Contract Overview</Text>
-            </View>
-          </View>
-        </LinearGradient>
-      </View>
+       <TabHeader title='Dashboard' subtitle='Contract Overview' />
 
       {/* Scrollable Content */}
       <ScrollView
@@ -375,30 +319,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#F8F9FA',
-  },
-  headerContainer: {
-    overflow: 'hidden',
-  },
-  headerGradient: {
-    paddingTop: 60,
-    paddingBottom: 24,
-    paddingHorizontal: 20,
-  },
-  headerContent: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  headerTitle: {
-    fontSize: 32,
-    fontWeight: '800',
-    color: '#FFFFFF',
-    letterSpacing: -0.5,
-  },
-  headerSubtitle: {
-    fontSize: 15,
-    color: 'rgba(255, 255, 255, 0.8)',
-    marginTop: 4,
   },
   scrollView: {
     flex: 1,
