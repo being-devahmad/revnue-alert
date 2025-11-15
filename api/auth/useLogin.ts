@@ -49,6 +49,9 @@ export const useLoginMutation = () => {
   return useMutation({
     mutationFn: loginUser,
     onSuccess: async (data) => {
+
+      console.log("Login response data:", data);
+
       // Store the token in AsyncStorage
       if (data.token) {
         await AsyncStorage.setItem("authToken", data.token);
