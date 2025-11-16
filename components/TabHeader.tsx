@@ -18,7 +18,7 @@ export const TabHeader = ({ title, subtitle, isChild }: { title: string, subtitl
                     styles.headerContent,
                     !isChild && { justifyContent: "flex-start" } // <-- shift left when no button
                 ]}>
-                    
+
                     {/* Back Button */}
                     {isChild && (
                         <TouchableOpacity
@@ -81,7 +81,7 @@ const styles = StyleSheet.create({
 
     titleWrapper: {
         flex: 1,
-        alignItems: "center",
+        marginLeft: 6,
     },
     headerTitle: {
         fontSize: 32,
@@ -93,5 +93,6 @@ const styles = StyleSheet.create({
         fontSize: 15,
         color: "rgba(255, 255, 255, 0.8)",
         marginTop: 4,
+        textAlign:'left',
     },
 })

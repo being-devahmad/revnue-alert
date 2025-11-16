@@ -29,6 +29,7 @@ const SettingsScreen = () => {
           color: '#9A1B2B',
           hasNavigation: true,
           screen: 'AccountSettings',
+          navigationPath: '/screens/AccountSettings', 
         },
       ],
     },
@@ -82,15 +83,12 @@ const SettingsScreen = () => {
 
   // ============ HANDLERS ============
   const handleItemPress = (item: any) => {
-    if (item.hasNavigation && item.screen) {
-      // Navigate to screen using expo-router
-      console.log(`📍 Navigating to ${item.screen}`);
+    if (item.hasNavigation && item.navigationPath) {
+      // ⭐ Use navigationPath if available
+      console.log(`📍 Navigating to ${item.label}`);
+      console.log(`🔗 Navigation path: ${item.navigationPath}`);
       
-      if (item.screen === 'AccountSettings') {
-        router.push('/screens/AccountSettings' as any);
-      } else {
-        router.push(item.screen as any);
-      }
+      router.push(item.navigationPath as any);
     } else if (item.id === 'logout') {
       // Show logout confirmation
       console.log('🚪 Logout requested');
