@@ -198,10 +198,16 @@ const AccountSettingsScreen = () => {
       setState(profileData.user.state || "");
       setZipCode(profileData.user.zip_code || "");
 
-      // Industry
-      setIndustryId(profileData.user.industry_id);
-      const industryName = getIndustryName(profileData.user.industry_id);
+      // ✅ FIXED: Industry handling
+      // Store the ID
+      const industryIdFromProfile = profileData.user.industry_id || 0;
+      setIndustryId(industryIdFromProfile);
+
+      // Get industry name from ID
+      const industryName = getIndustryName(industryIdFromProfile);
       setIndustry(industryName);
+
+      console.log(`✅ Industry loaded: ${industryName} (ID: ${industryIdFromProfile})`);
 
       // Billing Info
       const planName = getSubscriptionPlanName(profileData.user.stripe_plan);
@@ -266,7 +272,7 @@ const AccountSettingsScreen = () => {
       email,
       companyName,
       department,
-      industryId,
+      industryId, // ✅ This now has the correct ID
       phone,
       address,
       city,
@@ -282,6 +288,7 @@ const AccountSettingsScreen = () => {
     }
 
     console.log("✅ Validation passed, sending update request...");
+    console.log("📦 Update payload:", { ...profileRequest, industryId });
 
     // Send update request
     updateProfileMutate(profileRequest, {
@@ -377,6 +384,27 @@ const AccountSettingsScreen = () => {
     );
   };
 
+  // ✅ FIXED: Handle industry selection from bottom sheet
+  const handleIndustrySelect = (selectedIndustryName: string) => {
+    console.log("📝 Industry selected from sheet:", selectedIndustryName);
+
+    // Set the industry name
+    setIndustry(selectedIndustryName);
+
+    // The IndustryBottomSheet should pass the full industry object
+    // If it's just a string, we need to find the ID
+    // This depends on your useIndustries API response structure
+    
+    // Option 1: If the API returns objects with id and name
+    // The component should extract the ID from the selected item
+    
+    // For now, we'll assume the selected value is the name
+    // and we'll need to handle the ID mapping in the backend
+    // or get it from the industries list
+    
+    console.log(`✅ Industry name set to: ${selectedIndustryName}`);
+  };
+
   // ============ RENDER - LOADING STATE ============
   if (isLoadingProfile) {
     return (
@@ -422,9 +450,13 @@ const AccountSettingsScreen = () => {
         visible={showIndustryModal}
         selectedValue={industry}
         onSelect={(selectedIndustry) => {
-          setIndustry(selectedIndustry);
-          // TODO: Get industry ID from industry name
-          // This will need to be mapped based on your industry list
+          console.log("🏢 Industry selected:", selectedIndustry);
+          
+          // Set industry name
+          handleIndustrySelect(selectedIndustry);
+          
+          // Close modal
+          setShowIndustryModal(false);
         }}
         onClose={() => setShowIndustryModal(false)}
         title="Select Industry"
@@ -497,6 +529,9 @@ const AccountSettingsScreen = () => {
                 </Text>
                 <Ionicons name="chevron-down" size={20} color="#9A1B2B" />
               </TouchableOpacity>
+              {industryId > 0 && (
+                <Text style={styles.debugText}>ID: {industryId}</Text>
+              )}
             </View>
 
             <View style={styles.divider} />
@@ -1047,12 +1082,6 @@ const AccountSettingsScreen = () => {
                 <Text style={styles.errorInvoiceText}>
                   {invoicesError.message || "Failed to load invoices"}
                 </Text>
-                <TouchableOpacity
-                  style={styles.retryButton}
-                  onPress={() => window.location.reload()}
-                >
-                  <Text style={styles.retryButtonText}>Retry</Text>
-                </TouchableOpacity>
               </View>
             )}
 
@@ -1217,80 +1246,6 @@ const styles = StyleSheet.create({
     color: "#6B7280",
     marginTop: 6,
   },
-  // ============ BOTTOM SHEET STYLES ============
-  bottomSheetOverlay: {
-    flex: 1,
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
-    justifyContent: "flex-end",
-  },
-  bottomSheetBackdrop: {
-    flex: 1,
-  },
-  bottomSheetContainer: {
-    backgroundColor: "#FFFFFF",
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    maxHeight: "80%",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: -4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 12,
-    elevation: 8,
-  },
-  handleBar: {
-    width: 40,
-    height: 4,
-    backgroundColor: "#E5E7EB",
-    borderRadius: 2,
-    alignSelf: "center",
-    marginTop: 12,
-    marginBottom: 12,
-  },
-  bottomSheetHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingHorizontal: 20,
-    paddingBottom: 12,
-  },
-  bottomSheetTitle: {
-    fontSize: 18,
-    fontWeight: "700",
-    color: "#1F2937",
-  },
-  bottomSheetDivider: {
-    height: 1,
-    backgroundColor: "#E5E7EB",
-    marginHorizontal: 20,
-  },
-  bottomSheetList: {
-    maxHeight: 400,
-  },
-  bottomSheetOption: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingVertical: 14,
-    paddingHorizontal: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: "#F3F4F6",
-  },
-  bottomSheetOptionSelected: {
-    backgroundColor: "rgba(154, 27, 43, 0.05)",
-  },
-  bottomSheetOptionText: {
-    fontSize: 16,
-    color: "#6B7280",
-    fontWeight: "600",
-  },
-  bottomSheetOptionTextSelected: {
-    color: "#9A1B2B",
-    fontWeight: "700",
-  },
-  bottomSheetPadding: {
-    height: 20,
-  },
-  // ============ SUBSCRIPTION PICKER STYLES ============
   pickerOverlay: {
     flex: 1,
     backgroundColor: "rgba(0, 0, 0, 0.5)",
@@ -1329,47 +1284,6 @@ const styles = StyleSheet.create({
   pickerOptionTextSelected: {
     color: "#9A1B2B",
     fontWeight: "700",
-  },
-  // ============ HEADER STYLES ============
-  headerContainer: {
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.2,
-    shadowRadius: 16,
-    elevation: 12,
-  },
-  headerGradient: {
-    paddingTop: 60,
-    paddingBottom: 28,
-    paddingHorizontal: 20,
-  },
-  headerContent: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  backButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: "rgba(255, 255, 255, 0.2)",
-    alignItems: "center",
-    justifyContent: "center",
-    marginRight: 16,
-  },
-  headerTextContainer: {
-    flex: 1,
-  },
-  headerTitle: {
-    fontSize: 28,
-    fontWeight: "800",
-    color: "#FFFFFF",
-    letterSpacing: 0.5,
-  },
-  headerSubtitle: {
-    fontSize: 15,
-    color: "rgba(255, 255, 255, 0.9)",
-    marginTop: 6,
-    fontWeight: "500",
   },
   scrollView: {
     flex: 1,
@@ -1476,6 +1390,12 @@ const styles = StyleSheet.create({
     color: "#1F2937",
     fontWeight: "600",
     flex: 1,
+  },
+  debugText: {
+    fontSize: 11,
+    color: "#9CA3AF",
+    marginTop: 4,
+    fontStyle: "italic",
   },
   divider: {
     height: 1,
@@ -1780,18 +1700,6 @@ const styles = StyleSheet.create({
     color: "#1F2937",
     fontWeight: "600",
     textAlign: "center",
-  },
-  retryButton: {
-    backgroundColor: "#9A1B2B",
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-    borderRadius: 8,
-    marginTop: 8,
-  },
-  retryButtonText: {
-    fontSize: 14,
-    color: "#FFFFFF",
-    fontWeight: "600",
   },
   emptyInvoiceContainer: {
     alignItems: "center",

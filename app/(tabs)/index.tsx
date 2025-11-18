@@ -448,7 +448,7 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   contractMetricValue: {
-    fontSize: 15,
+    fontSize: 14,
     fontWeight: '700',
     color: '#1F2937',
   },

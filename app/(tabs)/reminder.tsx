@@ -248,15 +248,22 @@ const ReminderScreen: React.FC = () => {
     refetch();
   }, [refetch]);
 
+  // ✅ FIXED: Pass contractId to TimelineDetails
   const handleCardPress = (reminder: ReminderData) => {
+    console.log('📌 Navigating to timeline for contract ID:', reminder.id);
+    
     router.push({
       pathname: "/screens/TimelineDetails",
       params: {
+        // ✅ IMPORTANT: Pass the contract ID for API call
+        contractId: reminder.id.toString(),
+        
+        // Other params (optional, for fallback display)
         reminderName: reminder.name,
         accountNumber: reminder.account_number,
         inceptionDate: reminder.started_at,
         expirationDate: reminder.expired_at,
-        paymentAmount: reminder.amount,
+        paymentAmount: reminder.amount.toString(),
         paymentInterval: reminder.interval,
         lastPaymentDate: reminder.last_payment_at,
         category: reminder.category.name,
@@ -265,8 +272,8 @@ const ReminderScreen: React.FC = () => {
         website: reminder.website_email,
         phone: reminder.phone_number,
         status: getStatusBadge(reminder),
-        rating: reminder.supplier_rating,
-        daysLeft: getDaysLeft(reminder.expired_at),
+        rating: reminder.supplier_rating?.toString(),
+        daysLeft: getDaysLeft(reminder.expired_at).toString(),
       },
     });
   };
@@ -348,7 +355,7 @@ const ReminderScreen: React.FC = () => {
             <View style={styles.cardInfo}>
               <Ionicons name="pricetag" size={14} color="#9CA3AF" />
               <Text style={styles.cardInfoText}>
-                ${reminder.amount.toFixed(2)}
+                ${reminder?.amount?.toFixed(2)}
               </Text>
             </View>
             <View style={styles.cardInfo}>
@@ -380,7 +387,7 @@ const ReminderScreen: React.FC = () => {
         <View style={styles.cardFooter}>
           <View style={styles.cardFooterLeft}>
             <Text style={styles.paymentText}>
-              ${reminder.amount.toFixed(2)}
+              ${reminder?.amount?.toFixed(2)}
             </Text>
           </View>
           <View style={styles.cardFooterRight}>
