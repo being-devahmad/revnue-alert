@@ -62,6 +62,10 @@ export interface RemindersFilters {
   per_page?: number;
 }
 
+export interface TagCount {
+  [tag: string]: number;
+}
+
 export interface RemindersResponse {
   status: boolean;
   message: string;
@@ -70,6 +74,7 @@ export interface RemindersResponse {
     pagination: PaginationData;
     filters: Record<string, any>;
     reminders: ReminderData[];
+    tag_counts: TagCount;
   };
 }
 

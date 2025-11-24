@@ -85,6 +85,12 @@ const ReminderScreen: React.FC = () => {
     refetch,
   } = useReminders(apiFilters);
 
+  const activeCount = data?.pages[0]?.data?.tag_counts?.active || 0;
+  const expiredCount = data?.pages[0]?.data?.tag_counts?.expired || 0;
+  const expiringCount = data?.pages[0]?.data?.tag_counts?.expiring || 0;
+  const disabledCount = data?.pages[0]?.data?.tag_counts?.inactive || 0;
+  const totalCount = data?.pages[0]?.data?.tag_counts?.total || 0;
+
   // Flatten and combine all pages
   const allReminders = flattenReminders(data);
   const paginationInfo = getPaginationInfo(data);
@@ -168,26 +174,24 @@ const ReminderScreen: React.FC = () => {
 
   // ============ QUICK FILTERS DATA ============
   const filters = [
-    { id: "all", label: "All", count: paginationInfo.total, icon: "apps" },
+    { id: "all", label: "All", count: totalCount, icon: "apps" },
     {
       id: "active",
       label: "Active",
-      count: allReminders.filter((r) => getDaysLeft(r.expired_at) >= 0).length,
+      count: activeCount,
       icon: "checkmark-circle",
     },
     {
       id: "expiring",
       label: "Soon",
-      count: allReminders.filter(
-        (r) => getDaysLeft(r.expired_at) < 30 && getDaysLeft(r.expired_at) >= 0
-      ).length,
+      count: expiringCount,
       icon: "alert-circle",
     },
-    { id: "disabled", label: "Off", count: 0, icon: "ban" },
+    { id: "disabled", label: "Off", count: disabledCount, icon: "ban" },
     {
       id: "expired",
       label: "Past",
-      count: allReminders.filter((r) => getDaysLeft(r.expired_at) < 0).length,
+      count: expiredCount,
       icon: "close-circle",
     },
   ];
@@ -251,13 +255,13 @@ const ReminderScreen: React.FC = () => {
   // ✅ FIXED: Pass contractId to TimelineDetails
   const handleCardPress = (reminder: ReminderData) => {
     console.log('📌 Navigating to timeline for contract ID:', reminder.id);
-    
+
     router.push({
       pathname: "/screens/TimelineDetails",
       params: {
         // ✅ IMPORTANT: Pass the contract ID for API call
         contractId: reminder.id.toString(),
-        
+
         // Other params (optional, for fallback display)
         reminderName: reminder.name,
         accountNumber: reminder.account_number,
@@ -581,116 +585,123 @@ const ReminderScreen: React.FC = () => {
           </View>
 
           <View style={styles.filtersScrollView}>
-            {/* Name Filter */}
-            <View style={styles.filterInputGroup}>
-              <Text style={styles.filterLabel}>Name</Text>
-              <TextInput
-                style={styles.filterInput}
-                placeholder="search contract name"
-                placeholderTextColor="#9CA3AF"
-                value={nameFilter}
-                onChangeText={setNameFilter}
-              />
+            <View style={{ flexDirection: "row", gap: 12 }}>
+              {/* Name Filter */}
+              <View style={styles.filterInputGroup}>
+                <Text style={styles.filterLabel}>Name</Text>
+                <TextInput
+                  style={styles.filterInput}
+                  placeholder="search contract name"
+                  placeholderTextColor="#9CA3AF"
+                  value={nameFilter}
+                  onChangeText={setNameFilter}
+                />
+              </View>
+
+              {/* Category Filter */}
+              <View style={styles.filterInputGroup}>
+                <Text style={styles.filterLabel}>Category</Text>
+                <TextInput
+                  style={styles.filterInput}
+                  placeholder="search by categories"
+                  placeholderTextColor="#9CA3AF"
+                  value={categoryFilter}
+                  onChangeText={setCategoryFilter}
+                />
+              </View>
             </View>
 
-            {/* Category Filter */}
-            <View style={styles.filterInputGroup}>
-              <Text style={styles.filterLabel}>Category</Text>
-              <TextInput
-                style={styles.filterInput}
-                placeholder="search by categories"
-                placeholderTextColor="#9CA3AF"
-                value={categoryFilter}
-                onChangeText={setCategoryFilter}
-              />
+            <View style={{ flexDirection: "row", gap: 12 }}>
+              {/* Description Filter */}
+              <View style={styles.filterInputGroup}>
+                <Text style={styles.filterLabel}>Description</Text>
+                <TextInput
+                  style={styles.filterInput}
+                  placeholder="search description"
+                  placeholderTextColor="#9CA3AF"
+                  value={descriptionFilter}
+                  onChangeText={setDescriptionFilter}
+                />
+              </View>
+              {/* Payment Amount Filter */}
+              <View style={styles.filterInputGroup}>
+                <Text style={styles.filterLabel}>Payment Amount</Text>
+                <TextInput
+                  style={styles.filterInput}
+                  placeholder="search amount"
+                  placeholderTextColor="#9CA3AF"
+                  value={paymentAmount}
+                  onChangeText={setPaymentAmount}
+                  keyboardType="numeric"
+                />
+              </View>
             </View>
 
-            {/* Description Filter */}
-            <View style={styles.filterInputGroup}>
-              <Text style={styles.filterLabel}>Description</Text>
-              <TextInput
-                style={styles.filterInput}
-                placeholder="search description"
-                placeholderTextColor="#9CA3AF"
-                value={descriptionFilter}
-                onChangeText={setDescriptionFilter}
-              />
-            </View>
-
-            {/* Payment Amount Filter */}
-            <View style={styles.filterInputGroup}>
-              <Text style={styles.filterLabel}>Payment Amount</Text>
-              <TextInput
-                style={styles.filterInput}
-                placeholder="search amount"
-                placeholderTextColor="#9CA3AF"
-                value={paymentAmount}
-                onChangeText={setPaymentAmount}
-                keyboardType="numeric"
-              />
-            </View>
-
-            {/* Payment Interval Filter */}
-            <View style={styles.filterInputGroup}>
-              <Text style={styles.filterLabel}>Payment Interval</Text>
-              <TouchableOpacity
-                style={styles.filterInput}
-                onPress={() => setShowPaymentIntervalDropdown(true)}
-              >
-                <Text
-                  style={
-                    paymentInterval ? styles.dateText : styles.datePlaceholder
-                  }
+            <View style={{ flexDirection: "row", gap: 12 }}>
+              {/* Payment Interval Filter */}
+              <View style={styles.filterInputGroup}>
+                <Text style={styles.filterLabel}>Payment Interval</Text>
+                <TouchableOpacity
+                  style={styles.filterInput}
+                  onPress={() => setShowPaymentIntervalDropdown(true)}
                 >
-                  {paymentInterval || "search interval"}
-                </Text>
-              </TouchableOpacity>
-            </View>
+                  <Text
+                    style={
+                      paymentInterval ? styles.dateText : styles.datePlaceholder
+                    }
+                  >
+                    {paymentInterval || "search interval"}
+                  </Text>
+                </TouchableOpacity>
+              </View>
 
-            {/* Inception Date */}
-            <View style={styles.filterInputGroup}>
-              <Text style={styles.filterLabel}>Inception Date</Text>
-              <TouchableOpacity
-                style={styles.filterInput}
-                onPress={() => setShowInceptionPicker(true)}
-              >
-                <Text
-                  style={
-                    inceptionDate ? styles.dateText : styles.datePlaceholder
-                  }
+              {/* Inception Date */}
+              <View style={styles.filterInputGroup}>
+                <Text style={styles.filterLabel}>Inception Date</Text>
+                <TouchableOpacity
+                  style={styles.filterInput}
+                  onPress={() => setShowInceptionPicker(true)}
                 >
-                  {inceptionDate ? formatDate(inceptionDate) : "search date"}
-                </Text>
-              </TouchableOpacity>
+                  <Text
+                    style={
+                      inceptionDate ? styles.dateText : styles.datePlaceholder
+                    }
+                  >
+                    {inceptionDate ? formatDate(inceptionDate) : "search date"}
+                  </Text>
+                </TouchableOpacity>
+              </View>
             </View>
 
-            {/* Expiration Date */}
-            <View style={styles.filterInputGroup}>
-              <Text style={styles.filterLabel}>Expiration Date</Text>
-              <TouchableOpacity
-                style={styles.filterInput}
-                onPress={() => setShowExpirationPicker(true)}
-              >
-                <Text
-                  style={
-                    expirationDate ? styles.dateText : styles.datePlaceholder
-                  }
+            <View style={{ flexDirection: "row", gap: 12 }}>
+              {/* Expiration Date */}
+              <View style={styles.filterInputGroup}>
+                <Text style={styles.filterLabel}>Expiration Date</Text>
+                <TouchableOpacity
+                  style={styles.filterInput}
+                  onPress={() => setShowExpirationPicker(true)}
                 >
-                  {expirationDate ? formatDate(expirationDate) : "search date"}
-                </Text>
-              </TouchableOpacity>
-            </View>
+                  <Text
+                    style={
+                      expirationDate ? styles.dateText : styles.datePlaceholder
+                    }
+                  >
+                    {expirationDate ? formatDate(expirationDate) : "search date"}
+                  </Text>
+                </TouchableOpacity>
+              </View>
 
-            {/* Reminder Notes Filter */}
-            <View style={styles.filterInputGroup}>
-              <Text style={styles.filterLabel}>Reminder Notes</Text>
-              <TextInput
-                style={styles.filterInput}
-                placeholder="search notes"
-                placeholderTextColor="#9CA3AF"
-                value={reminderNotesFilter}
-                onChangeText={setReminderNotesFilter}
-              />
+              {/* Reminder Notes Filter */}
+              <View style={styles.filterInputGroup}>
+                <Text style={styles.filterLabel}>Reminder Notes</Text>
+                <TextInput
+                  style={styles.filterInput}
+                  placeholder="search notes"
+                  placeholderTextColor="#9CA3AF"
+                  value={reminderNotesFilter}
+                  onChangeText={setReminderNotesFilter}
+                />
+              </View>
             </View>
           </View>
 
@@ -989,6 +1000,7 @@ const styles = StyleSheet.create({
     color: "#1F2937",
     borderWidth: 1,
     borderColor: "#E5E7EB",
+    width: 170,
   },
   dateText: {
     fontSize: 14,
