@@ -1,4 +1,7 @@
+import { useCompleteTask } from '@/api/reminders/timeline-details/useCompleteTask';
+import { useResendICal } from '@/api/reminders/timeline-details/useResendiCal';
 import { useGetTimelineDetails } from '@/api/reminders/useGetTimelineDetails';
+import { TabHeader } from '@/components/TabHeader';
 import ContractDetailsTab from '@/components/TimelineDetailsTabs/ContractDetailsTab';
 import ReminderDetailsTab from '@/components/TimelineDetailsTabs/ReminderDetailsTab';
 import TimelineTab from '@/components/TimelineDetailsTabs/TimelineTab';
@@ -7,6 +10,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import {
   ActivityIndicator,
+  Alert,
   ScrollView,
   StyleSheet,
   Text,
@@ -39,6 +43,7 @@ const TimelineDetailsScreen: React.FC = () => {
   // Get contract ID from route params
   const contractId = params.contractId as string;
 
+
   // ✅ FETCH FULL TIMELINE DETAILS INCLUDING REMINDERS
   const { data, isLoading, error, refetch } = useGetTimelineDetails(contractId);
   console.log('🔄 useGetTimelineDetails state:', {
@@ -59,29 +64,6 @@ const TimelineDetailsScreen: React.FC = () => {
   const contract = data?.data?.contract;
   const timeline = data?.data?.timeline;
 
-  const handleEditContract = () => {
-    if (!contract) {
-      console.warn('❌ No contract data for edit');
-      return;
-    }
-
-    console.log('✏️ Editing contract:', contract.name);
-
-    router.push({
-      pathname: '/screens/ContractEditScreen',
-      params: {
-        contractId: contract.id,
-        name: contract.name,
-        accountNumber: contract.account_number,
-        startDate: contract.started_at,
-        endDate: contract.expired_at,
-        amount: contract.amount,
-        interval: contract.interval,
-        categoryId: contract.category_id,
-        autoRenew: contract.auto_renew ? 'true' : 'false',
-      },
-    });
-  };
 
   const handleEditReminder = () => {
     if (!contract) {
@@ -92,7 +74,7 @@ const TimelineDetailsScreen: React.FC = () => {
     console.log('✏️ Editing reminder:', contract.name);
 
     router.push({
-      pathname: '/screens/ReminderEditScreen',
+      pathname: '/screens/EditReminder',
       params: {
         contractId: contract.id,
         contractName: contract.name,
@@ -100,12 +82,55 @@ const TimelineDetailsScreen: React.FC = () => {
     });
   };
 
-  const handleResendIcal = (reminderId: string | number) => {
-    console.log('📅 Resending iCal for reminder:', reminderId);
-    // TODO: Implement API call to resend iCal
-    // Example:
-    // await apiClient.post(`/reminders/${reminderId}/resend-ical`);
+
+  // Resend iCal Hook
+  const { mutate: resendICal, isPending } = useResendICal();
+
+  const handleResendIcal = (reminderId: number) => {
+    resendICal(reminderId, {
+      onSuccess: (response) => {
+        Alert.alert(
+          "iCal Sent 🎉",
+          response.message || "Calendar reminder sent successfully!"
+        );
+      },
+
+      onError: (error: any) => {
+        Alert.alert(
+          "Error",
+          error.response?.data?.message || error.message || "Something went wrong"
+        );
+      },
+    });
   };
+
+
+  // Complete task handler
+
+  const { mutate: completeTask, isPending: isCompletingTask } = useCompleteTask();
+
+  const handleCompleteTask = (taskId: number) => {
+    console.log("⏳ Completing task:", taskId);
+
+    completeTask(taskId, {
+      onSuccess: (response) => {
+        Alert.alert(
+          "Task Completed 🎉",
+          response.message || "Successfully completed task!"
+        );
+
+        // Optional: Refresh timeline  
+        refetch();
+      },
+      onError: (error: any) => {
+        Alert.alert(
+          "Error",
+          error?.response?.data?.message || error.message || "Failed to complete task"
+        );
+      },
+    });
+  };
+
 
   const handleGoBack = () => {
     router.back();
@@ -132,7 +157,9 @@ const TimelineDetailsScreen: React.FC = () => {
           <ContractDetailsTab
             contract={contract}
             isLoading={isLoading}
-            onEdit={handleEditContract}
+            onEdit={handleEditReminder}
+            onCompleteTask={handleCompleteTask}
+            isCompletingTask={isCompletingTask}
           />
         );
       case 'reminder':
@@ -142,6 +169,7 @@ const TimelineDetailsScreen: React.FC = () => {
             isLoading={isLoading}
             onEdit={handleEditReminder}
             onResendIcal={handleResendIcal}
+            isResendingIcal={isPending}
           />
         );
       default:
@@ -212,21 +240,11 @@ const TimelineDetailsScreen: React.FC = () => {
   return (
     <View style={styles.container}>
       {/* Header */}
-      <View style={styles.headerContainer}>
-        <View style={styles.headerContent}>
-          <TouchableOpacity onPress={handleGoBack} style={styles.headerBack}>
-            <Ionicons name="arrow-back" size={24} color="white" />
-          </TouchableOpacity>
-          <View style={styles.headerTextContainer}>
-            <Text style={styles.headerTitle}>Timeline Details</Text>
-            {contract && (
-              <Text style={styles.headerSubtitle} numberOfLines={1}>
-                {contract.name}
-              </Text>
-            )}
-          </View>
-        </View>
-      </View>
+      <TabHeader
+        title='Timeline Details'
+        subtitle={contract ? contract.name : ''}
+        isChild={true}
+      />
 
       {/* Tabs Navigation */}
       <View style={styles.tabContainerWrapper}>

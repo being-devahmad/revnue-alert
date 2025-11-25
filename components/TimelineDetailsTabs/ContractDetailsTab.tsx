@@ -17,12 +17,16 @@ interface ContractDetailsTabProps {
   contract?: any;
   isLoading?: boolean;
   onEdit: () => void;
+  onCompleteTask: (contractId: number) => void;
+  isCompletingTask: boolean;
 }
 
 const ContractDetailsTab: React.FC<ContractDetailsTabProps> = ({
   contract,
   isLoading = false,
   onEdit,
+  onCompleteTask,
+  isCompletingTask,
 }) => {
   // ✅ Get reminder active status - primary source of truth
   const reminderActiveStatus = useMemo(() => {
@@ -230,12 +234,24 @@ const ContractDetailsTab: React.FC<ContractDetailsTabProps> = ({
           <View style={styles.statusActionsDivider} />
 
           <TouchableOpacity
-            style={styles.completeTaskButton}
+            style={[
+              styles.completeTaskButton,
+              isCompletingTask && { opacity: 0.6 }
+            ]}
             onPress={handleCompleteTask}
+            disabled={isCompletingTask}
           >
-            <Ionicons name="checkmark-done" size={20} color="white" />
-            <Text style={styles.completeTaskText}>Complete Task</Text>
+            {isCompletingTask ? (
+              <Ionicons name="time-outline" size={20} color="white" />
+            ) : (
+              <Ionicons name="checkmark-done" size={20} color="white" />
+            )}
+
+            <Text style={styles.completeTaskText}>
+              {isCompletingTask ? "Completing..." : "Complete Task"}
+            </Text>
           </TouchableOpacity>
+
         </View>
 
         {/* Current Status Badge */}

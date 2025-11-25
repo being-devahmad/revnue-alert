@@ -13,12 +13,16 @@ interface ReminderDetailsTabProps {
   contract?: any;
   isLoading?: boolean;
   onEdit?: () => void;
+  onResendIcal?: (reminderId: number) => void;
+  isResendingIcal?: boolean;
 }
 
 const ReminderDetailsTab: React.FC<ReminderDetailsTabProps> = ({
   contract,
   isLoading = false,
   onEdit,
+  onResendIcal,
+  isResendingIcal
 }) => {
   console.log("🔍 ReminderDetailsTab contract received:", contract);
 
@@ -99,11 +103,18 @@ const ReminderDetailsTab: React.FC<ReminderDetailsTabProps> = ({
               <Text style={styles.contractName}>{contract.name}</Text>
             </View>
           </View>
-          {onEdit && (
-            <TouchableOpacity style={styles.editButton} onPress={onEdit}>
-              <Ionicons name="create-outline" size={18} color="white" />
-              <Text style={styles.editButtonText}>Edit</Text>
+          {onResendIcal && (
+            <TouchableOpacity
+              style={styles.editButton}
+              onPress={() => onResendIcal(contract.id)}
+            >
+              <Ionicons name="send-outline" size={16} color="#fff" />
+              <Text style={styles.editButtonText}>
+                {isResendingIcal ? "Resending..." : "Resend iCal"}
+              </Text>
             </TouchableOpacity>
+
+
           )}
         </View>
 
@@ -346,7 +357,7 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: "#6B7280",
     marginTop: 2,
-    width: 230,
+    width: "80%",
     flexWrap: "wrap"
   },
   editButton: {

@@ -21,6 +21,7 @@ interface ReminderDetailsProps {
     onRemoveContact: (index: number) => void
     onSave: () => void
     onCancel: () => void
+    isLoading: boolean
 }
 
 export const ReminderDetails: React.FC<ReminderDetailsProps> = ({
@@ -32,6 +33,7 @@ export const ReminderDetails: React.FC<ReminderDetailsProps> = ({
     onRemoveContact,
     onSave,
     onCancel,
+    isLoading
 }) => {
     const [showDropdowns, setShowDropdowns] = useState({
         reminderPeriod: false,

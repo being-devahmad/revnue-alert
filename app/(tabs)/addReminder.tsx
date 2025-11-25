@@ -31,7 +31,7 @@ const AddReminderScreen = () => {
 
   // Step 1: Contract Details
   const [contractForm, setContractForm] = useState({
-    reminderTo: "Element DFW",
+    reminderTo: "",
     reminderName: "",
     description: "",
     category: "",

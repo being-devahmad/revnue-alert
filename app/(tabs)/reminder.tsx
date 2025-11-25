@@ -254,15 +254,13 @@ const ReminderScreen: React.FC = () => {
 
   // ✅ FIXED: Pass contractId to TimelineDetails
   const handleCardPress = (reminder: ReminderData) => {
-    console.log('📌 Navigating to timeline for contract ID:', reminder.id);
+    console.log("📌 Navigating to timeline for contract ID:", reminder.id);
 
     router.push({
       pathname: "/screens/TimelineDetails",
       params: {
         // ✅ IMPORTANT: Pass the contract ID for API call
         contractId: reminder.id.toString(),
-
-        // Other params (optional, for fallback display)
         reminderName: reminder.name,
         accountNumber: reminder.account_number,
         inceptionDate: reminder.started_at,
@@ -486,7 +484,7 @@ const ReminderScreen: React.FC = () => {
     <View style={styles.container}>
       {/* Header */}
 
-      <TabHeader title="Reminders" subtitle={`${data?.pages[0]?.data?.pagination?.total} contracts`} />
+      <TabHeader title="Reminders" subtitle={`${totalCount} contracts`} />
 
       {/* Search and Filter Section */}
       <View style={styles.searchSection}>
@@ -540,7 +538,8 @@ const ReminderScreen: React.FC = () => {
               <Text
                 style={[
                   styles.filterChipText,
-                  selectedFilter === filterItem.id && styles.filterChipTextActive,
+                  selectedFilter === filterItem.id &&
+                    styles.filterChipTextActive,
                 ]}
               >
                 {filterItem.label}
@@ -555,7 +554,7 @@ const ReminderScreen: React.FC = () => {
                   style={[
                     styles.filterBadgeText,
                     selectedFilter === filterItem.id &&
-                    styles.filterBadgeTextActive,
+                      styles.filterBadgeTextActive,
                   ]}
                 >
                   {filterItem.count}
@@ -686,7 +685,9 @@ const ReminderScreen: React.FC = () => {
                       expirationDate ? styles.dateText : styles.datePlaceholder
                     }
                   >
-                    {expirationDate ? formatDate(expirationDate) : "search date"}
+                    {expirationDate
+                      ? formatDate(expirationDate)
+                      : "search date"}
                   </Text>
                 </TouchableOpacity>
               </View>
@@ -797,7 +798,7 @@ const ReminderScreen: React.FC = () => {
                     style={[
                       styles.dropdownItemText,
                       paymentInterval === option &&
-                      styles.dropdownItemTextActive,
+                        styles.dropdownItemTextActive,
                     ]}
                   >
                     {option}
