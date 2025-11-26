@@ -106,6 +106,7 @@ export const ContractDetails: React.FC<ContractDetailsProps> = ({
 
   // API HOOks
   const { data: accounts } = useGetEnterpriseAccounts();
+  console.log('accounts =====>', accounts)
 
   const paymentIntervalOptions = ["Monthly", "Quarterly", "Annual"];
   const renewalPeriodOptions = ["1 Month", "6 Months", "1 Year"];

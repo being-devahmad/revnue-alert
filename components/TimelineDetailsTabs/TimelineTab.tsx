@@ -1,9 +1,18 @@
-
-import { formatDateLong, getDaysLeft } from "@/api/reminders/useGetTimelineDetails";
+import {
+  formatDateLong,
+  getDaysLeft,
+} from "@/api/reminders/useGetTimelineDetails";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
+import { useRouter } from "expo-router";
 import React, { useMemo } from "react";
-import { ScrollView, StyleSheet, Text, View } from "react-native";
+import {
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 
 interface TimelineTabProps {
   timeline?: any;
@@ -16,8 +25,10 @@ const TimelineTab: React.FC<TimelineTabProps> = ({
   contract,
   isLoading = false,
 }) => {
+  const router = useRouter();
 
-    
+  console.log("🕒 Rendering TimelineTab with contract:", contract);
+  console.log("🕒 Timeline data:", timeline?.rows?.length);
 
   // Calculate timeline progress percentage
   const calculateProgress = useMemo(() => {
@@ -118,6 +129,33 @@ const TimelineTab: React.FC<TimelineTabProps> = ({
   }
 
   const timelineColors = getTimelineColors();
+
+  // If no timeline rows → show Add Reminder box
+  if (!timeline?.rows || timeline.rows.length === 0) {
+    return (
+      <View style={styles.emptyTimelineBox}>
+        <Text style={styles.emptyTimelineText}>
+          No reminders found for this contract.
+        </Text>
+
+        <TouchableOpacity
+          style={styles.addReminderButton}
+          onPress={() => {
+            router.push({
+              pathname: "/(tabs)/addReminder",
+              params: {
+                contractId: contract?.id,
+                defaultTab: "reminder",
+              },
+            });
+          }}
+        >
+          <Ionicons name="add-circle-outline" size={20} color="#FFFFFF" />
+          <Text style={styles.addReminderButtonText}>Add Reminder</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
 
   return (
     <ScrollView style={styles.timelineContainer}>
@@ -545,6 +583,39 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: "#4B5563",
     lineHeight: 20,
+  },
+
+  // if no timeline rows styles
+  emptyTimelineBox: {
+    marginTop: 30,
+    padding: 20,
+    backgroundColor: "#FFFFFF",
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: "#E5E7EB",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  emptyTimelineText: {
+    fontSize: 16,
+    color: "#6B7280",
+    marginBottom: 16,
+    fontWeight: "500",
+    textAlign: "center",
+  },
+  addReminderButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    backgroundColor: "#9A1B2B",
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 10,
+  },
+  addReminderButtonText: {
+    color: "#FFFFFF",
+    fontSize: 15,
+    fontWeight: "600",
   },
 });
 

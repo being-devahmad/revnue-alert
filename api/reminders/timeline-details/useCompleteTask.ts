@@ -16,7 +16,7 @@ const completeTaskAPI = async (contractId: number): Promise<CompleteTaskResponse
     console.log('📤 Completing task...');
     console.log('📋 Contract ID:', contractId);
 
-    const response = await axiosInstance.post<CompleteTaskResponse>(
+    const response = await axiosInstance.get<CompleteTaskResponse>(
       `/contracts/${contractId}/complete`
     );
 

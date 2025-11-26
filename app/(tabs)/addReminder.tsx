@@ -1,11 +1,9 @@
-"use client";
-
 import { useAddContract } from "@/api/addReminder/useAddContract";
 import { useAddReminder } from "@/api/addReminder/useAddReminder";
 import { ContractDetails } from "@/components/AddReminderTabs/ContractDetailsTab";
 import { ReminderDetails } from "@/components/AddReminderTabs/ReminderDetailsTab";
 import { TabHeader } from "@/components/TabHeader";
-import { useRouter } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import { useState } from "react";
 import {
   ActivityIndicator,
@@ -20,7 +18,15 @@ type TabType = "details" | "reminder";
 
 const AddReminderScreen = () => {
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState<TabType>("details");
+
+  const params = useLocalSearchParams();
+  console.log('params-->', params)
+
+  const initialTab: TabType =
+    params?.defaultTab === "reminder" ? "reminder" : "details";
+
+  const [activeTab, setActiveTab] = useState<TabType>(initialTab);
+
 
   // API Mutations
   const { mutate: addContract, isPending: isAddingContract } = useAddContract();

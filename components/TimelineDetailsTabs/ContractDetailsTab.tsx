@@ -64,23 +64,6 @@ const ContractDetailsTab: React.FC<ContractDetailsTabProps> = ({
     return "#10B981";
   };
 
-  // Handle Complete Task
-  const handleCompleteTask = () => {
-    Alert.alert(
-      "Complete Task",
-      "Are you sure you want to mark this contract as complete?",
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Complete",
-          onPress: () => {
-            Alert.alert("Success", "Contract task has been completed!");
-          },
-        },
-      ]
-    );
-  };
-
   // Handle Toggle
   const handleToggleEnabled = (value: boolean) => {
     setIsEnabled(value);
@@ -238,9 +221,10 @@ const ContractDetailsTab: React.FC<ContractDetailsTabProps> = ({
               styles.completeTaskButton,
               isCompletingTask && { opacity: 0.6 }
             ]}
-            onPress={handleCompleteTask}
+            onPress={() => onCompleteTask(contract.id)}
             disabled={isCompletingTask}
           >
+
             {isCompletingTask ? (
               <Ionicons name="time-outline" size={20} color="white" />
             ) : (
