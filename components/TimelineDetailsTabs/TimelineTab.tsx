@@ -2,6 +2,7 @@ import {
   formatDateLong,
   getDaysLeft,
 } from "@/api/reminders/useGetTimelineDetails";
+import { formatISODuration } from "@/utils";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
@@ -93,11 +94,11 @@ const TimelineTab: React.FC<TimelineTabProps> = ({
 
   // Determine auto-renew status
   const getAutoRenewStatus = useMemo(() => {
-    if (contract?.interval) {
-      return "✓ " + contract.interval;
+    if (contract?.auto_renew) {
+      return "✓ " + formatISODuration(contract.auto_renew_period);
     }
     return "N/A";
-  }, [contract?.interval]);
+  }, [contract?.auto_renew, contract?.auto_renew_period]);
 
   // Determine timeline color based on days left
   const getTimelineColors = (): string[] => {
@@ -444,6 +445,7 @@ const styles = StyleSheet.create({
     color: "#6B7280",
     fontWeight: "500",
     marginBottom: 8,
+    textTransform: "capitalize",
   },
   keyInfoValue: {
     fontSize: 16,

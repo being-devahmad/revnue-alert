@@ -19,7 +19,9 @@ type TabType = "details" | "reminder";
 
 const AddReminderScreen = () => {
   const router = useRouter();
-  const { accountType } = useAuthStore();
+  const { accountType , user} = useAuthStore();
+
+  console.log('user-->', user)
 
   const isEnterprise = accountType === "enterprise";
 
@@ -356,6 +358,7 @@ const AddReminderScreen = () => {
           onCancel={handleCancel}
           isLoading={isAddingContract}
           isEnterprise={isEnterprise}
+          user={user}
         />
       )}
 

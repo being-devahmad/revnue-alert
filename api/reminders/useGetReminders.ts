@@ -195,9 +195,14 @@ export const getStatusColor = (reminder: ReminderData): string => {
 
 // ============ HELPER: GET STATUS BADGE ============
 export const getStatusBadge = (reminder: ReminderData): string => {
-
   console.log('Calculating status badge for reminder ID:', reminder);
 
+  // Step 1: Check if reminders array exists and has any active reminders
+  const hasActiveReminder = reminder.reminders?.some(r => r.active);
+
+  if (!hasActiveReminder) return 'Inactive';
+
+  // Step 2: Calculate based on expiry date
   const expirationDate = new Date(reminder.expired_at);
   const today = new Date();
   const daysUntilExpiry = Math.floor(
@@ -208,6 +213,7 @@ export const getStatusBadge = (reminder: ReminderData): string => {
   if (daysUntilExpiry < 30) return 'Expiring Soon';
   return 'Active';
 };
+
 
 // ============ HELPER: GET DAYS LEFT ============
 export const getDaysLeft = (expirationDate: string): number => {

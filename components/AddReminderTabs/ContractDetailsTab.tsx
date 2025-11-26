@@ -76,6 +76,7 @@ interface ContractDetailsProps {
   onCancel: () => void;
   isLoading?: boolean;
   isEnterprise: boolean;
+  user: any;
 }
 
 export const ContractDetails: React.FC<ContractDetailsProps> = ({
@@ -86,6 +87,7 @@ export const ContractDetails: React.FC<ContractDetailsProps> = ({
   onCancel,
   isLoading,
   isEnterprise,
+  user
 }) => {
 
   const richTextRef = useRef<any>(null);
@@ -217,10 +219,29 @@ export const ContractDetails: React.FC<ContractDetailsProps> = ({
             /> */}
             {
               isEnterprise && (
+                // <DropdownField
+                //   label="Assign Reminder To"
+                //   value={contractForm.reminderTo}
+                //   options={accounts && accounts?.map((acc: any) => `${acc.department}`)}
+                //   showDropdown={showDropdowns.reminderTo}
+                //   onToggle={() => toggleDropdown("reminderTo")}
+                //   onSelect={(value) => {
+                //     onContractChange("reminderTo", value);
+                //     toggleDropdown("reminderTo");
+                //   }}
+                //   placeholder="Select an account"
+                // />
                 <DropdownField
                   label="Assign Reminder To"
                   value={contractForm.reminderTo}
-                  options={accounts && accounts?.map((acc: any) => `${acc.department}`)}
+                  options={
+                    accounts?.map((acc: any) => {
+                      if (!acc.department && acc.email === user.email) {
+                        return "Parent";
+                      }
+                      return acc.department || "Unknown";
+                    })
+                  }
                   showDropdown={showDropdowns.reminderTo}
                   onToggle={() => toggleDropdown("reminderTo")}
                   onSelect={(value) => {
@@ -229,6 +250,7 @@ export const ContractDetails: React.FC<ContractDetailsProps> = ({
                   }}
                   placeholder="Select an account"
                 />
+
               )
             }
             <FormField
