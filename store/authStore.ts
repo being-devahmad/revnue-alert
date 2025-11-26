@@ -4,10 +4,11 @@ import { create } from "zustand";
 interface AuthState {
   token: string | null;
   user: any | null;
+  accountType: string | null;
   isLoadingAuth: boolean;
 
   // Actions
-  login: (token: string, user?: any) => Promise<void>;
+  login: (token: string, user?: any, accountType?: string | null) => Promise<void>;
   setToken: (token: string) => Promise<void>;
   loadToken: () => Promise<void>;
   logout: () => Promise<void>;
@@ -16,16 +17,20 @@ interface AuthState {
 export const useAuthStore = create<AuthState>((set) => ({
   token: null,
   user: null,
+  accountType: null,
   isLoadingAuth: true, // Start as true while loading
 
   // Login shortcut (used after API login)
-  login: async (token: string, user: any = null) => {
+  login: async (token: string, user: any = null, accountType: string | null = null) => {
     try {
       await AsyncStorage.setItem("authToken", token);
       if (user) {
         await AsyncStorage.setItem("authUser", JSON.stringify(user));
       }
-      set({ token, user, isLoadingAuth: false });
+      if (accountType) {
+        await AsyncStorage.setItem("accountType", accountType);
+      }
+      set({ token, user, accountType, isLoadingAuth: false });
     } catch (err) {
       console.error("AuthStore login error:", err);
       set({ isLoadingAuth: false });
@@ -48,10 +53,12 @@ export const useAuthStore = create<AuthState>((set) => ({
     try {
       const token = await AsyncStorage.getItem("authToken");
       const userStr = await AsyncStorage.getItem("authUser");
+      const accountType = await AsyncStorage.getItem("accountType");
 
       set({
         token: token || null,
         user: userStr ? JSON.parse(userStr) : null,
+        accountType: accountType || null,
         isLoadingAuth: false, // Finished loading
       });
     } catch (err) {
@@ -65,7 +72,8 @@ export const useAuthStore = create<AuthState>((set) => ({
     try {
       await AsyncStorage.removeItem("authToken");
       await AsyncStorage.removeItem("authUser");
-      set({ token: null, user: null, isLoadingAuth: false });
+      await AsyncStorage.removeItem("accountType");
+      set({ token: null, user: null, accountType: null, isLoadingAuth: false });
     } catch (err) {
       console.error("AuthStore logout error:", err);
     }

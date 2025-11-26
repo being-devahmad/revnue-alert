@@ -195,6 +195,9 @@ export const getStatusColor = (reminder: ReminderData): string => {
 
 // ============ HELPER: GET STATUS BADGE ============
 export const getStatusBadge = (reminder: ReminderData): string => {
+
+  console.log('Calculating status badge for reminder ID:', reminder);
+
   const expirationDate = new Date(reminder.expired_at);
   const today = new Date();
   const daysUntilExpiry = Math.floor(

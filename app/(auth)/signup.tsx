@@ -48,7 +48,7 @@ const SignupScreen = () => {
   // Industries list - from params, NOT hardcoded
   const [industries, setIndustries] = useState<Industry[]>([]);
   const [isLoadingIndustries, setIsLoadingIndustries] = useState(true);
-  
+
   // Track if industry is locked (for Home & Family)
   const [isIndustryLocked, setIsIndustryLocked] = useState(false);
 
@@ -62,18 +62,18 @@ const SignupScreen = () => {
 
     try {
       setIsLoadingIndustries(true);
-      
+
       // Parse industries from params (passed from PlanSelectionScreen)
       const industriesParam = params.industries as string;
-      
+
       if (industriesParam) {
         console.log("✅ Industries param found, parsing...");
         const parsedIndustries = JSON.parse(industriesParam);
-        
+
         console.log("✅ Industries successfully parsed!");
         console.log(`📊 Total industries: ${parsedIndustries.length}`);
         console.log("📋 Industry names:", parsedIndustries.map((ind: Industry) => ind.name).join(", "));
-        
+
         setIndustries(parsedIndustries);
 
         // ============ AUTO-SELECT LOGIC FOR "Home & Family" ============
@@ -82,7 +82,7 @@ const SignupScreen = () => {
           console.log("\n🏠 ===== HOME & FAMILY PLAN DETECTED =====");
           console.log("🔍 Looking for 'Home & Family' industry (with &) to auto-select & lock...");
           console.log(`📝 params received in SignupScreen: ${planName}`);
-          
+
           // ⭐ FIXED: Search for exact name with ampersand
           const homeAndFamilyIndustry = parsedIndustries.find(
             (ind: Industry) => {
@@ -175,9 +175,7 @@ const SignupScreen = () => {
 
   // ============ HANDLE SIGNUP ============
   const handleSignup = async () => {
-    if (!validateForm()) {
-      return;
-    }
+    if (!validateForm()) return;
 
     if (!industry) {
       Alert.alert("Error", "Industry not selected");
@@ -186,8 +184,7 @@ const SignupScreen = () => {
 
     try {
       console.log("\n📤 ===== SUBMITTING REGISTRATION =====");
-      
-      // Prepare registration data
+
       const registrationData = {
         first_name: firstName,
         middle_name: middleName || undefined,
@@ -203,24 +200,13 @@ const SignupScreen = () => {
         coupon_code: couponCode || undefined,
       };
 
-      console.log("📋 Registration payload:");
-      console.log(`  - Name: ${firstName} ${lastName}`);
-      console.log(`  - Email: ${email}`);
-      console.log(`  - Industry: ${industry.name} (ID: ${industry.id})`);
-      console.log(`  - Plan: ${planName}`);
-      console.log(`  - Product ID: ${productId}`);
+      console.log("📋 Registration payload:", registrationData);
 
-      // Call registration API
-      register(registrationData as any, {
+      // Call register from the hook
+      register(registrationData, {
         onSuccess: (data) => {
           console.log("✅ Registration SUCCESSFUL!");
-          console.log("👤 User created:", {
-            id: data.data.user.id,
-            name: data.data.user.name,
-            email: data.data.user.email,
-          });
-          
-          Alert.alert("Success", "Account created successfully!", [
+          Alert.alert("Success", data.message || "Account created successfully!", [
             {
               text: "Continue",
               onPress: () => {
@@ -230,8 +216,7 @@ const SignupScreen = () => {
           ]);
         },
         onError: (error: any) => {
-          console.error("❌ Registration FAILED!");
-          console.error("Error:", error.message);
+          console.error("❌ Registration FAILED!", error);
           Alert.alert("Registration Failed", error.message || "Please try again");
         },
       });
@@ -240,6 +225,7 @@ const SignupScreen = () => {
       Alert.alert("Error", "An unexpected error occurred");
     }
   };
+
 
   // ============ RENDER ============
 
@@ -378,7 +364,7 @@ const SignupScreen = () => {
                 <Text style={styles.label}>
                   Industry <Text style={styles.required}>*</Text>
                 </Text>
-                
+
                 {isLoadingIndustries ? (
                   <View style={styles.loadingDropdown}>
                     <ActivityIndicator size="small" color="#800000" />

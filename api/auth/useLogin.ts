@@ -38,6 +38,9 @@ interface LoginResponse {
   message: string;
   token: string;
   user: UserData;
+  verified: boolean;
+  account_type: string;
+  enterprise: boolean
 }
 
 const loginUser = async (credentials: LoginRequest): Promise<LoginResponse> => {
@@ -55,6 +58,7 @@ export const useLoginMutation = () => {
       // Store the token in AsyncStorage
       if (data.token) {
         await AsyncStorage.setItem("authToken", data.token);
+        await AsyncStorage.setItem("accountType", data.account_type);
       }
 
       // Optionally store user data

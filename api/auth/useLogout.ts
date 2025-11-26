@@ -38,6 +38,7 @@ const performLogout = async (): Promise<LogoutResponse> => {
       AsyncStorage.removeItem('authToken'),
       AsyncStorage.removeItem('userData'),
       AsyncStorage.removeItem('userPreferences'),
+      AsyncStorage.removeItem('accountType'),
     ]);
 
     console.log('✅ Local auth data cleared');
@@ -60,6 +61,7 @@ const performLogout = async (): Promise<LogoutResponse> => {
         AsyncStorage.removeItem('authToken'),
         AsyncStorage.removeItem('userData'),
         AsyncStorage.removeItem('userPreferences'),
+        AsyncStorage.removeItem('accountType'),
       ]);
       console.log('✅ Local data cleared despite API error');
     } catch (clearError) {

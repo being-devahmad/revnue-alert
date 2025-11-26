@@ -1,9 +1,7 @@
 import {
-  getDisplayCardNumber,
   getIndustryName,
   getSubscriptionPlanName,
-  getSubscriptionStatus,
-  useGetUserDetails,
+  useGetUserDetails
 } from "@/api/settings/useGetUserDetails";
 import {
   getFormattedAmount,
@@ -12,6 +10,12 @@ import {
   useDownloadInvoice,
   useInvoices,
 } from "@/api/settings/useInvoices";
+import {
+  getDisplayCardNumber,
+  getSubscriptionStatus,
+  useChangePlan,
+  usePlans
+} from '@/api/settings/usePlans';
 import {
   getPasswordStrength,
   useUpdatePassword,
@@ -117,17 +121,18 @@ const AccountSettingsScreen = () => {
   const [subscriptionPlan, setSubscriptionPlan] = useState("");
   const [subscriptionStatus, setSubscriptionStatus] = useState("");
   const [cardNumber, setCardNumber] = useState("");
+  const [expirationDate, setExpirationDate] = useState("");
   const [cvc, setCvc] = useState("");
-  const [expirationMonth, setExpirationMonth] = useState("");
-  const [expirationYear, setExpirationYear] = useState("");
+  const [cardToken, setCardToken] = useState(""); // For Stripe token
   const [couponCode, setCouponCode] = useState("");
   const [isEditingCard, setIsEditingCard] = useState(false);
+  const [planOptions, setPlanOptions] = useState<string[]>([]);
 
   const [savedCard, setSavedCard] = useState({
     lastFour: "",
     expiration: "",
+    brand: "",
   });
-
   // ============ PASSWORD STATE ============
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
@@ -166,6 +171,19 @@ const AccountSettingsScreen = () => {
     isSuccess: isProfileUpdateSuccess,
     isError: isProfileUpdateError,
   } = useUpdateUserProfile();
+
+  const {
+    data: plansData,
+    isLoading: isLoadingPlans,
+    error: plansError
+  } = usePlans();
+
+  const {
+    mutate: changeplanMutate,
+    isPending: isChangingPlan,
+    isSuccess: isPlanChangeSuccess,
+    isError: isPlanChangeError,
+  } = useChangePlan();
 
   // ============ API INTEGRATION ============
   const { mutate: updatePasswordMutate, isPending: isUpdatingPassword } =
@@ -394,14 +412,14 @@ const AccountSettingsScreen = () => {
     // The IndustryBottomSheet should pass the full industry object
     // If it's just a string, we need to find the ID
     // This depends on your useIndustries API response structure
-    
+
     // Option 1: If the API returns objects with id and name
     // The component should extract the ID from the selected item
-    
+
     // For now, we'll assume the selected value is the name
     // and we'll need to handle the ID mapping in the backend
     // or get it from the industries list
-    
+
     console.log(`✅ Industry name set to: ${selectedIndustryName}`);
   };
 
@@ -451,10 +469,10 @@ const AccountSettingsScreen = () => {
         selectedValue={industry}
         onSelect={(selectedIndustry) => {
           console.log("🏢 Industry selected:", selectedIndustry);
-          
+
           // Set industry name
           handleIndustrySelect(selectedIndustry);
-          
+
           // Close modal
           setShowIndustryModal(false);
         }}

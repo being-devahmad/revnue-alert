@@ -75,6 +75,7 @@ interface ContractDetailsProps {
   onProceed: () => void;
   onCancel: () => void;
   isLoading?: boolean;
+  isEnterprise: boolean;
 }
 
 export const ContractDetails: React.FC<ContractDetailsProps> = ({
@@ -84,7 +85,9 @@ export const ContractDetails: React.FC<ContractDetailsProps> = ({
   onProceed,
   onCancel,
   isLoading,
+  isEnterprise,
 }) => {
+
   const richTextRef = useRef<any>(null);
 
   const [showDatePickers, setShowDatePickers] = useState({
@@ -168,6 +171,7 @@ export const ContractDetails: React.FC<ContractDetailsProps> = ({
       richTextRef.current.setContentHTML(updatedNotes);
     }
   };
+
   return (
     <>
       {/* Category Bottom Sheet Modal */}
@@ -211,18 +215,22 @@ export const ContractDetails: React.FC<ContractDetailsProps> = ({
               }}
               placeholder="Select an account"
             /> */}
-            <DropdownField
-              label="Assign Reminder To"
-              value={contractForm.reminderTo}
-              options={accounts && accounts?.map((acc: any) => `${acc.department}`)}
-              showDropdown={showDropdowns.reminderTo}
-              onToggle={() => toggleDropdown("reminderTo")}
-              onSelect={(value) => {
-                onContractChange("reminderTo", value);
-                toggleDropdown("reminderTo");
-              }}
-              placeholder="Select an account"
-            />
+            {
+              isEnterprise && (
+                <DropdownField
+                  label="Assign Reminder To"
+                  value={contractForm.reminderTo}
+                  options={accounts && accounts?.map((acc: any) => `${acc.department}`)}
+                  showDropdown={showDropdowns.reminderTo}
+                  onToggle={() => toggleDropdown("reminderTo")}
+                  onSelect={(value) => {
+                    onContractChange("reminderTo", value);
+                    toggleDropdown("reminderTo");
+                  }}
+                  placeholder="Select an account"
+                />
+              )
+            }
             <FormField
               label="Reminder Name"
               value={contractForm.reminderName}

@@ -3,6 +3,7 @@ import { useAddReminder } from "@/api/addReminder/useAddReminder";
 import { ContractDetails } from "@/components/AddReminderTabs/ContractDetailsTab";
 import { ReminderDetails } from "@/components/AddReminderTabs/ReminderDetailsTab";
 import { TabHeader } from "@/components/TabHeader";
+import { useAuthStore } from "@/store/authStore";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useState } from "react";
 import {
@@ -18,6 +19,9 @@ type TabType = "details" | "reminder";
 
 const AddReminderScreen = () => {
   const router = useRouter();
+  const { accountType } = useAuthStore();
+
+  const isEnterprise = accountType === "enterprise";
 
   const params = useLocalSearchParams();
   console.log('params-->', params)
@@ -351,6 +355,7 @@ const AddReminderScreen = () => {
           onProceed={handleSaveContract}
           onCancel={handleCancel}
           isLoading={isAddingContract}
+          isEnterprise={isEnterprise}
         />
       )}
 
@@ -366,6 +371,7 @@ const AddReminderScreen = () => {
           onSave={handleSaveReminder}
           onCancel={handleCancel}
           isLoading={isAddingReminder}
+          isEnterprise={isEnterprise}
         />
       )}
 
