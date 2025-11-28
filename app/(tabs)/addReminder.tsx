@@ -374,7 +374,6 @@ const AddReminderScreen = () => {
           onSave={handleSaveReminder}
           onCancel={handleCancel}
           isLoading={isAddingReminder}
-          isEnterprise={isEnterprise}
         />
       )}
 

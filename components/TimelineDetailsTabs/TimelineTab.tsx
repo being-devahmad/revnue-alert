@@ -19,12 +19,14 @@ interface TimelineTabProps {
   timeline?: any;
   contract?: any;
   isLoading?: boolean;
+  timelineEnabled: boolean;
 }
 
 const TimelineTab: React.FC<TimelineTabProps> = ({
   timeline,
   contract,
   isLoading = false,
+  timelineEnabled,
 }) => {
   const router = useRouter();
 
@@ -139,21 +141,27 @@ const TimelineTab: React.FC<TimelineTabProps> = ({
           No reminders found for this contract.
         </Text>
 
-        <TouchableOpacity
-          style={styles.addReminderButton}
-          onPress={() => {
-            router.push({
-              pathname: "/(tabs)/addReminder",
-              params: {
-                contractId: contract?.id,
-                defaultTab: "reminder",
-              },
-            });
-          }}
-        >
-          <Ionicons name="add-circle-outline" size={20} color="#FFFFFF" />
-          <Text style={styles.addReminderButtonText}>Add Reminder</Text>
-        </TouchableOpacity>
+        {
+          timelineEnabled && (
+            <>
+              <TouchableOpacity
+                style={styles.addReminderButton}
+                onPress={() => {
+                  router.push({
+                    pathname: "/(tabs)/addReminder",
+                    params: {
+                      contractId: contract?.id,
+                      defaultTab: "reminder",
+                    },
+                  });
+                }}
+              >
+                <Ionicons name="add-circle-outline" size={20} color="#FFFFFF" />
+                <Text style={styles.addReminderButtonText}>Add Reminder</Text>
+              </TouchableOpacity>
+            </>
+          )
+        }
       </View>
     );
   }
@@ -266,18 +274,17 @@ const TimelineTab: React.FC<TimelineTabProps> = ({
                   const expiration = new Date(contract.expired_at);
                   const years = Math.floor(
                     (expiration.getTime() - inception.getTime()) /
-                      (1000 * 60 * 60 * 24 * 365)
+                    (1000 * 60 * 60 * 24 * 365)
                   );
                   const months = Math.floor(
                     ((expiration.getTime() - inception.getTime()) %
                       (1000 * 60 * 60 * 24 * 365)) /
-                      (1000 * 60 * 60 * 24 * 30)
+                    (1000 * 60 * 60 * 24 * 30)
                   );
 
                   if (years > 0 && months > 0)
-                    return `${years} year${
-                      years > 1 ? "s" : ""
-                    }, ${months} month${months > 1 ? "s" : ""}`;
+                    return `${years} year${years > 1 ? "s" : ""
+                      }, ${months} month${months > 1 ? "s" : ""}`;
                   if (years > 0) return `${years} year${years > 1 ? "s" : ""}`;
                   return `${months} month${months > 1 ? "s" : ""}`;
                 })()}
@@ -319,8 +326,8 @@ const TimelineTab: React.FC<TimelineTabProps> = ({
               daysLeft < 0
                 ? "close-circle"
                 : daysLeft < 30
-                ? "warning"
-                : "information-circle"
+                  ? "warning"
+                  : "information-circle"
             }
             size={20}
             color={
@@ -332,13 +339,13 @@ const TimelineTab: React.FC<TimelineTabProps> = ({
         <Text style={styles.infoBannerText}>
           {daysLeft < 0
             ? `This contract expired ${Math.abs(
-                daysLeft
-              )} days ago on ${formatDate(contract.expired_at)}.`
+              daysLeft
+            )} days ago on ${formatDate(contract.expired_at)}.`
             : daysLeft < 30
-            ? `⚠️ This contract is expiring soon! Only ${daysLeft} days remaining until ${formatDate(
+              ? `⚠️ This contract is expiring soon! Only ${daysLeft} days remaining until ${formatDate(
                 contract.expired_at
               )}.`
-            : `This contract is currently active and set to expire in ${daysLeft} days on ${formatDate(
+              : `This contract is currently active and set to expire in ${daysLeft} days on ${formatDate(
                 contract.expired_at
               )}.`}
           {contract.interval &&
@@ -589,7 +596,7 @@ const styles = StyleSheet.create({
 
   // if no timeline rows styles
   emptyTimelineBox: {
-    marginTop: 30,
+    margin: 30,
     padding: 20,
     backgroundColor: "#FFFFFF",
     borderRadius: 16,

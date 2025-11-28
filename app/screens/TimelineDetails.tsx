@@ -37,6 +37,8 @@ const TimelineDetailsScreen: React.FC = () => {
   const [activeTab, setActiveTab] = useState<ActiveTab>('timeline');
   const router = useRouter();
   const params = useLocalSearchParams();
+  const [timelineEnabled, setTimelineEnabled] = useState(true);
+
 
   console.log('🔍 TimelineDetailsScreen params:', params);
 
@@ -147,9 +149,10 @@ const TimelineDetailsScreen: React.FC = () => {
       case 'timeline':
         return (
           <TimelineTab
-            timeline={timeline}
+            timeline={timelineEnabled ? timeline : { rows: [] }}
             contract={contract}
             isLoading={isLoading}
+            timelineEnabled={timelineEnabled}
           />
         );
       case 'contract':
@@ -160,6 +163,8 @@ const TimelineDetailsScreen: React.FC = () => {
             onEdit={handleEditReminder}
             onCompleteTask={handleCompleteTask}
             isCompletingTask={isCompletingTask}
+            timelineEnabled={timelineEnabled}
+            setTimelineEnabled={setTimelineEnabled}
           />
         );
       case 'reminder':

@@ -1,5 +1,6 @@
 
 import { formatDate, getDaysLeft } from "@/api/reminders/useGetTimelineDetails";
+import { formatISODuration } from "@/utils";
 import { Ionicons } from "@expo/vector-icons";
 import React, { useMemo } from "react";
 import {
@@ -19,6 +20,8 @@ interface ContractDetailsTabProps {
   onEdit: () => void;
   onCompleteTask: (contractId: number) => void;
   isCompletingTask: boolean;
+  timelineEnabled: boolean;
+  setTimelineEnabled: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
 const ContractDetailsTab: React.FC<ContractDetailsTabProps> = ({
@@ -27,7 +30,13 @@ const ContractDetailsTab: React.FC<ContractDetailsTabProps> = ({
   onEdit,
   onCompleteTask,
   isCompletingTask,
+  timelineEnabled,
+  setTimelineEnabled
 }) => {
+
+  console.log("📄 ContractDetailsTab contract:", contract);
+
+
   // ✅ Get reminder active status - primary source of truth
   const reminderActiveStatus = useMemo(() => {
     if (!contract?.reminders || contract.reminders.length === 0) {
@@ -36,11 +45,11 @@ const ContractDetailsTab: React.FC<ContractDetailsTabProps> = ({
     return contract.reminders[0]?.active ?? true;
   }, [contract?.reminders]);
 
-  const [isEnabled, setIsEnabled] = React.useState(reminderActiveStatus);
 
-  React.useEffect(() => {
-    setIsEnabled(reminderActiveStatus);
-  }, [reminderActiveStatus]);
+  const toggleTimeline = () => {
+    setTimelineEnabled((prev) => !prev);
+    Alert.alert("Contract has been saved");
+  };
 
   // Calculate days left
   const daysLeft = useMemo(() => {
@@ -50,7 +59,7 @@ const ContractDetailsTab: React.FC<ContractDetailsTabProps> = ({
 
   // Get status
   const getStatus = (): string => {
-    if (!isEnabled) return "Disabled";
+    if (!timelineEnabled) return "Disabled";
     if (daysLeft < 0) return "Expired";
     if (daysLeft < 30) return "Expiring Soon";
     return "Active";
@@ -58,20 +67,14 @@ const ContractDetailsTab: React.FC<ContractDetailsTabProps> = ({
 
   // Get status color
   const getStatusColor = (): string => {
-    if (!isEnabled) return "#6B7280";
+    if (!timelineEnabled) return "#6B7280";
     if (daysLeft < 0) return "#EF4444";
     if (daysLeft < 30) return "#F59E0B";
     return "#10B981";
   };
 
   // Handle Toggle
-  const handleToggleEnabled = (value: boolean) => {
-    setIsEnabled(value);
-    Alert.alert(
-      value ? "Contract Enabled" : "Contract Disabled",
-      `This contract has been ${value ? "enabled" : "disabled"}.`
-    );
-  };
+
 
   if (isLoading) {
     return (
@@ -94,7 +97,7 @@ const ContractDetailsTab: React.FC<ContractDetailsTabProps> = ({
 
   const contractDetails = [
     {
-      label: "Contract Name",
+      label: "Reminder Name",
       value: contract.name,
       icon: "document-text-outline" as const,
     },
@@ -114,19 +117,31 @@ const ContractDetailsTab: React.FC<ContractDetailsTabProps> = ({
       icon: "calendar-outline" as const,
     },
     {
-      label: "Payment Amount",
+      label: "Payment",
       value: `$${contract.amount.toFixed(2)}`,
       icon: "cash-outline" as const,
     },
     {
-      label: "Payment Interval",
+      label: "Reminder Renew",
+      value: contract.auto_renew ? `Yes` : "No",
+      icon: "refresh-outline" as const,
+    },
+    {
+      label: "Renewal Period",
+      value: formatISODuration(contract.auto_renew_period),
+      icon: "refresh-outline" as const,
+    },
+    {
+      label: "Interval",
       value: contract.interval || "N/A",
       icon: "repeat-outline" as const,
     },
     {
-      label: "Auto Renew",
-      value: contract.auto_renew ? `Yes` : "No",
-      icon: "refresh-outline" as const,
+      label: "Last Payment Amount",
+      value: contract.last_payment_amount
+        ? `$${contract.last_payment_amount.toFixed(2)}`
+        : "N/A",
+      icon: "cash-outline" as const,
     },
     {
       label: "Last Payment Date",
@@ -136,13 +151,20 @@ const ContractDetailsTab: React.FC<ContractDetailsTabProps> = ({
       icon: "checkmark-circle-outline" as const,
     },
     {
-      label: "Days Left",
-      value:
-        daysLeft < 0
-          ? `Expired ${Math.abs(daysLeft)} days ago`
-          : `${daysLeft} days`,
-      icon: "hourglass-outline" as const,
+      label: "Deposits / Advance Pmnts",
+      value: contract.last_payment_at
+        ? formatDate(contract.payments)
+        : "N/A",
+      icon: "checkmark-circle-outline" as const,
     },
+    // {
+    //   label: "Days Left",
+    //   value:
+    //     daysLeft < 0
+    //       ? `Expired ${Math.abs(daysLeft)} days ago`
+    //       : `${daysLeft} days`,
+    //   icon: "hourglass-outline" as const,
+    // },
     {
       label: "Category",
       value: contract.category?.name || "N/A",
@@ -151,6 +173,11 @@ const ContractDetailsTab: React.FC<ContractDetailsTabProps> = ({
     {
       label: "Description",
       value: contract.description,
+      icon: "information-circle-outline" as const,
+    },
+    {
+      label: "Supplier / Task Notes",
+      value: contract?.notes || "N/A",
       icon: "information-circle-outline" as const,
     },
     {
@@ -163,7 +190,41 @@ const ContractDetailsTab: React.FC<ContractDetailsTabProps> = ({
       value: contract.phone_number || "N/A",
       icon: "call-outline" as const,
     },
+    {
+      label: "Non Renew Sent Date",
+      value: contract.non_renew_sent_date || "N/A",
+      icon: "calendar-outline" as const,
+    },
+    // {
+    //   label: "Supplier Rating",
+    //   value: contract.supplier_rating || "N/A",
+    //   icon: "star-outline" as const,
+    // },
   ];
+
+
+  const renderStars = (rating: number | null | undefined) => {
+    const totalStars = 5;
+    const filled = rating ? Math.min(rating, 5) : 0;
+
+    return (
+      <View style={{ flexDirection: "row", marginLeft: 22 }}>
+        {[...Array(totalStars)].map((_, index) => {
+          const isFilled = index < filled;
+          return (
+            <Ionicons
+              key={index}
+              name={isFilled ? "star" : "star-outline"}
+              size={18}
+              color={isFilled ? "#FBBF24" : "#D1D5DB"} // Yellow / Gray
+              style={{ marginRight: 4 }}
+            />
+          );
+        })}
+      </View>
+    );
+  };
+
 
   return (
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
@@ -189,27 +250,27 @@ const ContractDetailsTab: React.FC<ContractDetailsTabProps> = ({
           <View style={styles.statusToggleSection}>
             <View style={styles.statusToggleInfo}>
               <Ionicons
-                name={isEnabled ? "checkmark-circle" : "close-circle"}
+                name={timelineEnabled ? "checkmark-circle" : "close-circle"}
                 size={24}
-                color={isEnabled ? "#10B981" : "#EF4444"}
+                color={timelineEnabled ? "#10B981" : "#EF4444"}
               />
               <View style={styles.statusToggleTextContainer}>
                 <Text style={styles.statusToggleLabel}>Contract Status</Text>
                 <Text
                   style={[
                     styles.statusToggleValue,
-                    { color: isEnabled ? "#10B981" : "#EF4444" },
+                    { color: timelineEnabled ? "#10B981" : "#EF4444" },
                   ]}
                 >
-                  {isEnabled ? "Enabled" : "Disabled"}
+                  {timelineEnabled ? "Enabled" : "Disabled"}
                 </Text>
               </View>
             </View>
             <Switch
-              value={isEnabled}
-              onValueChange={handleToggleEnabled}
+              value={timelineEnabled}
+              onValueChange={toggleTimeline}
               trackColor={{ false: "#E5E7EB", true: "#D1FAE5" }}
-              thumbColor={isEnabled ? "#10B981" : "#9CA3AF"}
+              thumbColor={timelineEnabled ? "#10B981" : "#9CA3AF"}
               ios_backgroundColor="#E5E7EB"
             />
           </View>
@@ -302,6 +363,14 @@ const ContractDetailsTab: React.FC<ContractDetailsTabProps> = ({
               </Text>
             </View>
           ))}
+          <View style={styles.detailItem}>
+            <View style={styles.detailLabelContainer}>
+              <Ionicons name="star-outline" size={16} color="#9CA3AF" />
+              <Text style={styles.detailLabel}>Supplier Rating</Text>
+            </View>
+
+            {renderStars(contract.supplier_rating)}
+          </View>
         </View>
 
         {/* Summary Card */}

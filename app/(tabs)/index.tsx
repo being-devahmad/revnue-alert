@@ -81,7 +81,6 @@ const DashboardHome = () => {
 
     return remindersTable.headers.map((header, index) => ({
       label: header,
-      sublabel: `Category ${index + 1}`,
       reminders: remindersTable.reminders[index],
       payments: `$${remindersTable.payments[index].toFixed(2)}`,
       depreciation: `$${remindersTable.depreciation[index].toFixed(2)}`,
@@ -264,7 +263,6 @@ const DashboardHome = () => {
                 </View>
                 <View style={styles.contractCardInfo}>
                   <Text style={styles.contractLabel}>{item.label}</Text>
-                  <Text style={styles.contractSublabel}>{item.sublabel}</Text>
                 </View>
               </View>
               <View style={styles.contractCardFooter}>

@@ -1,9 +1,10 @@
 "use client";
 
+import { flattenCategories, getSortedCategories, useCategories } from "@/api/addReminder/useGetCategories";
 import { useGetEnterpriseAccounts } from "@/api/reminders/timeline-details/useGetEnterpriseAccounts";
 import { Ionicons } from "@expo/vector-icons";
 import DateTimePicker from "@react-native-community/datetimepicker";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   ScrollView,
@@ -89,6 +90,63 @@ export const ContractDetails: React.FC<ContractDetailsProps> = ({
   isEnterprise,
   user
 }) => {
+
+  console.log("contractForm ======>", contractForm);
+
+  // CATEGORY STATE
+// ==================== UPDATED & FINAL CODE (Copy-Paste Kar Do) ====================
+
+const [categories, setCategories] = useState<{ id: string; name: string }[]>([]);
+// STATE
+const [selectedCategoryName, setSelectedCategoryName] = useState<string>("");
+
+// PAGINATED CATEGORIES HOOK
+const { data } = useCategories();   // ← yeh infinite/paginated hai
+
+// SAB PAGES SE CATEGORIES LEKAR PROCESS KARO
+useEffect(() => {
+  if (!data?.pages || data.pages.length === 0) return;
+
+  // 1. Sab pages se categories collect karo
+  const allCategories: any[] = [];
+  data.pages.forEach(page => {
+    if (page?.data?.categories) {
+      allCategories.push(...page.data.categories);
+    }
+  });
+
+  if (allCategories.length === 0) return;
+
+  // 2. Flatten + Sort + Map (tumhara existing logic)
+  const flattened = flattenCategories({ categories: allCategories });
+  const sortedNames = getSortedCategories(flattened);
+
+  const mappedCategories = sortedNames.map(name => {
+    const cat = flattened.find((c: any) => c.name === name);
+    return {
+      id: String(cat?.id ?? ""),     // ← force string
+      name: cat?.name || name,
+    };
+  });
+
+  // 3. State update
+  setCategories(mappedCategories);
+
+  // 4. EDIT MODE: Agar form mein ID hai toh name set karo
+  if (contractForm?.category) {
+    const targetId = String(contractForm.category).trim();
+    const found = mappedCategories.find(c => c.id === targetId);
+
+    if (found) {
+      setSelectedCategoryName(found.name);
+      console.log("Category matched:", found.name, `(ID: ${targetId})`);
+    } else {
+      console.warn("Category ID not found even after all pages:", targetId);
+      setSelectedCategoryName(targetId);
+    }
+  }
+
+}, [data, contractForm?.category]); // ← data update hone pe bhi chalega (new pages load hone pe)
 
   const richTextRef = useRef<any>(null);
 
@@ -269,15 +327,10 @@ export const ContractDetails: React.FC<ContractDetailsProps> = ({
 
             {/* Category Selection with Bottom Sheet Modal */}
             <View style={styles.inputGroup}>
-              <Text style={styles.label}>
-                Category <Text style={styles.required}>*</Text>
-              </Text>
-              <TouchableOpacity
-                style={styles.selectInput}
-                onPress={() => setShowCategoryModal(true)}
-              >
+              <Text style={styles.label}>Category <Text style={styles.required}>*</Text></Text>
+              <TouchableOpacity style={styles.selectInput} onPress={() => setShowCategoryModal(true)}>
                 <Text style={styles.selectText}>
-                  {contractForm.category || "Select Category"}
+                  {selectedCategoryName || "Select Category"}
                 </Text>
                 <Ionicons name="chevron-down" size={20} color="#9A1B2B" />
               </TouchableOpacity>

@@ -14,6 +14,7 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
+  Alert,
   Animated,
   FlatList,
   Modal,
@@ -280,19 +281,6 @@ const ReminderScreen: React.FC = () => {
     });
   };
 
-  const handleRenewPress = (reminder: ReminderData) => {
-    router.push({
-      pathname: "/screens/RenewContract",
-      params: {
-        reminderName: reminder.name,
-        accountNumber: reminder.account_number,
-        expirationDate: reminder.expired_at,
-        paymentAmount: reminder.amount,
-        paymentInterval: reminder.interval,
-      },
-    });
-  };
-
   const clearFilters = () => {
     setNameFilter("");
     setCategoryFilter("");
@@ -411,8 +399,9 @@ const ReminderScreen: React.FC = () => {
           <TouchableOpacity
             style={styles.renewButton}
             onPress={(e) => {
-              e.stopPropagation();
-              handleRenewPress(reminder);
+              // e.stopPropagation();
+              // handleRenewPress(reminder);
+              Alert.alert('This feature isn’t supported in the mobile app yet. To renew your contract, please edit the reminder or use the web portal to complete the renewal.')
             }}
           >
             <Ionicons name="refresh-circle" size={18} color="#FFFFFF" />

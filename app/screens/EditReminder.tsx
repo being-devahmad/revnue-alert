@@ -7,6 +7,7 @@ import { useUpdateReminder } from "@/api/reminders/timeline-details/useUpdateRem
 import { ContractDetails } from "@/components/AddReminderTabs/ContractDetailsTab";
 import { ReminderDetails } from "@/components/AddReminderTabs/ReminderDetailsTab";
 import { TabHeader } from "@/components/TabHeader";
+import { useAuthStore } from "@/store/authStore";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useState } from "react";
 import {
@@ -20,16 +21,6 @@ import {
 
 type TabType = "details" | "reminder";
 
-// Reverse mapping functions
-const getCategoryNameFromId = (categoryId: number): string => {
-  const reverseMap: Record<number, string> = {
-    1: "Employee, Leave of Absence",
-    2: "Lease, Office Equipment",
-    3: "License, Liquor",
-    4: "Software License",
-  };
-  return reverseMap[categoryId] || "";
-};
 
 const getIntervalLabelFromPeriod = (period: string): string => {
   const reverseMap: Record<string, string> = {
@@ -64,12 +55,9 @@ const EditReminder = () => {
     reminderId,
     contractName,
   } = useLocalSearchParams();
-  console.log("📝 EditReminder params:", {
-    contractId,
-    reminderId,
-    contractName, 
 
-  })
+    const { accountType} = useAuthStore();
+    const isEnterprise = accountType === "enterprise";
 
   const [activeTab, setActiveTab] = useState<TabType>("details");
 
@@ -125,7 +113,7 @@ const EditReminder = () => {
         reminderTo: "",
         reminderName: contractData.name || "",
         description: contractData.description || "",
-        category: getCategoryNameFromId(contractData.category_id) || "",
+        category: contractData.category_id || "",
         deposits: "0.00",
         paymentAmount: String(contractData.amount || 0),
         paymentInterval: contractData.interval || "",
@@ -166,6 +154,11 @@ const EditReminder = () => {
       }
     }
   }, [contractData]);
+
+
+  useEffect(()=>{
+    console.log("contractForm changed:", contractForm);
+  },[contractForm])
 
   // Populate reminder form when reminder data is loaded
   useEffect(() => {
@@ -458,6 +451,7 @@ const EditReminder = () => {
           onProceed={handleSaveContract}
           onCancel={handleCancel}
           isLoading={isUpdatingContract}
+          isEnterprise={isEnterprise}
         />
       )}
 
