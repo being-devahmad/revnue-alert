@@ -1,4 +1,5 @@
 import SplashScreen from "@/components/SplashScreen";
+import { StripeProvider } from "@stripe/stripe-react-native";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Stack } from "expo-router";
 import * as SplashScreenExpo from "expo-splash-screen";
@@ -45,12 +46,19 @@ export default function RootLayout() {
   }
 
   return (
-    <QueryClientProvider client={queryClient}>
-      <Stack screenOptions={{ headerShown: false }}>
-        <Stack.Screen name="(auth-check)" />
-        <Stack.Screen name="(auth)" />
-        <Stack.Screen name="(tabs)" /> {/* Expo Router automatically loads tabs layout */}
-      </Stack>
-    </QueryClientProvider>
+    <StripeProvider
+      publishableKey={process.env.EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY || ""}
+      threeDSecureParams={{
+        backgroundColor: "#FFF",
+      }}
+    >
+      <QueryClientProvider client={queryClient}>
+        <Stack screenOptions={{ headerShown: false }}>
+          <Stack.Screen name="(auth-check)" />
+          <Stack.Screen name="(auth)" />
+          <Stack.Screen name="(tabs)" />
+        </Stack>
+      </QueryClientProvider>
+    </StripeProvider>
   );
 }

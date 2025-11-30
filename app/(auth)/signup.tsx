@@ -1,4 +1,3 @@
-import { useRegister } from "@/api/auth/useRegister";
 import { Industry, SearchableIndustryDropdown } from "@/components/ui/IndustryDropdown";
 import { Ionicons } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
@@ -18,10 +17,21 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
+interface UserFormData {
+  firstName: string;
+  middleName: string;
+  lastName: string;
+  industry: Industry;
+  companyName: string;
+  email: string;
+  password: string;
+  confirmPassword: string;
+  couponCode: string;
+}
+
 const SignupScreen = () => {
   const router = useRouter();
   const params = useLocalSearchParams();
-  const { register, isLoading: isRegistering, error: registerError } = useRegister();
 
   // Plan data from route params
   const planId = params.planId as string;
@@ -52,6 +62,9 @@ const SignupScreen = () => {
   // Track if industry is locked (for Home & Family)
   const [isIndustryLocked, setIsIndustryLocked] = useState(false);
 
+  // Processing state
+  const [isProcessing, setIsProcessing] = useState(false);
+
   // ============ INITIALIZE INDUSTRIES FROM PARAMS ============
   useEffect(() => {
     console.log("\n🔄 ===== SIGNUP SCREEN MOUNTED =====");
@@ -77,13 +90,10 @@ const SignupScreen = () => {
         setIndustries(parsedIndustries);
 
         // ============ AUTO-SELECT LOGIC FOR "Home & Family" ============
-        // ⭐ KEY FIX: Match exact name with ampersand "Home & Family"
         if (planName === "Home & Family") {
           console.log("\n🏠 ===== HOME & FAMILY PLAN DETECTED =====");
           console.log("🔍 Looking for 'Home & Family' industry (with &) to auto-select & lock...");
-          console.log(`📝 params received in SignupScreen: ${planName}`);
 
-          // ⭐ FIXED: Search for exact name with ampersand
           const homeAndFamilyIndustry = parsedIndustries.find(
             (ind: Industry) => {
               const normalizedName = ind.name.toLowerCase().trim();
@@ -98,12 +108,10 @@ const SignupScreen = () => {
             console.log(`   ID: ${homeAndFamilyIndustry.id}, Name: ${homeAndFamilyIndustry.name}`);
             console.log("✅ AUTO-SELECTING & LOCKING Home & Family...\n");
             setIndustry(homeAndFamilyIndustry);
-            setIsIndustryLocked(true); // Lock it!
+            setIsIndustryLocked(true);
           } else {
             console.warn("⚠️  Home & Family industry NOT FOUND");
             console.log("❌ Available industries:", parsedIndustries.map((ind: Industry) => ind.name));
-            console.log("📝 Note: Make sure the industry name matches exactly 'Home & Family' (with ampersand)");
-            console.log(`params received in SignupScreen: ${planName}`);
           }
         } else {
           console.log(`ℹ️  Plan is: "${planName}" (not Home & Family), industries not locked\n`);
@@ -111,12 +119,10 @@ const SignupScreen = () => {
         }
       } else {
         console.error("❌ No industries param received from PlanSelectionScreen!");
-        console.log("⚠️  Industries list will be EMPTY");
         setIndustries([]);
       }
     } catch (error) {
       console.error("❌ Error parsing industries:", error);
-      console.error("Error details:", (error as Error).message);
       setIndustries([]);
     } finally {
       setIsLoadingIndustries(false);
@@ -173,8 +179,8 @@ const SignupScreen = () => {
     return true;
   };
 
-  // ============ HANDLE SIGNUP ============
-  const handleSignup = async () => {
+  // ============ HANDLE CONTINUE TO PAYMENT ============
+  const handleContinueToPayment = async () => {
     if (!validateForm()) return;
 
     if (!industry) {
@@ -182,50 +188,60 @@ const SignupScreen = () => {
       return;
     }
 
-    try {
-      console.log("\n📤 ===== SUBMITTING REGISTRATION =====");
+    setIsProcessing(true);
 
-      const registrationData = {
-        first_name: firstName,
-        middle_name: middleName || undefined,
-        last_name: lastName,
-        company: companyName || undefined,
-        industry_id: industry.id,
+    try {
+      console.log("\n📋 ===== COLLECTING USER DATA =====");
+      console.log("NO API CALL YET - Just collecting form data for payment screen");
+
+      // Prepare user form data to pass to payment screen
+      const userFormData: UserFormData = {
+        firstName,
+        middleName,
+        lastName,
+        industry,
+        companyName,
         email: email.trim(),
         password,
-        password_confirmation: confirmPassword,
-        product_id: productId,
-        price_id: priceId,
-        card_token: "tok_visa",
-        coupon_code: couponCode || undefined,
+        confirmPassword,
+        couponCode,
       };
 
-      console.log("📋 Registration payload:", registrationData);
-
-      // Call register from the hook
-      register(registrationData, {
-        onSuccess: (data) => {
-          console.log("✅ Registration SUCCESSFUL!");
-          Alert.alert("Success", data.message || "Account created successfully!", [
-            {
-              text: "Continue",
-              onPress: () => {
-                router.replace("/(auth)/login");
-              },
-            },
-          ]);
-        },
-        onError: (error: any) => {
-          console.error("❌ Registration FAILED!", error);
-          Alert.alert("Registration Failed", error.message || "Please try again");
-        },
+      console.log("✅ User data collected:", {
+        firstName,
+        lastName,
+        email,
+        industryId: industry.id,
+        industryName: industry.name,
       });
+
+      setTimeout(() => {
+        setIsProcessing(false);
+
+        console.log("📤 Navigating to payment screen with user data...");
+
+        // Navigate to payment screen with BOTH plan data and user form data
+        router.push({
+          pathname: "/(auth)/paymentForm",
+          params: {
+            // Plan data
+            planId,
+            planName,
+            billingCycle,
+            price,
+            priceId,
+            productId,
+            // User form data - pass as JSON string
+            userFormData: JSON.stringify(userFormData),
+          }
+        });
+      }, 500);
     } catch (error: any) {
-      console.error("❌ Unexpected error during signup:", error);
+      console.error("❌ Unexpected error:", error);
       Alert.alert("Error", "An unexpected error occurred");
+      setIsProcessing(false);
     }
   };
-
 
   // ============ RENDER ============
 
@@ -294,7 +310,7 @@ const SignupScreen = () => {
                     onChangeText={setFirstName}
                     onFocus={() => setFocusedInput("firstName")}
                     onBlur={() => setFocusedInput(null)}
-                    editable={!isRegistering}
+                    editable={!isProcessing}
                   />
                 </View>
               </View>
@@ -321,7 +337,7 @@ const SignupScreen = () => {
                     onChangeText={setMiddleName}
                     onFocus={() => setFocusedInput("middleName")}
                     onBlur={() => setFocusedInput(null)}
-                    editable={!isRegistering}
+                    editable={!isProcessing}
                   />
                 </View>
               </View>
@@ -350,7 +366,7 @@ const SignupScreen = () => {
                     onChangeText={setLastName}
                     onFocus={() => setFocusedInput("lastName")}
                     onBlur={() => setFocusedInput(null)}
-                    editable={!isRegistering}
+                    editable={!isProcessing}
                   />
                 </View>
               </View>
@@ -359,7 +375,7 @@ const SignupScreen = () => {
               <View style={styles.sectionDivider} />
               <Text style={styles.sectionTitle}>Company Information</Text>
 
-              {/* Industry Dropdown - FROM PARAMS, NOT HARDCODED */}
+              {/* Industry Dropdown */}
               <View style={styles.inputGroup}>
                 <Text style={styles.label}>
                   Industry <Text style={styles.required}>*</Text>
@@ -376,13 +392,12 @@ const SignupScreen = () => {
                       industries={industries}
                       selectedIndustry={industry}
                       onSelect={(selectedInd) => {
-                        // Only allow selection if not locked
                         if (!isIndustryLocked) {
                           console.log("🎯 Industry selected:", selectedInd.name);
                           setIndustry(selectedInd);
                         }
                       }}
-                      disabled={isRegistering}
+                      disabled={isProcessing}
                       isLocked={isIndustryLocked}
                     />
                   </>
@@ -418,7 +433,7 @@ const SignupScreen = () => {
                     onChangeText={setCompanyName}
                     onFocus={() => setFocusedInput("companyName")}
                     onBlur={() => setFocusedInput(null)}
-                    editable={!isRegistering}
+                    editable={!isProcessing}
                   />
                 </View>
               </View>
@@ -453,7 +468,7 @@ const SignupScreen = () => {
                     onBlur={() => setFocusedInput(null)}
                     keyboardType="email-address"
                     autoCapitalize="none"
-                    editable={!isRegistering}
+                    editable={!isProcessing}
                   />
                 </View>
               </View>
@@ -483,11 +498,11 @@ const SignupScreen = () => {
                     secureTextEntry={!showPassword}
                     onFocus={() => setFocusedInput("password")}
                     onBlur={() => setFocusedInput(null)}
-                    editable={!isRegistering}
+                    editable={!isProcessing}
                   />
                   <TouchableOpacity
                     onPress={() => setShowPassword(!showPassword)}
-                    disabled={isRegistering}
+                    disabled={isProcessing}
                   >
                     <Ionicons
                       name={showPassword ? "eye-outline" : "eye-off-outline"}
@@ -523,11 +538,11 @@ const SignupScreen = () => {
                     secureTextEntry={!showConfirmPassword}
                     onFocus={() => setFocusedInput("confirmPassword")}
                     onBlur={() => setFocusedInput(null)}
-                    editable={!isRegistering}
+                    editable={!isProcessing}
                   />
                   <TouchableOpacity
                     onPress={() => setShowConfirmPassword(!showConfirmPassword)}
-                    disabled={isRegistering}
+                    disabled={isProcessing}
                   >
                     <Ionicons
                       name={showConfirmPassword ? "eye-outline" : "eye-off-outline"}
@@ -564,7 +579,7 @@ const SignupScreen = () => {
                     onFocus={() => setFocusedInput("couponCode")}
                     onBlur={() => setFocusedInput(null)}
                     autoCapitalize="characters"
-                    editable={!isRegistering}
+                    editable={!isProcessing}
                   />
                 </View>
               </View>
@@ -578,38 +593,26 @@ const SignupScreen = () => {
                 </Text>
               </View>
 
-              {/* Error Display */}
-              {registerError && (
-                <View style={styles.errorBanner}>
-                  <Ionicons name="alert-circle" size={18} color="#EF4444" />
-                  <Text style={styles.errorBannerText}>
-                    {registerError instanceof Error
-                      ? registerError.message
-                      : "Registration failed. Please try again."}
-                  </Text>
-                </View>
-              )}
-
-              {/* Create Account Button */}
+              {/* Continue to Payment Button */}
               <TouchableOpacity
                 style={[
                   styles.createAccountButton,
-                  isRegistering && styles.createAccountButtonDisabled,
+                  isProcessing && styles.createAccountButtonDisabled,
                 ]}
-                onPress={handleSignup}
-                disabled={isRegistering}
+                onPress={handleContinueToPayment}
+                disabled={isProcessing}
               >
-                {isRegistering ? (
+                {isProcessing ? (
                   <>
                     <ActivityIndicator size="small" color="#FFF" />
                     <Text style={styles.createAccountButtonText}>
-                      Creating account...
+                      Continuing...
                     </Text>
                   </>
                 ) : (
                   <>
                     <Text style={styles.createAccountButtonText}>
-                      Create Account
+                      Continue to Payment
                     </Text>
                     <Ionicons name="arrow-forward" size={20} color="#FFF" />
                   </>
@@ -621,7 +624,7 @@ const SignupScreen = () => {
                 <Text style={styles.loginText}>Already have an account?</Text>
                 <TouchableOpacity
                   onPress={() => router.replace("/(auth)/login")}
-                  disabled={isRegistering}
+                  disabled={isProcessing}
                 >
                   <Text style={styles.loginLink}> Log in</Text>
                 </TouchableOpacity>
@@ -639,14 +642,11 @@ const SignupScreen = () => {
 export default SignupScreen;
 
 // ============ STYLES ============
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#800000",
   },
-
-  // ===== HEADER =====
   headerContainer: {
     backgroundColor: "#800000",
     height: 200,
@@ -662,8 +662,6 @@ const styles = StyleSheet.create({
     width: 350,
     height: 350,
   },
-
-  // ===== FORM WRAPPER =====
   formWrapper: {
     flex: 1,
     backgroundColor: "#FFF",
@@ -683,8 +681,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     paddingTop: 32,
   },
-
-  // ===== PLAN BADGE =====
   planBadge: {
     flexDirection: "row",
     alignItems: "center",
@@ -702,8 +698,6 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     color: "#059669",
   },
-
-  // ===== FORM TITLES =====
   formTitle: {
     fontSize: 28,
     fontWeight: "800",
@@ -715,8 +709,6 @@ const styles = StyleSheet.create({
     color: "#6B7280",
     marginBottom: 28,
   },
-
-  // ===== SECTION TITLE =====
   sectionTitle: {
     fontSize: 16,
     fontWeight: "700",
@@ -724,15 +716,11 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     marginTop: 20,
   },
-
-  // ===== SECTION DIVIDER =====
   sectionDivider: {
     height: 1,
     backgroundColor: "#F3F4F6",
     marginVertical: 24,
   },
-
-  // ===== INPUT FIELDS =====
   inputGroup: {
     marginBottom: 20,
     position: "relative",
@@ -769,8 +757,6 @@ const styles = StyleSheet.create({
     color: "#1F2937",
     fontWeight: "500",
   },
-
-  // ===== INDUSTRY DROPDOWN STATES =====
   loadingDropdown: {
     flexDirection: "row",
     alignItems: "center",
@@ -786,13 +772,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: "#6B7280",
     fontWeight: "500",
-  },
-  lockedNote: {
-    fontSize: 12,
-    color: "#10B981",
-    fontWeight: "600",
-    marginTop: 6,
-    marginLeft: 4,
   },
   errorDropdown: {
     flexDirection: "row",
@@ -811,28 +790,6 @@ const styles = StyleSheet.create({
     fontWeight: "500",
     flex: 1,
   },
-
-  // ===== ERROR BANNER =====
-  errorBanner: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#FEE2E2",
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    borderRadius: 8,
-    marginBottom: 20,
-    gap: 8,
-    borderWidth: 1,
-    borderColor: "#FECACA",
-  },
-  errorBannerText: {
-    fontSize: 13,
-    fontWeight: "500",
-    color: "#DC2626",
-    flex: 1,
-  },
-
-  // ===== TERMS & CONDITIONS =====
   termsContainer: {
     paddingVertical: 16,
     marginBottom: 24,
@@ -847,8 +804,6 @@ const styles = StyleSheet.create({
     color: "#800000",
     fontWeight: "700",
   },
-
-  // ===== BUTTONS =====
   createAccountButton: {
     backgroundColor: "#800000",
     flexDirection: "row",
@@ -872,8 +827,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "700",
   },
-
-  // ===== LOGIN LINK =====
   loginContainer: {
     flexDirection: "row",
     justifyContent: "center",
@@ -888,8 +841,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: "700",
   },
-
-  // ===== BOTTOM SPACING =====
   bottomSpacing: {
     height: 40,
   },
