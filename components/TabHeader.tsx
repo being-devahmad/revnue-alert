@@ -1,24 +1,35 @@
-import { Ionicons } from "@expo/vector-icons"
-import { LinearGradient } from "expo-linear-gradient"
-import { useRouter } from "expo-router"
-import { StyleSheet, Text, TouchableOpacity, View } from "react-native"
+import { Ionicons } from "@expo/vector-icons";
+import { LinearGradient } from "expo-linear-gradient";
+import { useRouter } from "expo-router";
+import { Alert, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
-export const TabHeader = ({ title, subtitle, isChild }: { title: string, subtitle?: string, isChild?: boolean }) => {
+export const TabHeader = ({
+    title,
+    subtitle,
+    isChild,
+    isDelete,
+}: {
+    title: string;
+    subtitle?: string;
+    isChild?: boolean;
+    isDelete?: boolean;
+}) => {
     const router = useRouter();
 
     return (
         <View style={styles.headerContainer}>
             <LinearGradient
-                colors={['#9A1B2B', '#6B1420']}
+                colors={["#9A1B2B", "#6B1420"]}
                 style={styles.headerGradient}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 1 }}
             >
-                <View style={[
-                    styles.headerContent,
-                    !isChild && { justifyContent: "flex-start" } // <-- shift left when no button
-                ]}>
-
+                <View
+                    style={[
+                        styles.headerContent,
+                        !isChild && { justifyContent: "flex-start" }, // <-- shift left when no button
+                    ]}
+                >
                     {/* Back Button */}
                     {isChild && (
                         <TouchableOpacity
@@ -31,27 +42,41 @@ export const TabHeader = ({ title, subtitle, isChild }: { title: string, subtitl
                     )}
 
                     {/* TITLE GROUP */}
-                    <View style={[
-                        styles.titleWrapper,
-                        !isChild && { alignItems: "flex-start", marginLeft: 0 } // <-- left align content
-                    ]}>
+                    <View
+                        style={[
+                            styles.titleWrapper,
+                            !isChild && {
+                                alignItems: "flex-start",
+                                marginLeft: 0,
+                                marginRight: 0,
+                            },
+                        ]}
+                    >
                         <Text style={styles.headerTitle}>{title}</Text>
-                        {subtitle && (
-                            <Text style={styles.headerSubtitle}>{subtitle}</Text>
-                        )}
+                        {subtitle && <Text style={styles.headerSubtitle}>{subtitle}</Text>}
                     </View>
 
-                    {/* Placeholder ONLY if child */}
-                    {isChild ? <View style={{ width: 40 }} /> : null}
+                    {/* DELETE BUTTON */}
+                    {isDelete && (
+                        <TouchableOpacity
+                            onPress={()=> Alert.alert("This feature isn’t available in the mobile app yet. To delete your reminder, please log in to the web portal. ")}
+                            activeOpacity={0.7}
+                            style={styles.deleteButton}
+                        >
+                            <Ionicons name="trash-outline" size={22} color="#fff" />
+                        </TouchableOpacity>
+                    )}
+
+                    {/* {isChild ? <View style={{ width: 40 }} /> : null} */}
                 </View>
             </LinearGradient>
         </View>
-    )
-}
+    );
+};
 
 const styles = StyleSheet.create({
     headerContainer: {
-        overflow: 'hidden',
+        overflow: "hidden",
     },
     headerGradient: {
         paddingTop: 60,
@@ -59,9 +84,9 @@ const styles = StyleSheet.create({
         paddingHorizontal: 20,
     },
     headerContent: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "space-between",
     },
 
     backButton: {
@@ -93,6 +118,21 @@ const styles = StyleSheet.create({
         fontSize: 15,
         color: "rgba(255, 255, 255, 0.8)",
         marginTop: 4,
-        textAlign:'left',
+        textAlign: "left",
     },
-})
+    deleteButton: {
+        width: 40,
+        height: 40,
+        borderRadius: 20,
+        backgroundColor: "rgba(255,255,255,0.15)",
+        justifyContent: "center",
+        alignItems: "center",
+        borderWidth: 1,
+        borderColor: "rgba(255,255,255,0.25)",
+        shadowColor: "#000",
+        shadowOpacity: 0.2,
+        shadowOffset: { width: 0, height: 2 },
+        shadowRadius: 4,
+    },
+
+});
