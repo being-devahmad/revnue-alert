@@ -1,3 +1,4 @@
+import { useAuthStore } from '@/store/authStore';
 import axiosInstance from '@/utils/axios';
 import { useInfiniteQuery } from '@tanstack/react-query';
 
@@ -128,8 +129,13 @@ const fetchReminders = async (
 
 // ============ USE REMINDERS HOOK ============
 export const useReminders = (filters: RemindersFilters = {}) => {
+  // ✅ Get current user ID from auth store
+  const user = useAuthStore((state) => state.user);
+  const userId = user?.id;
+
   return useInfiniteQuery({
-    queryKey: ['reminders', filters], // Unique key per filter combination
+    // ✅ KEY FIX: Include userId in query key so different users have different cache
+    queryKey: ['reminders', userId, filters],
     queryFn: ({ pageParam = 1 }) => fetchReminders(pageParam, filters),
     getNextPageParam: (lastPage) => {
       // If there's a next page, return the next page number
@@ -143,6 +149,8 @@ export const useReminders = (filters: RemindersFilters = {}) => {
     staleTime: 1000 * 60 * 5, // 5 minutes
     gcTime: 1000 * 60 * 10, // 10 minutes garbage collection time
     maxPages: Infinity, // Allow loading unlimited pages (scroll through all)
+    // ✅ Only run query if user is authenticated
+    enabled: !!userId,
   });
 };
 

@@ -1,6 +1,7 @@
+import { useAuthStore } from "@/store/authStore";
 import axiosInstance from "@/utils/axios";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 interface LoginRequest {
   email: string;
@@ -40,7 +41,7 @@ interface LoginResponse {
   user: UserData;
   verified: boolean;
   account_type: string;
-  enterprise: boolean
+  enterprise: boolean;
 }
 
 const loginUser = async (credentials: LoginRequest): Promise<LoginResponse> => {
@@ -49,10 +50,12 @@ const loginUser = async (credentials: LoginRequest): Promise<LoginResponse> => {
 };
 
 export const useLoginMutation = () => {
+  const queryClient = useQueryClient();
+  const { login: storeLogin } = useAuthStore();
+
   return useMutation({
     mutationFn: loginUser,
     onSuccess: async (data) => {
-
       console.log("Login response data:", data);
 
       // Store the token in AsyncStorage
@@ -64,7 +67,17 @@ export const useLoginMutation = () => {
       // Optionally store user data
       if (data.user) {
         await AsyncStorage.setItem("userData", JSON.stringify(data.user));
+        await AsyncStorage.setItem("authUser", JSON.stringify(data.user));
       }
+
+      // ✅ Update Zustand auth store with new user data
+      await storeLogin(data.token, data.user, data.account_type);
+
+      // ✅ KEY FIX: Invalidate all dashboard queries so they refetch with new user
+      // This clears the cache for the old user's dashboard data
+      await queryClient.invalidateQueries({ queryKey: ["dashboard"] });
+
+      console.log("✅ Dashboard cache invalidated - new user data will be fetched");
     },
     onError: (error: any) => {
       // Handle errors globally or let the component handle them

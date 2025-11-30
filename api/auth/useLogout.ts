@@ -1,6 +1,7 @@
+import { useAuthStore } from '@/store/authStore';
 import axiosInstance from '@/utils/axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 
 // ============ TYPE DEFINITIONS ============
 export interface LogoutResponse {
@@ -33,19 +34,17 @@ const performLogout = async (): Promise<LogoutResponse> => {
     // Clear local auth data regardless of API response
     // This ensures user is logged out even if API has issues
     console.log('🧹 Clearing local auth data...');
-    
+
     await Promise.all([
       AsyncStorage.removeItem('authToken'),
       AsyncStorage.removeItem('userData'),
+      AsyncStorage.removeItem('authUser'),
       AsyncStorage.removeItem('userPreferences'),
       AsyncStorage.removeItem('accountType'),
     ]);
 
     console.log('✅ Local auth data cleared');
 
-    // Clear axios interceptor cache if needed
-    // Reset any app state here if needed
-    
     return response.data;
   } catch (error: any) {
     console.error('❌ Error during logout:', {
@@ -60,6 +59,7 @@ const performLogout = async (): Promise<LogoutResponse> => {
       await Promise.all([
         AsyncStorage.removeItem('authToken'),
         AsyncStorage.removeItem('userData'),
+        AsyncStorage.removeItem('authUser'),
         AsyncStorage.removeItem('userPreferences'),
         AsyncStorage.removeItem('accountType'),
       ]);
@@ -75,10 +75,24 @@ const performLogout = async (): Promise<LogoutResponse> => {
 
 // ============ USE LOGOUT HOOK ============
 export const useLogout = () => {
+  const queryClient = useQueryClient();
+  const { logout: storeLogout } = useAuthStore();
+
   return useMutation({
     mutationFn: performLogout,
-    onSuccess: (data) => {
+    onSuccess: async (data) => {
       console.log('✅ Logout mutation successful');
+
+      // ✅ Clear Zustand auth store
+      await storeLogout();
+
+      // ✅ KEY FIX: Invalidate all dashboard queries to clear cached data
+      await queryClient.invalidateQueries({ queryKey: ["dashboard"] });
+
+      // ✅ Also clear the entire query cache for safety
+      await queryClient.clear();
+
+      console.log('✅ All caches cleared');
     },
     onError: (error: any) => {
       console.error('❌ Logout mutation error:', error.message);
@@ -106,8 +120,8 @@ export const logoutAndRedirect = async (
 export const isUserLoggedIn = async (): Promise<boolean> => {
   try {
     const token = await AsyncStorage.getItem('authToken');
-    const user = await AsyncStorage.getItem('userData');
-    
+    const user = await AsyncStorage.getItem('authUser');
+
     console.log('🔍 Auth check:', {
       hasToken: !!token,
       hasUser: !!user,
@@ -123,9 +137,9 @@ export const isUserLoggedIn = async (): Promise<boolean> => {
 // ============ HELPER: GET STORED USER ============
 export const getStoredUser = async () => {
   try {
-    const userData = await AsyncStorage.getItem('userData');
+    const userData = await AsyncStorage.getItem('authUser');
     if (!userData) return null;
-    
+
     return JSON.parse(userData);
   } catch (error) {
     console.error('Error retrieving stored user:', error);
@@ -147,11 +161,13 @@ export const getAuthToken = async (): Promise<string | null> => {
 export const clearAllAuthData = async (): Promise<void> => {
   try {
     console.log('🧹 Clearing all auth data...');
-    
+
     await Promise.all([
       AsyncStorage.removeItem('authToken'),
       AsyncStorage.removeItem('userData'),
+      AsyncStorage.removeItem('authUser'),
       AsyncStorage.removeItem('userPreferences'),
+      AsyncStorage.removeItem('accountType'),
     ]);
 
     console.log('✅ All auth data cleared');

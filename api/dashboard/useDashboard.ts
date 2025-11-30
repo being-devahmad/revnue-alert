@@ -1,5 +1,4 @@
-
-
+import { useAuthStore } from '@/store/authStore'; // Import your auth store
 import axiosInstance from '@/utils/axios';
 import { useQuery } from '@tanstack/react-query';
 
@@ -46,7 +45,6 @@ const fetchDashboardData = async (): Promise<DashboardData> => {
   try {
     const response = await axiosInstance.get<DashboardResponse>("/dashboard");
 
-
     // Validate response structure
     if (!response.data) {
       throw new Error("No response data from API");
@@ -61,7 +59,6 @@ const fetchDashboardData = async (): Promise<DashboardData> => {
     }
 
     const dashboardData = response.data.data;
-    
 
     return dashboardData;
   } catch (error: any) {
@@ -76,16 +73,24 @@ const fetchDashboardData = async (): Promise<DashboardData> => {
 };
 
 export const useDashboard = () => {
+  // Get current user ID from auth store
+  const user = useAuthStore((state) => state.user);
+  const userId = user?.id;
+
   const query = useQuery({
-    queryKey: ["dashboard"],
+    // ✅ KEY FIX: Include userId in query key so different users have different cache
+    queryKey: ["dashboard", userId],
     queryFn: fetchDashboardData,
     staleTime: 1000 * 60 * 5, // 5 minutes
     gcTime: 1000 * 60 * 10, // 10 minutes
     retry: 2,
+    // ✅ Only run query if user is authenticated
+    enabled: !!userId,
   });
 
   // Debug logging
   console.log('🎯 useDashboard Hook State:', {
+    userId,
     status: query.status,
     isLoading: query.isLoading,
     isFetching: query.isFetching,
