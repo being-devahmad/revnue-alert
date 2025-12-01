@@ -93,15 +93,28 @@ export const useCategories = (search: string = '') => {
 };
 
 // ============ HELPER: FLATTEN ALL CATEGORIES ============
+// export const flattenCategories = (data: any): Category[] => {
+//   if (!data?.pages) return [];
+//   return data.pages.reduce(
+//     (acc: Category[], page: CategoriesResponse) => [
+//       ...acc,
+//       ...page.data.categories,
+//     ],
+//     []
+//   );
+// };
+
+
 export const flattenCategories = (data: any): Category[] => {
-  if (!data?.pages) return [];
-  return data.pages.reduce(
-    (acc: Category[], page: CategoriesResponse) => [
-      ...acc,
-      ...page.data.categories,
-    ],
-    []
-  );
+  if (!data?.pages || data.pages.length === 0) return [];
+
+  return data.pages.flatMap((page: any) => {
+    // page can be:
+    // 1. the full response { status, message, data: { categories: [...] } }
+    // 2. or just the inner { pagination, categories: [...] } (when RQ unwraps)
+    const categoriesArray = page?.data?.categories ?? page?.categories;
+    return Array.isArray(categoriesArray) ? categoriesArray : [];
+  });
 };
 
 // ============ HELPER: GET SORTED CATEGORIES ============

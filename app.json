@@ -12,7 +12,10 @@
       "supportsTablet": true,
       "bundleIdentifier": "com.devahmad41.revnuealert",
       "infoPlist": {
-        "ITSAppUsesNonExemptEncryption": false
+        "ITSAppUsesNonExemptEncryption": false,
+        "NSCameraUsageDescription": "We need camera access to let you upload images if required.",
+        "NSPhotoLibraryUsageDescription": "We need permission to select photos from your gallery.",
+        "NSPhotoLibraryAddUsageDescription": "We need permission to save images to your photo library."
       }
     },
     "android": {

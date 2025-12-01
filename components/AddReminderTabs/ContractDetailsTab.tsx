@@ -1,10 +1,10 @@
 "use client";
 
-import { useCategories } from "@/api/addReminder/useGetCategories";
+import { flattenCategories, useCategories } from "@/api/addReminder/useGetCategories";
 import { useGetEnterpriseAccounts } from "@/api/reminders/timeline-details/useGetEnterpriseAccounts";
 import { Ionicons } from "@expo/vector-icons";
 import DateTimePicker from "@react-native-community/datetimepicker";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -190,29 +190,20 @@ export const ContractDetails: React.FC<ContractDetailsProps> = ({
     const categoryName = selectedCategory || contractForm.category || "N/A";
     console.log("📋 Category Name:", categoryName);
 
-    const generatedNote = `<b>Reminder Name:</b> ${
-      contractForm.reminderName?.trim() || "N/A"
-    }<br><b>Account Number:</b> ${
-      contractForm.accountNumber?.trim() || "N/A"
-    }<br><b>Payment Amount:</b> ${
-      contractForm.paymentAmount || "N/A"
-    }<br><b>Payment Interval:</b> ${
-      contractForm.paymentInterval?.trim() || "N/A"
-    }<br><b>Expiration Date:</b> ${
-      contractForm.expirationDate
+    const generatedNote = `<b>Reminder Name:</b> ${contractForm.reminderName?.trim() || "N/A"
+      }<br><b>Account Number:</b> ${contractForm.accountNumber?.trim() || "N/A"
+      }<br><b>Payment Amount:</b> ${contractForm.paymentAmount || "N/A"
+      }<br><b>Payment Interval:</b> ${contractForm.paymentInterval?.trim() || "N/A"
+      }<br><b>Expiration Date:</b> ${contractForm.expirationDate
         ? contractForm.expirationDate.toISOString().split("T")[0]
         : "N/A"
-    }<br><b>Category:</b> ${categoryName}<br><b>Description:</b> ${
-      contractForm.description?.trim() || "N/A"
-    }<br><b>Website / Email:</b> ${
-      contractForm.emailWebsite?.trim() || "N/A"
-    }<br><b>Phone Number:</b> ${
-      contractForm.phone?.trim() || "N/A"
-    }<br><b>Non-Renew Sent Date:</b> ${
-      contractForm.nonRenewDate
+      }<br><b>Category:</b> ${categoryName}<br><b>Description:</b> ${contractForm.description?.trim() || "N/A"
+      }<br><b>Website / Email:</b> ${contractForm.emailWebsite?.trim() || "N/A"
+      }<br><b>Phone Number:</b> ${contractForm.phone?.trim() || "N/A"
+      }<br><b>Non-Renew Sent Date:</b> ${contractForm.nonRenewDate
         ? contractForm.nonRenewDate.toISOString().split("T")[0]
         : "N/A"
-    }<br>`;
+      }<br>`;
 
     console.log("📝 Generated Template:", generatedNote);
 
@@ -223,8 +214,8 @@ export const ContractDetails: React.FC<ContractDetailsProps> = ({
     const updatedNotes = hasExistingTemplate
       ? contractForm.notes.replace(templatePattern, generatedNote)
       : contractForm.notes
-      ? generatedNote + "<br><br>" + contractForm.notes
-      : generatedNote;
+        ? generatedNote + "<br><br>" + contractForm.notes
+        : generatedNote;
 
     console.log("✅ Updated Notes:", updatedNotes);
 
@@ -262,9 +253,29 @@ export const ContractDetails: React.FC<ContractDetailsProps> = ({
     console.log("✅ ===== TEMPLATE GENERATION COMPLETED =====\n");
   };
 
-  const handleSelectCategory = ()=>{
-    
-  }
+const handleSelectCategory = (categoryId: string) => {
+  const allCategories = flattenCategories(categories); // now always returns Category[]
+  const selectedCat = allCategories.find(
+    (cat: Category) => String(cat.id) === categoryId
+  );
+
+  const categoryName = selectedCat?.name ?? "Unknown Category";
+
+
+  setSelectedCategory(categoryName);                    // shown in UI
+  onContractChange("category", categoryId);            // saved ID
+};
+
+useEffect(() => {
+  if (!contractForm.category || !categories) return;
+
+  const all = flattenCategories(categories);
+  console.log('all---->', all)
+  const found = all.find((c: Category) => String(c.id) === contractForm.category);
+  console.log('found-->', found)
+  if (found) setSelectedCategory(found.name);
+}, [contractForm.category, categories]);
+
 
   return (
     <>
@@ -331,7 +342,7 @@ export const ContractDetails: React.FC<ContractDetailsProps> = ({
                 style={styles.selectInput}
                 onPress={() => setShowCategoryModal(true)}
               >
-                <Text style={styles.selectText}>
+                <Text style={[styles.selectText, !selectedCategory && {color:'#9CA3AF'}]}>
                   {selectedCategory || "Select Category"}
                 </Text>
                 <Ionicons name="chevron-down" size={20} color="#9A1B2B" />
