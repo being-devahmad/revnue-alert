@@ -58,6 +58,39 @@ export interface FormattedUserProfile {
   subscriptionEndsAt: string | null;
 }
 
+// ============ INDUSTRIES MAP CACHE ============
+// ✅ Module-level cache - reuses data from useIndustries API
+let industriesMapCache: Map<number, string> = new Map();
+
+/**
+ * ✅ Initialize the industries map from API data
+ * Call this when you have industries loaded from useIndustries
+ */
+export const initializeIndustriesMap = (industries: { id: number; name: string }[]) => {
+  industriesMapCache.clear();
+  industries.forEach(ind => {
+    industriesMapCache.set(ind.id, ind.name);
+  });
+  console.log('✅ Industries map initialized with', industriesMapCache.size, 'industries');
+};
+
+/**
+ * ✅ Get industry name by ID using the cached map
+ * Uses the same data from useIndustries API - no duplication
+ */
+export const getIndustryName = (industryId: number): string => {
+  if (industryId === 0) return 'Not Selected';
+  
+  const name = industriesMapCache.get(industryId);
+  
+  if (!name) {
+    console.warn(`⚠️ Industry ID ${industryId} not found in map`);
+    return 'Unknown Industry';
+  }
+  
+  return name;
+};
+
 // ============ FETCH USER PROFILE FUNCTION ============
 const fetchUserProfile = async (): Promise<UserProfileResponse> => {
   try {
@@ -192,27 +225,6 @@ export const getDisplayCardNumber = (lastFour: string | null): string => {
     return 'No payment method on file';
   }
   return `**************${lastFour}`;
-};
-
-// ============ HELPER: GET INDUSTRY NAME BY ID ============
-/**
- * This is a placeholder - in a real app, you'd fetch industry names from an API
- * or use the industry data from your IndustryBottomSheet
- */
-export const getIndustryName = (industryId: number): string => {
-  const industryMap: { [key: number]: string } = {
-    1: 'General (Default)',
-    2: 'Construction',
-    3: 'Manufacturing',
-    4: 'Healthcare',
-    5: 'Retail',
-    6: 'Technology',
-    7: 'Finance',
-    8: 'Education',
-    // Add more as needed
-  };
-
-  return industryMap[industryId] || 'Industry';
 };
 
 // ============ HELPER: FORMAT DATE ============

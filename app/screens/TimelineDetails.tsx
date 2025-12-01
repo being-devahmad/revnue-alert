@@ -7,7 +7,7 @@ import ReminderDetailsTab from '@/components/TimelineDetailsTabs/ReminderDetails
 import TimelineTab from '@/components/TimelineDetailsTabs/TimelineTab';
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -39,7 +39,6 @@ const TimelineDetailsScreen: React.FC = () => {
   const params = useLocalSearchParams();
   const [timelineEnabled, setTimelineEnabled] = useState(true);
 
-
   console.log('🔍 TimelineDetailsScreen params:', params);
 
   // Get contract ID from route params
@@ -65,6 +64,15 @@ const TimelineDetailsScreen: React.FC = () => {
   // Extract contract and timeline from API response
   const contract = data?.data?.contract;
   const timeline = data?.data?.timeline;
+
+  const initialCompleted = !!(
+    contract?.completed_at || contract?.completed_by
+  );
+  const [isTaskCompleted, setIsTaskCompleted] = useState(initialCompleted)
+
+useEffect(() => {
+  setIsTaskCompleted(!!(contract?.completed_at || contract?.completed_by));
+}, [contract?.completed_at, contract?.completed_by]);
 
 
   const handleEditReminder = () => {
@@ -116,6 +124,7 @@ const TimelineDetailsScreen: React.FC = () => {
 
     completeTask(taskId, {
       onSuccess: (response) => {
+        setIsTaskCompleted(true)
         Alert.alert(
           "Task Completed 🎉",
           response.message || "Successfully completed task!"
@@ -165,6 +174,7 @@ const TimelineDetailsScreen: React.FC = () => {
             isCompletingTask={isCompletingTask}
             timelineEnabled={timelineEnabled}
             setTimelineEnabled={setTimelineEnabled}
+            isTaskCompleted={isTaskCompleted}
           />
         );
       case 'reminder':

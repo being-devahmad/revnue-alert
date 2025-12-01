@@ -1,27 +1,37 @@
-"use client"
+"use client";
 
-import { Ionicons } from "@expo/vector-icons"
-import type React from "react"
-import { useState } from "react"
-import { ScrollView, StyleSheet, Switch, Text, TextInput, TouchableOpacity, View } from "react-native"
-import { RichTextEditor } from "../RichTextEditor"
-import { DropdownField } from "../ui/DropdownField"
+import { Ionicons } from "@expo/vector-icons";
+import type React from "react";
+import { useState } from "react";
+import {
+    ScrollView,
+    StyleSheet,
+    Switch,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View,
+} from "react-native";
+
+import { ReminderPeriodInput } from "../ReminderPeriodInput";
+import { RichTextEditor } from "../RichTextEditor";
+import { DropdownField } from "../ui/DropdownField";
 
 interface ReminderDetailsProps {
     reminderForm: {
-        reminderPeriod: string
-        remindersToSend: string
-        notes: string
-        resendICal: boolean
-    }
-    contactInputs: string[]
-    onReminderChange: (field: string, value: string | boolean | string[]) => void
-    onContactChange: (index: number, value: string) => void
-    onAddContact: () => void
-    onRemoveContact: (index: number) => void
-    onSave: () => void
-    onCancel: () => void
-    isLoading: boolean
+        reminderPeriod: string;
+        remindersToSend: string;
+        notes: string;
+        resendICal: boolean;
+    };
+    contactInputs: string[];
+    onReminderChange: (field: string, value: string | boolean | string[]) => void;
+    onContactChange: (index: number, value: string) => void;
+    onAddContact: () => void;
+    onRemoveContact: (index: number) => void;
+    onSave: () => void;
+    onCancel: () => void;
+    isLoading: boolean;
 }
 
 export const ReminderDetails: React.FC<ReminderDetailsProps> = ({
@@ -33,24 +43,22 @@ export const ReminderDetails: React.FC<ReminderDetailsProps> = ({
     onRemoveContact,
     onSave,
     onCancel,
-    isLoading
+    isLoading,
 }) => {
     const [showDropdowns, setShowDropdowns] = useState({
-        reminderPeriod: false,
         remindersToSend: false,
         templates: false,
-    })
+    });
 
+    const [selectedTemplate, setSelectedTemplate] = useState<string>("");
 
-    const [selectedTemplate, setSelectedTemplate] = useState<string>("")
-
-    const reminderPeriodOptions = ["30 days", "60 days", "90 days"]
+    const reminderPeriodOptions = ["30 days", "60 days", "90 days"];
     const remindersToSendOptions = [
         "0 - Send no reminders",
         "1 - Send single reminder",
         "2 - Send reminders and final reminder",
         "3 - Send initial, secondary and final reminder",
-    ]
+    ];
 
     // Template options for the dropdown
     const templateOptions = [
@@ -58,28 +66,26 @@ export const ReminderDetails: React.FC<ReminderDetailsProps> = ({
         "Service Request to Supplier",
         "Non Renewal/ Termination Notice to Suppler",
         "Certificate of Insurance Request to Supplier",
-    ]
+    ];
 
     const closeAllDropdowns = () => {
         setShowDropdowns({
-            reminderPeriod: false,
             remindersToSend: false,
             templates: false,
-        })
-    }
-
+        });
+    };
 
     const toggleDropdown = (dropdown: keyof typeof showDropdowns) => {
-        setShowDropdowns((prev) => ({ ...prev, [dropdown]: !prev[dropdown] }))
-    }
+        setShowDropdowns((prev) => ({ ...prev, [dropdown]: !prev[dropdown] }));
+    };
 
     const handleTemplateSelect = (template: string) => {
         // You can add logic here to populate the notes field with the selected template
         // For now, it just closes the dropdown
-        setSelectedTemplate(template)
-        toggleDropdown("templates")
+        setSelectedTemplate(template);
+        toggleDropdown("templates");
         // Example: onReminderChange("notes", getTemplateContent(template))
-    }
+    };
 
     return (
         <>
@@ -88,9 +94,7 @@ export const ReminderDetails: React.FC<ReminderDetailsProps> = ({
                 <View
                     style={[
                         styles.card,
-                        (showDropdowns.reminderPeriod ||
-                            showDropdowns.remindersToSend ||
-                            showDropdowns.templates) &&
+                        (showDropdowns.remindersToSend || showDropdowns.templates) &&
                         styles.cardActive,
                     ]}
                 >
@@ -100,24 +104,13 @@ export const ReminderDetails: React.FC<ReminderDetailsProps> = ({
                     </View>
 
                     <View style={styles.section}>
-                        <DropdownField
-                            label="Reminder Period"
+                        {/* New Dynamic Reminder Period Input */}
+                        <ReminderPeriodInput
                             value={reminderForm.reminderPeriod}
-                            options={reminderPeriodOptions}
-                            showDropdown={showDropdowns.reminderPeriod}
-                            onToggle={() => {
-                                // FIXED: Only close other dropdowns if this one is currently closed
-                                if (!showDropdowns.reminderPeriod) {
-                                    closeAllDropdowns()
-                                }
-                                toggleDropdown("reminderPeriod")
-                            }}
-                            onSelect={(value) => {
-                                onReminderChange("reminderPeriod", value);
-                                toggleDropdown("reminderPeriod");
-                            }}
+                            onChange={(value) => onReminderChange("reminderPeriod", value)}
+                            label="Reminder Period"
                             required={true}
-                            placeholder="Select reminder period"
+                            placeholder="Enter number (e.g., 30, 5, 90...)"
                         />
                         <DropdownField
                             label="Reminders to Send"
@@ -126,9 +119,9 @@ export const ReminderDetails: React.FC<ReminderDetailsProps> = ({
                             showDropdown={showDropdowns.remindersToSend}
                             onToggle={() => {
                                 if (!showDropdowns.remindersToSend) {
-                                    closeAllDropdowns()
+                                    closeAllDropdowns();
                                 }
-                                toggleDropdown("remindersToSend")
+                                toggleDropdown("remindersToSend");
                             }}
                             onSelect={(value) => {
                                 onReminderChange("remindersToSend", value);
@@ -140,17 +133,14 @@ export const ReminderDetails: React.FC<ReminderDetailsProps> = ({
                         {/* Contacts Section */}
                         <View style={styles.contactsSection}>
                             <Text style={styles.label}>
-                                Contacts{' '}
-                                <Text style={styles.required}>*</Text>
+                                Contacts <Text style={styles.required}>*</Text>
                             </Text>
                             {contactInputs.map((contact, index) => (
                                 <View key={index} style={styles.contactRow}>
                                     <TextInput
                                         style={[styles.input, styles.contactInput]}
                                         value={contact}
-                                        onChangeText={(text) =>
-                                            onContactChange(index, text)
-                                        }
+                                        onChangeText={(text) => onContactChange(index, text)}
                                         placeholder="Enter email address"
                                         placeholderTextColor="#9CA3AF"
                                         keyboardType="email-address"
@@ -160,11 +150,7 @@ export const ReminderDetails: React.FC<ReminderDetailsProps> = ({
                                             style={styles.removeContactBtn}
                                             onPress={() => onRemoveContact(index)}
                                         >
-                                            <Ionicons
-                                                name="close-circle"
-                                                size={22}
-                                                color="#EF4444"
-                                            />
+                                            <Ionicons name="close-circle" size={22} color="#EF4444" />
                                         </TouchableOpacity>
                                     )}
                                 </View>
@@ -179,21 +165,25 @@ export const ReminderDetails: React.FC<ReminderDetailsProps> = ({
                         </View>
 
                         {/* Notes with Rich Text Editor */}
+                        {/* Notes Section */}
                         <View style={styles.inputGroup}>
-                            <View style={styles.notesHeader}>
-                                <Text style={styles.label}>
-                                    Notes{" "}
+                            {/* Header */}
+                            <View style={styles.notesHeaderWrapper}>
+                                <View style={{ flexDirection: 'column' }}>
+                                    <Text style={styles.label}>
+                                        Notes
+                                    </Text>
+
                                     <Text style={{ fontSize: 10 }}>(sent with reminder)</Text>
-                                </Text>
-                                <View style={styles.templateDropdownContainer}>
+                                </View>
+
+                                {/* Template Dropdown */}
+                                <View style={styles.templateDropdownWrapper}>
                                     <TouchableOpacity
                                         style={styles.templateButton}
                                         onPress={() => {
-                                            // FIXED: Only close other dropdowns if this one is currently closed
-                                            if (!showDropdowns.templates) {
-                                                closeAllDropdowns()
-                                            }
-                                            toggleDropdown("templates")
+                                            if (!showDropdowns.templates) closeAllDropdowns();
+                                            toggleDropdown("templates");
                                         }}
                                     >
                                         <Ionicons
@@ -201,12 +191,17 @@ export const ReminderDetails: React.FC<ReminderDetailsProps> = ({
                                             size={14}
                                             color="#9A1B2B"
                                         />
-                                        <Text style={styles.templateButtonText}>
-                                            {/* FIXED: Show selected template or default text */}
+                                        <Text
+                                            numberOfLines={1}
+                                            ellipsizeMode="tail"
+                                            style={styles.templateButtonText}
+                                        >
                                             {selectedTemplate || "Reminder Email Templates"}
                                         </Text>
                                         <Ionicons
-                                            name={showDropdowns.templates ? "chevron-up" : "chevron-down"}
+                                            name={
+                                                showDropdowns.templates ? "chevron-up" : "chevron-down"
+                                            }
                                             size={14}
                                             color="#9A1B2B"
                                         />
@@ -231,6 +226,8 @@ export const ReminderDetails: React.FC<ReminderDetailsProps> = ({
                                     )}
                                 </View>
                             </View>
+
+                            {/* Rich Text Editor */}
                             <RichTextEditor
                                 value={reminderForm.notes}
                                 onChangeText={(text) => onReminderChange("notes", text)}
@@ -240,7 +237,9 @@ export const ReminderDetails: React.FC<ReminderDetailsProps> = ({
 
                         {/* Resend iCal Switch */}
                         <View style={styles.switchRow}>
-                            <Text style={styles.switchLabel}>Send iCal (sent with reminder)</Text>
+                            <Text style={styles.switchLabel}>
+                                Send iCal (sent with reminder)
+                            </Text>
                             <Switch
                                 value={reminderForm.resendICal}
                                 onValueChange={(value) => onReminderChange("resendICal", value)}
@@ -258,21 +257,24 @@ export const ReminderDetails: React.FC<ReminderDetailsProps> = ({
                         <Ionicons name="attach" size={20} color="#9A1B2B" />
                         <Text style={styles.cardTitle}>
                             Add Attachments to Notifications{" "}
-                            <Text style={{ fontSize: 10, color: "#6B7280" }}>(Max upload size: 16MB)</Text>
+                            <Text style={{ fontSize: 10, color: "#6B7280" }}>
+                                (Max upload size: 16MB)
+                            </Text>
                         </Text>
                     </View>
                     <View style={styles.section}>
                         <TouchableOpacity style={styles.attachmentButton} disabled>
-                            <Ionicons
-                                name="cloud-upload-outline"
-                                size={24}
-                                color="#6B7280"
-                            />
+                            <Ionicons name="cloud-upload-outline" size={24} color="#6B7280" />
                             <Text style={styles.attachmentButtonText}>Choose Files</Text>
-                            <Text style={styles.attachmentNote}>Available from portal only</Text>
+                            <Text style={styles.attachmentNote}>
+                                Available from portal only
+                            </Text>
                         </TouchableOpacity>
                         <Text style={styles.attachmentWarning}>
-                            Note: Large attachments may be subject to size restrictions by your mail server or service provider. Please ensure your are not exceeding any such restrictions or you may not receive the email notifications.
+                            Note: Large attachments may be subject to size restrictions by
+                            your mail server or service provider. Please ensure your are not
+                            exceeding any such restrictions or you may not receive the email
+                            notifications.
                         </Text>
                     </View>
                 </View>
@@ -290,9 +292,8 @@ export const ReminderDetails: React.FC<ReminderDetailsProps> = ({
                 </View>
             </ScrollView>
         </>
-    )
-}
-
+    );
+};
 
 const styles = StyleSheet.create({
     card: {
@@ -323,7 +324,7 @@ const styles = StyleSheet.create({
         fontSize: 16,
         fontWeight: "700",
         color: "#111827",
-        width: '70%'
+        width: "70%",
     },
     section: {
         gap: 16,
@@ -413,24 +414,26 @@ const styles = StyleSheet.create({
         alignItems: "center",
         gap: 6,
         backgroundColor: "#F9FAFB",
-        padding: 6,
+        paddingVertical: 6,
+        paddingHorizontal: 10,
         borderRadius: 6,
         borderWidth: 1,
         borderColor: "#E5E7EB",
-        width: 200,
+        maxWidth: 200, // prevent overflow
     },
     templateButtonText: {
-        fontSize: 10,
+        fontSize: 12,
         color: "#9A1B2B",
         fontWeight: "600",
-        width: '70%'
+        marginHorizontal: 4,
+        flexShrink: 1, // text truncates instead of pushing layout
     },
     templateDropdownMenu: {
         position: "absolute",
         top: "100%",
         right: 0,
         marginTop: 4,
-        backgroundColor: "white",
+        backgroundColor: "#fff",
         borderRadius: 8,
         borderWidth: 1,
         borderColor: "#E5E7EB",
@@ -438,7 +441,9 @@ const styles = StyleSheet.create({
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.1,
         shadowRadius: 4,
-        elevation: 3,
+        elevation: 5,
+        maxHeight: 180,
+        width: 220, // fixed width for dropdown
         zIndex: 1000,
     },
     contactsSection: {
@@ -567,4 +572,17 @@ const styles = StyleSheet.create({
         fontWeight: "600",
         fontSize: 14,
     },
-})
+
+    notesHeaderWrapper: {
+        flexDirection: "row",
+        justifyContent: "space-between",
+        alignItems: "center",
+        marginBottom: 8,
+        flexWrap: "nowrap", // ensures header elements stay in one line
+    },
+
+    templateDropdownWrapper: {
+        position: "relative", // for absolute dropdown
+        zIndex: 100,
+    },
+});

@@ -66,8 +66,6 @@ export const TabHeader = ({
                             <Ionicons name="trash-outline" size={22} color="#fff" />
                         </TouchableOpacity>
                     )}
-
-                    {/* {isChild ? <View style={{ width: 40 }} /> : null} */}
                 </View>
             </LinearGradient>
         </View>

@@ -56,6 +56,8 @@ const EditReminder = () => {
     contractName,
   } = useLocalSearchParams();
 
+  console.log('contract-id-->', contractId)
+
     const { accountType} = useAuthStore();
     const isEnterprise = accountType === "enterprise";
 
@@ -408,6 +410,7 @@ const EditReminder = () => {
         title="Edit Reminder"
         subtitle={contractName as string || ""}
         isChild={true}
+        isDelete={true}
       />
 
       {/* Tab Navigation */}

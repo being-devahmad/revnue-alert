@@ -1,10 +1,14 @@
 "use client";
 
-import { flattenCategories, getSortedCategories, useCategories } from "@/api/addReminder/useGetCategories";
+import {
+  flattenCategories,
+  getSortedCategories,
+  useCategories
+} from "@/api/addReminder/useGetCategories";
 import { useGetEnterpriseAccounts } from "@/api/reminders/timeline-details/useGetEnterpriseAccounts";
 import { Ionicons } from "@expo/vector-icons";
 import DateTimePicker from "@react-native-community/datetimepicker";
-import { useEffect, useRef, useState } from "react";
+import { Alert, useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   ScrollView,
@@ -88,65 +92,72 @@ export const ContractDetails: React.FC<ContractDetailsProps> = ({
   onCancel,
   isLoading,
   isEnterprise,
-  user
+  user,
 }) => {
-
   console.log("contractForm ======>", contractForm);
 
-  // CATEGORY STATE
-// ==================== UPDATED & FINAL CODE (Copy-Paste Kar Do) ====================
+  // ============ CATEGORIES STATE ============
+  const [categories, setCategories] = useState<{ id: string; name: string }[]>(
+    []
+  );
+  const [selectedCategoryName, setSelectedCategoryName] = useState<string>("");
 
-const [categories, setCategories] = useState<{ id: string; name: string }[]>([]);
-// STATE
-const [selectedCategoryName, setSelectedCategoryName] = useState<string>("");
+  // Fetch categories using the hook
+  const { data } = useCategories();
 
-// PAGINATED CATEGORIES HOOK
-const { data } = useCategories();   // ← yeh infinite/paginated hai
+  // ============ PROCESS CATEGORIES WHEN DATA CHANGES ============
+  useEffect(() => {
+    console.log("\n🔄 ===== PROCESSING CATEGORIES IN ContractDetails =====");
 
-// SAB PAGES SE CATEGORIES LEKAR PROCESS KARO
-useEffect(() => {
-  if (!data?.pages || data.pages.length === 0) return;
-
-  // 1. Sab pages se categories collect karo
-  const allCategories: any[] = [];
-  data.pages.forEach(page => {
-    if (page?.data?.categories) {
-      allCategories.push(...page.data.categories);
+    if (!data?.pages || data.pages.length === 0) {
+      console.log("⚠️ No data pages available");
+      return;
     }
-  });
 
-  if (allCategories.length === 0) return;
+    // 1. Collect all categories from all pages
+    const allCategories: any[] = [];
+    data.pages.forEach((page) => {
+      if (page?.data?.categories) {
+        allCategories.push(...page.data.categories);
+      }
+    });
 
-  // 2. Flatten + Sort + Map (tumhara existing logic)
-  const flattened = flattenCategories({ categories: allCategories });
-  const sortedNames = getSortedCategories(flattened);
+    console.log("📊 Total categories collected:", allCategories.length);
 
-  const mappedCategories = sortedNames.map(name => {
-    const cat = flattened.find((c: any) => c.name === name);
-    return {
-      id: String(cat?.id ?? ""),     // ← force string
-      name: cat?.name || name,
-    };
-  });
-
-  // 3. State update
-  setCategories(mappedCategories);
-
-  // 4. EDIT MODE: Agar form mein ID hai toh name set karo
-  if (contractForm?.category) {
-    const targetId = String(contractForm.category).trim();
-    const found = mappedCategories.find(c => c.id === targetId);
-
-    if (found) {
-      setSelectedCategoryName(found.name);
-      console.log("Category matched:", found.name, `(ID: ${targetId})`);
-    } else {
-      console.warn("Category ID not found even after all pages:", targetId);
-      setSelectedCategoryName(targetId);
+    if (allCategories.length === 0) {
+      console.log("⚠️ No categories found in pages");
+      return;
     }
-  }
 
-}, [data, contractForm?.category]); // ← data update hone pe bhi chalega (new pages load hone pe)
+    // 2. Flatten + Sort
+    const flattened = flattenCategories({ categories: allCategories });
+    const sortedNames = getSortedCategories(flattened);
+
+    // 3. Map to objects with id and name
+    const mappedCategories = sortedNames.map((name) => {
+      const cat = flattened.find((c: any) => c.name === name);
+      return {
+        id: String(cat?.id ?? ""),
+        name: cat?.name || name,
+      };
+    });
+
+    console.log("✅ Processed categories:", mappedCategories);
+    setCategories(mappedCategories);
+
+    // 4. If editing and category is already selected, set the name
+    if (contractForm?.category) {
+      const targetId = String(contractForm.category).trim();
+      const found = mappedCategories.find((c) => c.id === targetId);
+
+      if (found) {
+        setSelectedCategoryName(found.name);
+        console.log("✅ Category matched:", found.name, `(ID: ${targetId})`);
+      } else {
+        console.warn("⚠️ Category ID not found:", targetId);
+      }
+    }
+  }, [data]);
 
   const richTextRef = useRef<any>(null);
 
@@ -166,13 +177,32 @@ useEffect(() => {
   // Category Modal State
   const [showCategoryModal, setShowCategoryModal] = useState(false);
 
-
-  // API HOOks
+  // API Hooks
   const { data: accounts } = useGetEnterpriseAccounts();
-  console.log('accounts =====>', accounts)
+  console.log("accounts =====>", accounts);
 
-  const paymentIntervalOptions = ["Monthly", "Quarterly", "Annual"];
-  const renewalPeriodOptions = ["1 Month", "6 Months", "1 Year"];
+  const paymentIntervalOptions = [
+    "Weekly",
+    "Monthly",
+    "Semi-Quarterly",
+    "Quarterly",
+    "Semi-Annually",
+    "Annually",
+    "Other",
+  ];
+  const renewalPeriodOptions = [
+    "30 Days",
+    "1 Month",
+    "60 Days",
+    "3 Months",
+    "6 Months",
+    "1 Year",
+    "18 Months",
+    "2 Year",
+    "3 Year",
+    "4 Year",
+    "5 Year",
+  ];
 
   const toggleDatePicker = (picker: keyof typeof showDatePickers) => {
     setShowDatePickers((prev) => ({ ...prev, [picker]: !prev[picker] }));
@@ -200,24 +230,70 @@ useEffect(() => {
     onContractChange(field, null);
   };
 
+  // ============ HANDLE CATEGORY SELECTION ============
+  const handleCategorySelect = (selectedCategoryId: string) => {
+    console.log("🎯 handleCategorySelect called with ID:", selectedCategoryId);
+    console.log("🔍 Looking in categories:", categories);
+
+    const categoryObj = categories.find(c => c.id === selectedCategoryId);
+
+    console.log("✅ Found category:", categoryObj);
+
+    if (categoryObj) {
+      console.log("📝 Setting name to:", categoryObj.name);
+      setSelectedCategoryName(categoryObj.name);
+      onContractChange("category", selectedCategoryId);
+      console.log("✅ State updated");
+    } else {
+      console.error("❌ Category not found in categories array");
+      console.error("All categories:", categories);
+    }
+
+    setShowCategoryModal(false);
+  };
+
+  // ============ HANDLE ADD REMINDER TEMPLATE ============
   const handleAddReminderTemplate = () => {
-    const generatedNote = `<b>Reminder Name:</b> ${contractForm.reminderName
-      }<br><b>Account Number:</b> ${contractForm.accountNumber
-      }<br><b>Payment Amount:</b> ${contractForm.paymentAmount
-      }<br><b>Payment Interval:</b> ${contractForm.paymentInterval || ""
+    console.log("\n🔄 ===== TEMPLATE GENERATION STARTED =====");
+
+    const hasData =
+      contractForm.reminderName?.trim() ||
+      contractForm.accountNumber?.trim() ||
+      contractForm.paymentAmount ||
+      contractForm.category;
+
+    if (!hasData) {
+      Alert.alert(
+        "Empty Form",
+        "Please fill in at least the Reminder Name or other details before adding a template."
+      );
+      console.log("⚠️ Form is empty, skipping template generation");
+      return;
+    }
+
+    const categoryName = selectedCategoryName || contractForm.category || "N/A";
+    console.log("📋 Category Name:", categoryName);
+
+    const generatedNote = `<b>Reminder Name:</b> ${contractForm.reminderName?.trim() || "N/A"
+      }<br><b>Account Number:</b> ${contractForm.accountNumber?.trim() || "N/A"
+      }<br><b>Payment Amount:</b> ${contractForm.paymentAmount || "N/A"
+      }<br><b>Payment Interval:</b> ${contractForm.paymentInterval?.trim() || "N/A"
       }<br><b>Expiration Date:</b> ${contractForm.expirationDate
         ? contractForm.expirationDate.toISOString().split("T")[0]
-        : ""
-      }<br><b>Category:</b> ${contractForm.category}<br><b>Description:</b> ${contractForm.description
-      }<br><b>Website / Email:</b> ${contractForm.emailWebsite
-      }<br><b>Phone Number:</b> ${contractForm.phone
+        : "N/A"
+      }<br><b>Category:</b> ${categoryName}<br><b>Description:</b> ${contractForm.description?.trim() || "N/A"
+      }<br><b>Website / Email:</b> ${contractForm.emailWebsite?.trim() || "N/A"
+      }<br><b>Phone Number:</b> ${contractForm.phone?.trim() || "N/A"
       }<br><b>Non-Renew Sent Date:</b> ${contractForm.nonRenewDate
         ? contractForm.nonRenewDate.toISOString().split("T")[0]
-        : ""
+        : "N/A"
       }<br>`;
+
+    console.log("📝 Generated Template:", generatedNote);
 
     const templatePattern = /<b>Reminder Name:<\/b>[\s\S]*?(<br><br>|$)/;
     const hasExistingTemplate = templatePattern.test(contractForm.notes);
+    console.log("🔍 Has existing template:", hasExistingTemplate);
 
     const updatedNotes = hasExistingTemplate
       ? contractForm.notes.replace(templatePattern, generatedNote)
@@ -225,11 +301,37 @@ useEffect(() => {
         ? generatedNote + "<br><br>" + contractForm.notes
         : generatedNote;
 
-    setContractForm((prev) => ({ ...prev, notes: updatedNotes }));
+    console.log("✅ Updated Notes:", updatedNotes);
 
-    if (richTextRef.current) {
-      richTextRef.current.setContentHTML(updatedNotes);
-    }
+    setContractForm((prev) => ({
+      ...prev,
+      notes: updatedNotes,
+    }));
+
+    onContractChange("notes", updatedNotes);
+
+    setTimeout(() => {
+      console.log("📝 Attempting to update RichTextEditor...");
+
+      if (richTextRef?.current) {
+        console.log("✅ richTextRef.current exists");
+
+        try {
+          if (typeof richTextRef.current.setContentHTML === "function") {
+            richTextRef.current.setContentHTML(updatedNotes);
+            console.log("✅ Successfully called setContentHTML");
+          } else {
+            console.warn("❌ setContentHTML not found. Available methods:", Object.keys(richTextRef.current));
+          }
+        } catch (error) {
+          console.error("❌ Error calling setContentHTML:", error);
+        }
+      } else {
+        console.warn("❌ richTextRef.current is null");
+      }
+    }, 100);
+
+    console.log("✅ ===== TEMPLATE GENERATION COMPLETED =====\n");
   };
 
   return (
@@ -237,12 +339,8 @@ useEffect(() => {
       {/* Category Bottom Sheet Modal */}
       <CategoryBottomSheet
         visible={showCategoryModal}
-        selectedValue={contractForm.category}
-        onSelect={(selectedCategory) => {
-          console.log("📁 Category selected:", selectedCategory);
-          onContractChange("category", selectedCategory);
-          setShowCategoryModal(false);
-        }}
+        selectedValue={selectedCategoryName}
+        onSelect={handleCategorySelect}
         onClose={() => setShowCategoryModal(false)}
         title="Select Category"
       />
@@ -258,59 +356,25 @@ useEffect(() => {
           </View>
 
           <View style={styles.section}>
-            {/* <DropdownField
-              label="Assign Reminder To"
-              value={contractForm.reminderTo}
-              options={reminderToOptions}
-              showDropdown={showDropdowns.reminderTo}
-              onToggle={() => {
-                if (!showDropdowns.reminderTo) {
-                  closeAllDropdowns();
-                }
-                toggleDropdown("reminderTo");
-              }}
-              onSelect={(value) => {
-                onContractChange("reminderTo", value);
-                toggleDropdown("reminderTo");
-              }}
-              placeholder="Select an account"
-            /> */}
-            {
-              isEnterprise && (
-                // <DropdownField
-                //   label="Assign Reminder To"
-                //   value={contractForm.reminderTo}
-                //   options={accounts && accounts?.map((acc: any) => `${acc.department}`)}
-                //   showDropdown={showDropdowns.reminderTo}
-                //   onToggle={() => toggleDropdown("reminderTo")}
-                //   onSelect={(value) => {
-                //     onContractChange("reminderTo", value);
-                //     toggleDropdown("reminderTo");
-                //   }}
-                //   placeholder="Select an account"
-                // />
-                <DropdownField
-                  label="Assign Reminder To"
-                  value={contractForm.reminderTo}
-                  options={
-                    accounts?.map((acc: any) => {
-                      if (!acc.department && acc.email === user.email) {
-                        return "Parent";
-                      }
-                      return acc.department || "Unknown";
-                    })
+            {isEnterprise && (
+              <DropdownField
+                label="Assign Reminder To"
+                value={contractForm.reminderTo}
+                options={accounts?.map((acc: any) => {
+                  if (!acc.department && acc.email === user.email) {
+                    return "Parent";
                   }
-                  showDropdown={showDropdowns.reminderTo}
-                  onToggle={() => toggleDropdown("reminderTo")}
-                  onSelect={(value) => {
-                    onContractChange("reminderTo", value);
-                    toggleDropdown("reminderTo");
-                  }}
-                  placeholder="Select an account"
-                />
-
-              )
-            }
+                  return acc.department || "Unknown";
+                })}
+                showDropdown={showDropdowns.reminderTo}
+                onToggle={() => toggleDropdown("reminderTo")}
+                onSelect={(value) => {
+                  onContractChange("reminderTo", value);
+                  toggleDropdown("reminderTo");
+                }}
+                placeholder="Select an account"
+              />
+            )}
             <FormField
               label="Reminder Name"
               value={contractForm.reminderName}
@@ -327,8 +391,13 @@ useEffect(() => {
 
             {/* Category Selection with Bottom Sheet Modal */}
             <View style={styles.inputGroup}>
-              <Text style={styles.label}>Category <Text style={styles.required}>*</Text></Text>
-              <TouchableOpacity style={styles.selectInput} onPress={() => setShowCategoryModal(true)}>
+              <Text style={styles.label}>
+                Category <Text style={styles.required}>*</Text>
+              </Text>
+              <TouchableOpacity
+                style={styles.selectInput}
+                onPress={() => setShowCategoryModal(true)}
+              >
                 <Text style={styles.selectText}>
                   {selectedCategoryName || "Select Category"}
                 </Text>
@@ -701,7 +770,7 @@ useEffect(() => {
             <View style={styles.row}>
               <View style={styles.inputGroup}>
                 <FormField
-                  label="Website "
+                  label="Website or Email Address"
                   value={contractForm.emailWebsite}
                   onChangeText={(text) =>
                     onContractChange("emailWebsite", text)
@@ -748,7 +817,11 @@ useEffect(() => {
                 style={styles.templateButton}
                 onPress={handleAddReminderTemplate}
               >
-                <Ionicons name="document-text-outline" size={16} color="#9A1B2B" />
+                <Ionicons
+                  name="document-text-outline"
+                  size={16}
+                  color="#9A1B2B"
+                />
                 <Text style={styles.templateButtonText}>Reminder Template</Text>
               </TouchableOpacity>
             </View>

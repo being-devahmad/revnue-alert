@@ -1,7 +1,8 @@
-
 import { formatDate, getDaysLeft } from "@/api/reminders/useGetTimelineDetails";
+import { useAuthStore } from "@/store/authStore";
 import { formatISODuration } from "@/utils";
 import { Ionicons } from "@expo/vector-icons";
+import dayjs from "dayjs";
 import React, { useMemo } from "react";
 import {
   Alert,
@@ -22,6 +23,7 @@ interface ContractDetailsTabProps {
   isCompletingTask: boolean;
   timelineEnabled: boolean;
   setTimelineEnabled: React.Dispatch<React.SetStateAction<boolean>>;
+  isTaskCompleted: boolean
 }
 
 const ContractDetailsTab: React.FC<ContractDetailsTabProps> = ({
@@ -31,11 +33,13 @@ const ContractDetailsTab: React.FC<ContractDetailsTabProps> = ({
   onCompleteTask,
   isCompletingTask,
   timelineEnabled,
-  setTimelineEnabled
+  setTimelineEnabled,
+  isTaskCompleted
 }) => {
-
   console.log("📄 ContractDetailsTab contract:", contract);
 
+  const store = useAuthStore()
+  const completedBy = store?.user?.id === contract?.completed_by && `${store?.user?.first_name} ${store?.user?.last_name}`
 
   // ✅ Get reminder active status - primary source of truth
   const reminderActiveStatus = useMemo(() => {
@@ -44,7 +48,6 @@ const ContractDetailsTab: React.FC<ContractDetailsTabProps> = ({
     }
     return contract.reminders[0]?.active ?? true;
   }, [contract?.reminders]);
-
 
   const toggleTimeline = () => {
     setTimelineEnabled((prev) => !prev);
@@ -74,7 +77,6 @@ const ContractDetailsTab: React.FC<ContractDetailsTabProps> = ({
   };
 
   // Handle Toggle
-
 
   if (isLoading) {
     return (
@@ -152,9 +154,7 @@ const ContractDetailsTab: React.FC<ContractDetailsTabProps> = ({
     },
     {
       label: "Deposits / Advance Pmnts",
-      value: contract.last_payment_at
-        ? formatDate(contract.payments)
-        : "N/A",
+      value: contract.last_payment_at ? formatDate(contract.payments) : "N/A",
       icon: "checkmark-circle-outline" as const,
     },
     // {
@@ -177,7 +177,7 @@ const ContractDetailsTab: React.FC<ContractDetailsTabProps> = ({
     },
     {
       label: "Supplier / Task Notes",
-      value: contract?.notes || "N/A",
+      value: contract?.last_payment_notes || "N/A",
       icon: "information-circle-outline" as const,
     },
     {
@@ -202,7 +202,6 @@ const ContractDetailsTab: React.FC<ContractDetailsTabProps> = ({
     // },
   ];
 
-
   const renderStars = (rating: number | null | undefined) => {
     const totalStars = 5;
     const filled = rating ? Math.min(rating, 5) : 0;
@@ -224,7 +223,6 @@ const ContractDetailsTab: React.FC<ContractDetailsTabProps> = ({
       </View>
     );
   };
-
 
   return (
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
@@ -280,12 +278,11 @@ const ContractDetailsTab: React.FC<ContractDetailsTabProps> = ({
           <TouchableOpacity
             style={[
               styles.completeTaskButton,
-              isCompletingTask && { opacity: 0.6 }
+              isCompletingTask && { opacity: 0.6 },
             ]}
             onPress={() => onCompleteTask(contract.id)}
             disabled={isCompletingTask}
           >
-
             {isCompletingTask ? (
               <Ionicons name="time-outline" size={20} color="white" />
             ) : (
@@ -296,7 +293,6 @@ const ContractDetailsTab: React.FC<ContractDetailsTabProps> = ({
               {isCompletingTask ? "Completing..." : "Complete Task"}
             </Text>
           </TouchableOpacity>
-
         </View>
 
         {/* Current Status Badge */}
@@ -351,12 +347,12 @@ const ContractDetailsTab: React.FC<ContractDetailsTabProps> = ({
                   styles.detailValue,
                   detail.value === "N/A" && styles.detailValueNA,
                   detail.label === "Days Left" &&
-                  daysLeft < 0 &&
-                  styles.expiredValue,
+                    daysLeft < 0 &&
+                    styles.expiredValue,
                   detail.label === "Days Left" &&
-                  daysLeft >= 0 &&
-                  daysLeft < 30 &&
-                  styles.urgentValue,
+                    daysLeft >= 0 &&
+                    daysLeft < 30 &&
+                    styles.urgentValue,
                 ]}
               >
                 {detail.value}
@@ -371,6 +367,28 @@ const ContractDetailsTab: React.FC<ContractDetailsTabProps> = ({
 
             {renderStars(contract.supplier_rating)}
           </View>
+
+          {isTaskCompleted && (
+            <>
+              {/* Last Completed */}
+              <View style={styles.detailItem}>
+                <Text style={styles.detailLabel}>Last Completed</Text>
+               <Text style={[styles.detailValue, {marginTop:7}]}>
+                  {contract?.completed_at
+                    ? dayjs(contract.completed_at).format("DD MMM YYYY")
+                    : "—"}
+                </Text>
+              </View>
+
+              {/* Last Completed By */}
+              <View style={styles.detailItem}>
+                <Text style={styles.detailLabel}>Last Completed By</Text>
+                <Text style={[styles.detailValue, {marginTop:7}]}>
+                  {completedBy ?? "—"}
+                </Text>
+              </View>
+            </>
+          )}
         </View>
 
         {/* Summary Card */}
@@ -417,17 +435,10 @@ const ContractDetailsTab: React.FC<ContractDetailsTabProps> = ({
         {contract.notes && (
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
-              <Ionicons
-                name="document-text"
-                size={16}
-                color="#6B7280"
-              />
+              <Ionicons name="document-text" size={16} color="#6B7280" />
               <Text style={styles.sectionTitle}>Notes</Text>
             </View>
-            <HtmlRichTextNoteDisplay
-              content={contract.notes}
-              maxHeight={600}
-            />
+            <HtmlRichTextNoteDisplay content={contract.notes} maxHeight={600} />
           </View>
         )}
       </View>

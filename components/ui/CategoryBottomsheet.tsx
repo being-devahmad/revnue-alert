@@ -1,25 +1,30 @@
 import {
-    flattenCategories,
-    getPaginationInfo,
-    getSortedCategories,
-    searchCategories,
-    useCategories,
+  flattenCategories,
+  getPaginationInfo,
+  getSortedCategories,
+  searchCategories,
+  useCategories,
 } from "@/api/addReminder/useGetCategories";
 import { Ionicons } from "@expo/vector-icons";
 import { useEffect, useRef, useState } from "react";
 import {
-    ActivityIndicator,
-    Animated,
-    FlatList,
-    Modal,
-    NativeScrollEvent,
-    NativeSyntheticEvent,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  Animated,
+  FlatList,
+  Modal,
+  NativeScrollEvent,
+  NativeSyntheticEvent,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from "react-native";
+
+interface CategoryItem {
+  id: string;
+  name: string;
+}
 
 export const CategoryBottomSheet = ({
   visible,
@@ -29,17 +34,17 @@ export const CategoryBottomSheet = ({
   title,
 }: {
   visible: boolean;
-  selectedValue: string;
-  onSelect: (value: string) => void;
+  selectedValue: string;  // Now receives the NAME for display
+  onSelect: (categoryId: string) => void;  // Passes the ID
   onClose: () => void;
   title: string;
 }) => {
   const slideAnim = useState(new Animated.Value(500))[0];
   const [searchQuery, setSearchQuery] = useState("");
-  const [filteredCategories, setFilteredCategories] = useState<string[]>([]);
+  const [filteredCategories, setFilteredCategories] = useState<CategoryItem[]>([]);
   const flatListRef = useRef<FlatList>(null);
 
-  // Use infinite query hook - just like useReminders!
+  // Use infinite query hook
   const {
     data,
     isLoading,
@@ -60,11 +65,31 @@ export const CategoryBottomSheet = ({
         // Search in categories
         const searched = searchCategories(allLoadedCategories, searchQuery);
         const names = getSortedCategories(searched);
-        setFilteredCategories(names);
+        
+        // ✅ Map to include both ID and name
+        const withIds = names.map(name => {
+          const cat = searched.find((c: any) => c.name === name);
+          return {
+            id: String(cat?.id ?? ""),
+            name: cat?.name || name,
+          };
+        });
+        
+        setFilteredCategories(withIds);
       } else {
         // Show all sorted categories
         const names = getSortedCategories(allLoadedCategories);
-        setFilteredCategories(names);
+        
+        // ✅ Map to include both ID and name
+        const withIds = names.map(name => {
+          const cat = allLoadedCategories.find((c: any) => c.name === name);
+          return {
+            id: String(cat?.id ?? ""),
+            name: cat?.name || name,
+          };
+        });
+        
+        setFilteredCategories(withIds);
       }
     }
   }, [allLoadedCategories, searchQuery]);
@@ -91,25 +116,25 @@ export const CategoryBottomSheet = ({
     const { layoutMeasurement, contentOffset, contentSize } = event.nativeEvent;
     const paddingToBottom = 20;
 
-    // Check if user scrolled near the bottom
     const isNearBottom =
       layoutMeasurement.height + contentOffset.y >=
       contentSize.height - paddingToBottom;
 
-    // Load more if near bottom and more pages available
     if (
       isNearBottom &&
       hasNextPage &&
       !isFetchingNextPage &&
-      !searchQuery.trim() // Don't paginate while searching
+      !searchQuery.trim()
     ) {
       fetchNextPage();
     }
   };
 
-  const handleSelect = (value: string) => {
-    onSelect(value);
-    setSearchQuery(""); // Clear search on selection
+  // ✅ Pass the ID to parent
+  const handleSelect = (categoryId: string) => {
+    console.log("✅ Selected category ID:", categoryId);
+    onSelect(categoryId);  // ← Pass ID
+    setSearchQuery("");
     onClose();
   };
 
@@ -221,7 +246,7 @@ export const CategoryBottomSheet = ({
             <FlatList
               ref={flatListRef}
               data={filteredCategories}
-              keyExtractor={(item, index) => `${item}-${index}`}
+              keyExtractor={(item) => item.id}  // ← Use ID as key
               scrollEnabled={filteredCategories?.length > 6}
               style={styles.bottomSheetList}
               onScroll={handleScroll}
@@ -230,20 +255,20 @@ export const CategoryBottomSheet = ({
                 <TouchableOpacity
                   style={[
                     styles.bottomSheetOption,
-                    selectedValue === item && styles.bottomSheetOptionSelected,
+                    selectedValue === item.name && styles.bottomSheetOptionSelected,  // ← Compare NAME
                   ]}
-                  onPress={() => handleSelect(item)}
+                  onPress={() => handleSelect(item.id)}  // ← Pass ID
                 >
                   <Text
                     style={[
                       styles.bottomSheetOptionText,
-                      selectedValue === item &&
-                        styles.bottomSheetOptionTextSelected,
+                      selectedValue === item.name &&
+                        styles.bottomSheetOptionTextSelected,  // ← Compare NAME
                     ]}
                   >
-                    {item}
+                    {item.name}  {/* Display name */}
                   </Text>
-                  {selectedValue === item && (
+                  {selectedValue === item.name && (  // ← Compare NAME
                     <Ionicons
                       name="checkmark-circle"
                       size={20}

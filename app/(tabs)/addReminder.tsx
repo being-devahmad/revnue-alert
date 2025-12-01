@@ -19,27 +19,28 @@ type TabType = "details" | "reminder";
 
 const AddReminderScreen = () => {
   const router = useRouter();
-  const { accountType , user} = useAuthStore();
+  const { accountType, user } = useAuthStore();
 
-  console.log('user-->', user)
+  console.log("user-->", user);
 
   const isEnterprise = accountType === "enterprise";
 
   const params = useLocalSearchParams();
-  console.log('params-->', params)
+  console.log("params-->", params);
 
   const initialTab: TabType =
     params?.defaultTab === "reminder" ? "reminder" : "details";
 
   const [activeTab, setActiveTab] = useState<TabType>(initialTab);
 
-
   // API Mutations
   const { mutate: addContract, isPending: isAddingContract } = useAddContract();
   const { mutate: addReminder, isPending: isAddingReminder } = useAddReminder();
 
   // Store contract ID after creation
-  const [createdContractId, setCreatedContractId] = useState<number | null>(null);
+  const [createdContractId, setCreatedContractId] = useState<number | null>(
+    null
+  );
 
   // Step 1: Contract Details
   const [contractForm, setContractForm] = useState({
@@ -76,11 +77,51 @@ const AddReminderScreen = () => {
 
   const [contactInputs, setContactInputs] = useState([""]);
 
-  const handleContractChange = (
-    field: string,
-    value: string | boolean | Date | number | null
+  // const handleContractChange = (
+  //   field: string,
+  //   value: string | boolean | Date | number | null
+  // ) => {
+  //   setContractForm((prev) => ({ ...prev, [field]: value }));
+  // };
+
+  const handleContractChange = <K extends keyof typeof contractForm>(
+    field: K,
+    value: (typeof contractForm)[K]
   ) => {
-    setContractForm((prev) => ({ ...prev, [field]: value }));
+    const moneyFields: (keyof typeof contractForm)[] = [
+      "deposits",
+      "paymentAmount",
+      "lastPaymentAmount",
+    ];
+
+    // MONEY FIELDS SPECIAL LOGIC
+    if (moneyFields.includes(field) && typeof value === "string") {
+      let clean = value.replace(/[^0-9]/g, "");
+
+      // If empty -> reset to 0.00
+      if (clean.length === 0) {
+        return setContractForm((prev) => ({ ...prev, [field]: "0.00" }));
+      }
+
+      // Always ensure at least 2 digits for decimals
+      if (clean.length === 1) clean = "0" + clean;
+
+      const formatted =
+        clean.substring(0, clean.length - 2) +
+        "." +
+        clean.substring(clean.length - 2);
+
+      return setContractForm((prev) => ({
+        ...prev,
+        [field]: formatted,
+      }));
+    }
+
+    // DEFAULT HANDLER FOR NON-MONEY FIELDS
+    setContractForm((prev) => ({
+      ...prev,
+      [field]: value,
+    }));
   };
 
   const handleReminderChange = (
@@ -106,12 +147,6 @@ const AddReminderScreen = () => {
   };
 
   // ============ CATEGORY & PERIOD MAPPING ============
-  const categoryMap: Record<string, number> = {
-    "Employee, Leave of Absence": 1,
-    "Lease, Office Equipment": 2,
-    "License, Liquor": 3,
-    "Software License": 4,
-  };
 
   const periodMap: Record<string, string> = {
     "30 days": "P30D",
@@ -183,17 +218,16 @@ const AddReminderScreen = () => {
       return;
     }
 
+    console.log('category-->', contractForm?.category)
+
     // Build payload
     const contractPayload = {
       name: contractForm.reminderName,
       description: contractForm.description,
-      category_id: categoryMap[contractForm.category] || 1,
-      started_at: contractForm.inceptionDate
-        ?.toISOString()
-        .split("T")[0] || "",
-      expired_at: contractForm.expirationDate
-        ?.toISOString()
-        .split("T")[0] || "",
+      category_id: contractForm?.category,
+      started_at: contractForm.inceptionDate?.toISOString().split("T")[0] || "",
+      expired_at:
+        contractForm.expirationDate?.toISOString().split("T")[0] || "",
       account_number: contractForm.accountNumber,
       amount: parseFloat(contractForm.paymentAmount) || 0,
       interval: contractForm.paymentInterval,
@@ -202,15 +236,13 @@ const AddReminderScreen = () => {
       auto_renew_period: contractForm.renewal ? "P1Y" : null,
       supplier_rating: contractForm.supplierRating,
       last_payment_amount: parseFloat(contractForm.lastPaymentAmount) || 0,
-      last_payment_at: contractForm.lastPaymentDate
-        ?.toISOString()
-        .split("T")[0] || "",
+      last_payment_at:
+        contractForm.lastPaymentDate?.toISOString().split("T")[0] || "",
       last_payment_notes: "",
       website_email: contractForm.emailWebsite,
       phone_number: contractForm.phone,
-      non_renew_sent_at: contractForm.nonRenewDate
-        ?.toISOString()
-        .split("T")[0] || null,
+      non_renew_sent_at:
+        contractForm.nonRenewDate?.toISOString().split("T")[0] || null,
       notes: contractForm.notes,
     };
 
@@ -279,7 +311,7 @@ const AddReminderScreen = () => {
           {
             text: "Go to Reminders",
             onPress: () => {
-              router.push('/(tabs)/reminder');
+              router.push("/(tabs)/reminder");
             },
           },
         ]);

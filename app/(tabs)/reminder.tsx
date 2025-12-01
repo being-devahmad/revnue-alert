@@ -20,6 +20,7 @@ import {
   Modal,
   Platform,
   RefreshControl,
+  ScrollView,
   StyleSheet,
   Text,
   TextInput,
@@ -30,9 +31,15 @@ import {
 const ReminderScreen: React.FC = () => {
   const router = useRouter();
   const { filter } = useLocalSearchParams();
+  console.log('filter-->', filter)
+  useEffect(() => {
+    if (filter) {
+      setSelectedFilter(filter.toString());
+    }
+  }, [filter]);
 
   // ============ STATE MANAGEMENT ============
-  const [selectedFilter, setSelectedFilter] = useState(filter || "all");
+  const [selectedFilter, setSelectedFilter] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
 
@@ -59,7 +66,7 @@ const ReminderScreen: React.FC = () => {
       all: undefined,
       active: "active",
       expiring: "expiring",
-      disabled: "inactive",
+      inactive: "inactive",
       expired: "expired",
     };
     const filterStr = Array.isArray(filterValue) ? filterValue[0] : filterValue;
@@ -184,14 +191,14 @@ const ReminderScreen: React.FC = () => {
     },
     {
       id: "expiring",
-      label: "Soon",
+      label: "Expiring",
       count: expiringCount,
       icon: "alert-circle",
     },
-    { id: "disabled", label: "Off", count: disabledCount, icon: "ban" },
+    { id: "inactive", label: "Inactive", count: disabledCount, icon: "ban" },
     {
       id: "expired",
-      label: "Past",
+      label: "Expired",
       count: expiredCount,
       icon: "close-circle",
     },
@@ -395,7 +402,7 @@ const ReminderScreen: React.FC = () => {
         </View>
 
         {/* Renew Button for Expired */}
-        {daysLeft < 0 && (
+        {reminder?.auto_renew !== 1 && (
           <TouchableOpacity
             style={styles.renewButton}
             onPress={(e) => {
@@ -509,7 +516,11 @@ const ReminderScreen: React.FC = () => {
 
       {/* Quick Filters */}
       <View style={styles.filterContainer}>
-        <View style={styles.filterContent}>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.filterContent}
+        >
           {filters.map((filterItem) => (
             <TouchableOpacity
               key={filterItem.id}
@@ -527,8 +538,7 @@ const ReminderScreen: React.FC = () => {
               <Text
                 style={[
                   styles.filterChipText,
-                  selectedFilter === filterItem.id &&
-                    styles.filterChipTextActive,
+                  selectedFilter === filterItem.id && styles.filterChipTextActive,
                 ]}
               >
                 {filterItem.label}
@@ -543,7 +553,7 @@ const ReminderScreen: React.FC = () => {
                   style={[
                     styles.filterBadgeText,
                     selectedFilter === filterItem.id &&
-                      styles.filterBadgeTextActive,
+                    styles.filterBadgeTextActive,
                   ]}
                 >
                   {filterItem.count}
@@ -551,8 +561,9 @@ const ReminderScreen: React.FC = () => {
               </View>
             </TouchableOpacity>
           ))}
-        </View>
+        </ScrollView>
       </View>
+
 
       {/* Advanced Filters */}
       <Animated.View
@@ -787,7 +798,7 @@ const ReminderScreen: React.FC = () => {
                     style={[
                       styles.dropdownItemText,
                       paymentInterval === option &&
-                        styles.dropdownItemTextActive,
+                      styles.dropdownItemTextActive,
                     ]}
                   >
                     {option}
@@ -904,7 +915,9 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     gap: 8,
     alignItems: "center",
+    paddingRight: 20,
   },
+
   filterChip: {
     flexDirection: "row",
     alignItems: "center",

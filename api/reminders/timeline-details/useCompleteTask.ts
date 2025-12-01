@@ -1,5 +1,5 @@
-import axiosInstance from '@/utils/axios';
-import { useMutation } from '@tanstack/react-query';
+import axiosInstance from "@/utils/axios";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 export interface CompleteTaskResponse {
   status: boolean;
@@ -11,10 +11,12 @@ export interface CompleteTaskResponse {
   };
 }
 
-const completeTaskAPI = async (contractId: number): Promise<CompleteTaskResponse> => {
+const completeTaskAPI = async (
+  contractId: number
+): Promise<CompleteTaskResponse> => {
   try {
-    console.log('📤 Completing task...');
-    console.log('📋 Contract ID:', contractId);
+    console.log("📤 Completing task...");
+    console.log("📋 Contract ID:", contractId);
 
     const response = await axiosInstance.get<CompleteTaskResponse>(
       `/contracts/${contractId}/complete`
@@ -33,12 +35,12 @@ const completeTaskAPI = async (contractId: number): Promise<CompleteTaskResponse
       throw new Error("No data in response");
     }
 
-    console.log('✅ Task completed successfully!');
-    console.log('📊 Response:', response.data);
+    console.log("✅ Task completed successfully!");
+    console.log("📊 Response:", response.data);
 
     return response.data;
   } catch (error: any) {
-    console.error('❌ Error completing task:', {
+    console.error("❌ Error completing task:", {
       message: error.message,
       status: error.response?.status,
       data: error.response?.data,
@@ -49,21 +51,25 @@ const completeTaskAPI = async (contractId: number): Promise<CompleteTaskResponse
 };
 
 export const useCompleteTask = () => {
+  const queryClient = useQueryClient();
   const mutation = useMutation({
     mutationFn: completeTaskAPI,
     onMutate: () => {
-      console.log('🔄 Mutation started: Completing task...');
+      console.log("🔄 Mutation started: Completing task...");
     },
     onSuccess: (data) => {
-      console.log('🎉 Mutation success:', data);
+      console.log("🎉 Mutation success:", data);
+
+      // 🔥 Invalidate all timeline details queries
+      queryClient.invalidateQueries({ queryKey: ["timelineDetails"] });
     },
     onError: (error: any) => {
-      console.error('💥 Mutation error:', error.message);
+      console.error("💥 Mutation error:", error.message);
     },
   });
 
   // Debug logging
-  console.log('🎯 useCompleteTask Hook State:', {
+  console.log("🎯 useCompleteTask Hook State:", {
     isPending: mutation.isPending,
     isSuccess: mutation.isSuccess,
     isError: mutation.isError,

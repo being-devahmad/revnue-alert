@@ -94,9 +94,6 @@ export const useFetchContractById = (contractId: number | string | undefined) =>
     enabled: !!contractId,
     staleTime: 5 * 60 * 1000, // 5 minutes
     retry: 3,
-    onError: (error: any) => {
-      console.error('💥 Query error:', error.message);
-    },
   });
 
   console.log('🎯 useFetchContractById Hook State:', {

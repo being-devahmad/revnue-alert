@@ -95,6 +95,7 @@ const ReminderDetailsTab: React.FC<ReminderDetailsTabProps> = ({
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
       <View style={styles.detailsContainer}>
         {/* Header */}
+        {/* Header */}
         <View style={styles.detailsHeader}>
           <View style={styles.headerLeft}>
             <Ionicons name="notifications" size={24} color="#9A1B2B" />
@@ -103,25 +104,38 @@ const ReminderDetailsTab: React.FC<ReminderDetailsTabProps> = ({
               <Text style={styles.contractName}>{contract.name}</Text>
             </View>
           </View>
-          {onResendIcal && (
-            <TouchableOpacity
-              style={styles.editButton}
-              onPress={() => onResendIcal(contract.id)}
-            >
-              <Ionicons name="send-outline" size={16} color="#fff" />
-              <Text style={styles.editButtonText}>
-                {isResendingIcal ? "Resending..." : "Resend iCal"}
-              </Text>
-            </TouchableOpacity>
 
+          <View style={{gap:5}}>
+            {onResendIcal && (
+              <TouchableOpacity
+                style={styles.actionButton}
+                onPress={() => onResendIcal(contract?.reminders[0]?.id)}
+              >
+                <Ionicons name="send-outline" size={16} color="#fff" />
+                <Text style={styles.actionButtonText}>
+                  {isResendingIcal ? "Resending..." : "Resend iCal"}
+                </Text>
+              </TouchableOpacity>
+            )}
 
-          )}
+            {onEdit && (
+              <TouchableOpacity
+                style={[styles.actionButton]} // optional: blue color
+                onPress={onEdit}
+              >
+                <Ionicons name="pencil-outline" size={16} color="#fff" />
+                <Text style={styles.actionButtonText}>Edit Reminder</Text>
+              </TouchableOpacity>
+            )}
+          </View>
+
         </View>
+
 
         {/* Reminders List or Empty State */}
         {reminders && reminders.length > 0 ? (
           <>
-            {reminders.map((reminder, index) => (
+            {reminders && reminders.map((reminder, index) => (
               <View key={reminder.id || index} style={styles.reminderCard}>
                 {/* Reminder Header */}
                 <View style={styles.reminderHeader}>
@@ -357,7 +371,7 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: "#6B7280",
     marginTop: 2,
-    width: "80%",
+    width: "70%",
     flexWrap: "wrap"
   },
   editButton: {
@@ -374,6 +388,25 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     color: "#FFFFFF",
   },
+
+  actionButton: {
+    flexDirection: 'row',
+    alignItems: 'center', // centers icon & text vertically
+    justifyContent: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 8,
+    backgroundColor: '#9A1B2B',
+    gap: 6, // space between icon & text
+    minWidth: 100,
+  },
+  actionButtonText: {
+    color: '#fff',
+    fontSize: 13,
+    fontWeight: '600',
+    textAlign: 'center',
+  },
+
 
   // Contract Overview Card Styles
   contractOverviewCard: {

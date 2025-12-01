@@ -1,6 +1,6 @@
 import { Ionicons } from "@expo/vector-icons"
 import { useEffect } from "react"
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native"
+import { Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native"
 
 export const DropdownField = ({
     label,
@@ -21,14 +21,11 @@ export const DropdownField = ({
     required?: boolean
     placeholder?: string
 }) => {
-
-
     useEffect(() => {
         if (value === "" && showDropdown) {
-            onToggle(); // or explicitly call to close
+            onToggle();
         }
     }, [value]);
-
 
     return (
         <View style={[styles.fieldContainer, showDropdown && styles.fieldContainerActive]}>
@@ -51,7 +48,7 @@ export const DropdownField = ({
                         style={styles.clearButton}
                         onPress={(e) => {
                             e.stopPropagation();
-                            onSelect(""); 
+                            onSelect("");
                         }}
                     >
                         <Ionicons name="close-circle" size={20} color="#EF4444" />
@@ -60,7 +57,14 @@ export const DropdownField = ({
             </View>
             {showDropdown && (
                 <View style={styles.dropdownContainer}>
-                    <ScrollView style={styles.dropdownScroll} nestedScrollEnabled>
+                    {/* <CHANGE> Android fix: Use scrollEnabled, keyboardShouldPersistTaps, and set explicit dimensions */}
+                    <ScrollView 
+                        style={[styles.dropdownScroll , Platform.OS === 'ios' && {maxHeight: 180}]}
+                        nestedScrollEnabled
+                        scrollEnabled={options.length > 5}
+                        keyboardShouldPersistTaps="handled"
+                        showsVerticalScrollIndicator={Platform.OS === 'ios'}
+                    >
                         {options.map((option, index) => (
                             <TouchableOpacity
                                 key={index}
@@ -97,7 +101,6 @@ const styles = StyleSheet.create({
     required: {
         color: '#EF4444',
     },
-    // ADDED: Wrapper for dropdown button and clear button
     dropdownButtonWrapper: {
         flexDirection: "row",
         alignItems: "center",
@@ -119,11 +122,9 @@ const styles = StyleSheet.create({
         fontSize: 14,
         color: "#111827",
     },
-    // ADDED: Placeholder style
     dropdownPlaceholder: {
         color: "#9CA3AF",
     },
-    // ADDED: Clear button style
     clearButton: {
         padding: 4,
     },
@@ -143,10 +144,12 @@ const styles = StyleSheet.create({
         shadowRadius: 12,
         elevation: 10,
         zIndex: 10000,
+        // <CHANGE> Added overflow hidden for Android
         overflow: "hidden",
     },
     dropdownScroll: {
-        maxHeight: 180,
+        // <CHANGE> Set explicit max height and ensure scrolling works on Android
+        maxHeight: "auto",
     },
     dropdownItem: {
         flexDirection: "row",
@@ -167,23 +170,5 @@ const styles = StyleSheet.create({
     dropdownItemTextSelected: {
         fontWeight: "600",
         color: "#9A1B2B",
-    },
-
-    dropdownMenu: {
-        position: "absolute",
-        top: 60, // Adjusted to position below the dropdown button (label + button height)
-        left: 0,
-        right: 0,
-        backgroundColor: "white",
-        borderRadius: 8,
-        borderWidth: 1,
-        borderColor: "#E5E7EB",
-        shadowColor: "#000",
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.15,
-        shadowRadius: 6,
-        elevation: 5,
-        zIndex: 6000, // Extremely high zIndex to ensure it's above all other elements
-        maxHeight: 180, // Constrain height
     },
 })

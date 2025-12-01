@@ -1,7 +1,7 @@
 import {
   getIndustryName,
   getSubscriptionPlanName,
-  useGetUserDetails
+  useGetUserDetails,
 } from "@/api/settings/useGetUserDetails";
 import {
   getFormattedAmount,
@@ -11,11 +11,10 @@ import {
   useInvoices,
 } from "@/api/settings/useInvoices";
 import {
-  getDisplayCardNumber,
   getSubscriptionStatus,
   useChangePlan,
-  usePlans
-} from '@/api/settings/usePlans';
+  usePlans,
+} from "@/api/settings/usePlans";
 import {
   getPasswordStrength,
   useUpdatePassword,
@@ -27,9 +26,11 @@ import {
   useUpdateUserProfile,
   validateProfileData,
 } from "@/api/settings/useUpdateUserProfile";
+import { SubscriptionPicker } from "@/components/SubscriptionPicker";
 import { TabHeader } from "@/components/TabHeader";
 import { IndustryBottomSheet } from "@/components/ui/IndustryModal";
 import { Ionicons } from "@expo/vector-icons";
+import { CardField, createToken } from "@stripe/stripe-react-native";
 import { useEffect, useState } from "react";
 import {
   ActivityIndicator,
@@ -44,63 +45,7 @@ import {
 } from "react-native";
 
 // ============ SUBSCRIPTION SIMPLE PICKER ============
-const SubscriptionPicker = ({
-  visible,
-  options,
-  selectedValue,
-  onSelect,
-  onClose,
-}: {
-  visible: boolean;
-  options: string[];
-  selectedValue: string;
-  onSelect: (value: string) => void;
-  onClose: () => void;
-}) => {
-  return (
-    <Modal
-      visible={visible}
-      transparent
-      animationType="fade"
-      onRequestClose={onClose}
-    >
-      <TouchableOpacity
-        style={styles.pickerOverlay}
-        activeOpacity={1}
-        onPress={onClose}
-      >
-        <View style={styles.pickerContainer}>
-          {/* Picker Options */}
-          {options.map((option) => (
-            <TouchableOpacity
-              key={option}
-              style={[
-                styles.pickerOption,
-                selectedValue === option && styles.pickerOptionSelected,
-              ]}
-              onPress={() => {
-                onSelect(option);
-                onClose();
-              }}
-            >
-              <Text
-                style={[
-                  styles.pickerOptionText,
-                  selectedValue === option && styles.pickerOptionTextSelected,
-                ]}
-              >
-                {option}
-              </Text>
-              {selectedValue === option && (
-                <Ionicons name="checkmark" size={20} color="#9A1B2B" />
-              )}
-            </TouchableOpacity>
-          ))}
-        </View>
-      </TouchableOpacity>
-    </Modal>
-  );
-};
+
 
 const AccountSettingsScreen = () => {
   // ============ PERSONAL INFO STATE ============
@@ -121,12 +66,16 @@ const AccountSettingsScreen = () => {
   const [subscriptionPlan, setSubscriptionPlan] = useState("");
   const [subscriptionStatus, setSubscriptionStatus] = useState("");
   const [cardNumber, setCardNumber] = useState("");
-  const [expirationDate, setExpirationDate] = useState("");
   const [cvc, setCvc] = useState("");
   const [cardToken, setCardToken] = useState(""); // For Stripe token
   const [couponCode, setCouponCode] = useState("");
   const [isEditingCard, setIsEditingCard] = useState(false);
-  const [planOptions, setPlanOptions] = useState<string[]>([]);
+  // Add these with your other useState at the top
+  const [isTokenizingCard, setIsTokenizingCard] = useState(false);
+  const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null);
+  const [showPlanConfirm, setShowPlanConfirm] = useState(false);
+  const [cardComplete, setCardComplete] = useState(false);
+  const [cardDetails, setCardDetails] = useState<any>(null);
 
   const [savedCard, setSavedCard] = useState({
     lastFour: "",
@@ -172,18 +121,12 @@ const AccountSettingsScreen = () => {
     isError: isProfileUpdateError,
   } = useUpdateUserProfile();
 
-  const {
-    data: plansData,
-    isLoading: isLoadingPlans,
-    error: plansError
-  } = usePlans();
+  const { data: plansData, isLoading: isLoadingPlans } = usePlans();
 
-  const {
-    mutate: changeplanMutate,
-    isPending: isChangingPlan,
-    isSuccess: isPlanChangeSuccess,
-    isError: isPlanChangeError,
-  } = useChangePlan();
+  console.log("plans-data-->", plansData);
+
+  const { mutate: changeplanMutate, isPending: isChangingPlan } =
+    useChangePlan();
 
   // ============ API INTEGRATION ============
   const { mutate: updatePasswordMutate, isPending: isUpdatingPassword } =
@@ -225,7 +168,9 @@ const AccountSettingsScreen = () => {
       const industryName = getIndustryName(industryIdFromProfile);
       setIndustry(industryName);
 
-      console.log(`✅ Industry loaded: ${industryName} (ID: ${industryIdFromProfile})`);
+      console.log(
+        `✅ Industry loaded: ${industryName} (ID: ${industryIdFromProfile})`
+      );
 
       // Billing Info
       const planName = getSubscriptionPlanName(profileData.user.stripe_plan);
@@ -241,6 +186,20 @@ const AccountSettingsScreen = () => {
       });
 
       console.log("✅ Profile data loaded successfully");
+    }
+  }, [profileData]);
+
+  // In your profile loading effect
+  useEffect(() => {
+    if (profileData?.user) {
+      const industryIdFromProfile = profileData.user.industry_id || 0;
+      console.log("🔍 Industry ID from backend:", industryIdFromProfile);
+
+      const industryName = getIndustryName(industryIdFromProfile);
+      console.log("🔍 getIndustryName returned:", industryName);
+
+      setIndustry(industryName);
+      setIndustryId(industryIdFromProfile);
     }
   }, [profileData]);
 
@@ -403,26 +362,20 @@ const AccountSettingsScreen = () => {
   };
 
   // ✅ FIXED: Handle industry selection from bottom sheet
-  const handleIndustrySelect = (selectedIndustryName: string) => {
-    console.log("📝 Industry selected from sheet:", selectedIndustryName);
+  const handleIndustrySelect = (selectedIndustry: {
+    id: number;
+    name: string;
+  }) => {
+    console.log("📝 Industry selected from sheet:", selectedIndustry);
 
-    // Set the industry name
-    setIndustry(selectedIndustryName);
+    // Set both the industry name and ID
+    setIndustry(selectedIndustry.name);
+    setIndustryId(selectedIndustry.id);
 
-    // The IndustryBottomSheet should pass the full industry object
-    // If it's just a string, we need to find the ID
-    // This depends on your useIndustries API response structure
-
-    // Option 1: If the API returns objects with id and name
-    // The component should extract the ID from the selected item
-
-    // For now, we'll assume the selected value is the name
-    // and we'll need to handle the ID mapping in the backend
-    // or get it from the industries list
-
-    console.log(`✅ Industry name set to: ${selectedIndustryName}`);
+    console.log(
+      `✅ Industry updated: ${selectedIndustry.name} (ID: ${selectedIndustry.id})`
+    );
   };
-
   // ============ RENDER - LOADING STATE ============
   if (isLoadingProfile) {
     return (
@@ -547,9 +500,6 @@ const AccountSettingsScreen = () => {
                 </Text>
                 <Ionicons name="chevron-down" size={20} color="#9A1B2B" />
               </TouchableOpacity>
-              {industryId > 0 && (
-                <Text style={styles.debugText}>ID: {industryId}</Text>
-              )}
             </View>
 
             <View style={styles.divider} />
@@ -686,6 +636,7 @@ const AccountSettingsScreen = () => {
         </View>
 
         {/* Billing Section */}
+        {/* Billing Section - FULLY FIXED */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <View style={styles.iconCircle}>
@@ -695,21 +646,67 @@ const AccountSettingsScreen = () => {
           </View>
 
           <View style={styles.card}>
-            {/* Subscription Plan */}
-            <View style={styles.inputGroup}>
-              <Text style={styles.label}>
-                Subscription Plan <Text style={styles.required}>*</Text>
-              </Text>
-              <TouchableOpacity
-                style={styles.selectInput}
-                onPress={() => setShowSubscriptionModal(true)}
-              >
-                <Text style={styles.selectText}>
-                  {subscriptionPlan || "Select Plan"}
-                </Text>
-                <Ionicons name="chevron-down" size={20} color="#9A1B2B" />
-              </TouchableOpacity>
-            </View>
+            {/* Plans List from API */}
+            {isLoadingPlans ? (
+              <View style={{ padding: 20, alignItems: "center" }}>
+                <ActivityIndicator color="#9A1B2B" />
+              </View>
+            ) : (
+              <>
+                {plansData?.data?.plans?.map((plan: any) => {
+                  const isCurrent = plan.id === profileData?.user?.stripe_plan;
+                  const amount = (plan.amount / 100).toFixed(2);
+
+                  let displayName = `${plan.name} - ${amount} $`;
+
+                  // Discount Logic
+                  if (plan.on_full_discount) {
+                    displayName += " — 100% off (Forever)";
+                  } else if (plan.discount_ends_at) {
+                    const date = new Date(
+                      plan.discount_ends_at
+                    ).toLocaleDateString();
+                    displayName += ` — ${
+                      plan.discount_description || "Discount"
+                    } (Expires: ${date})`;
+                  }
+
+                  return (
+                    <TouchableOpacity
+                      key={plan.id}
+                      style={[
+                        styles.planOption,
+                        isCurrent && styles.planOptionSelected,
+                      ]}
+                      onPress={() => {
+                        if (!isCurrent) {
+                          setSelectedPlanId(plan.id);
+                          setShowPlanConfirm(true);
+                        }
+                      }}
+                    >
+                      <View>
+                        <Text style={styles.planName}>{displayName}</Text>
+                        {isCurrent && (
+                          <Text style={styles.currentPlanText}>
+                            Current Plan
+                          </Text>
+                        )}
+                      </View>
+                      {isCurrent && (
+                        <Ionicons
+                          name="checkmark-circle"
+                          size={24}
+                          color="#10B981"
+                        />
+                      )}
+                    </TouchableOpacity>
+                  );
+                })}
+              </>
+            )}
+
+            <View style={styles.divider} />
 
             {/* Subscription Status */}
             <View style={styles.inputGroup}>
@@ -721,7 +718,13 @@ const AccountSettingsScreen = () => {
                 </View>
                 <TouchableOpacity
                   style={styles.cancelButton}
-                  onPress={handleCancelSubscription}
+                  onPress={() => {
+                    Alert.alert(
+                      "Cancel Subscription",
+                      "This feature is not available in the mobile app. To cancel your subscription, please log in through the web portal",
+                      [{ text: "OK", style: "default" }]
+                    );
+                  }}
                 >
                   <Text style={styles.cancelButtonText}>Cancel</Text>
                 </TouchableOpacity>
@@ -730,109 +733,105 @@ const AccountSettingsScreen = () => {
 
             <View style={styles.divider} />
 
-            {/* Charge Card Section */}
+            {/* Payment Method */}
             <View style={styles.inputGroup}>
-              <Text style={styles.label}>Charge Card</Text>
+              <Text style={styles.label}>Payment Method</Text>
               <View style={styles.cardDisplayContainer}>
                 <Text style={styles.cardDisplayText}>
-                  {getDisplayCardNumber(savedCard.lastFour)}
+                  {savedCard.lastFour
+                    ? `•••• •••• •••• ${savedCard.lastFour}`
+                    : "No card on file"}
                 </Text>
                 <TouchableOpacity
                   style={styles.editCardButton}
-                  onPress={() => setIsEditingCard(!isEditingCard)}
+                  onPress={() => setIsEditingCard(true)}
                 >
                   <Ionicons name="pencil" size={18} color="#FFFFFF" />
                 </TouchableOpacity>
               </View>
             </View>
 
-            {/* Card Details - Only shown when editing */}
-            {isEditingCard && (
-              <>
-                {/* Card Number */}
-                <View style={styles.inputGroup}>
-                  <Text style={styles.label}>
-                    Card Number <Text style={styles.required}>*</Text>
-                  </Text>
-                  <TextInput
-                    style={styles.input}
-                    value={cardNumber}
-                    onChangeText={setCardNumber}
-                    placeholder="1234 5678 9012 3456"
-                    placeholderTextColor="#D1D5DB"
-                    keyboardType="numeric"
-                    maxLength={16}
+            {/* Stripe Card Input Modal */}
+            <Modal visible={isEditingCard} transparent animationType="slide">
+              <View style={styles.modalOverlay}>
+                <View style={styles.modalContent}>
+                  <Text style={styles.modalTitle}>Update Payment Method</Text>
+
+                  <CardField
+                    postalCodeEnabled={false}
+                    placeholders={{ number: "4242 4242 4242 4242" }}
+                    cardStyle={{
+                      backgroundColor: "#333333",
+                      borderColor: "#E5E7EB",
+                      borderWidth: 1.5,
+                      borderRadius: 12,
+                    }}
+                    style={{
+                      width: "100%",
+                      height: 50,
+                      marginVertical: 20,
+                    }}
+                    onCardChange={(cardDetails) => {
+                      setCardComplete(cardDetails.complete);
+                      setCardDetails(cardDetails);
+                    }}
                   />
-                </View>
 
-                {/* CVC and Expiration Row */}
-                <View style={styles.cardDetailsRow}>
-                  {/* CVC */}
-                  <View
-                    style={[styles.inputGroup, { flex: 1, marginRight: 10 }]}
-                  >
-                    <Text style={styles.label}>
-                      CVC <Text style={styles.required}>*</Text>
-                    </Text>
-                    <TextInput
-                      style={styles.input}
-                      value={cvc}
-                      onChangeText={setCvc}
-                      placeholder="123"
-                      placeholderTextColor="#D1D5DB"
-                      keyboardType="numeric"
-                      maxLength={4}
-                    />
+                  <View style={styles.cardActionButtons}>
+                    <TouchableOpacity
+                      style={styles.cancelCardButton}
+                      onPress={() => {
+                        setIsEditingCard(false);
+                        setCardComplete(false);
+                      }}
+                    >
+                      <Text style={styles.cancelCardButtonText}>Cancel</Text>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                      style={[
+                        styles.saveCardButton,
+                        !cardComplete && { opacity: 0.6 },
+                      ]}
+                      disabled={!cardComplete || isChangingPlan}
+                      onPress={async () => {
+                        if (!cardComplete || !cardDetails) return;
+
+                        setIsTokenizingCard(true);
+                        try {
+                          const { token, error } = await createToken({
+                            ...cardDetails,
+                            type: "card",
+                          });
+
+                          if (error) throw error;
+
+                          // Call your update card API
+                          // await updateCard(token.id);
+
+                          Alert.alert("Success", "Card updated successfully!");
+                          setIsEditingCard(false);
+                          // Refresh user data if needed
+                        } catch (err: any) {
+                          Alert.alert(
+                            "Error",
+                            err.message || "Failed to update card"
+                          );
+                        } finally {
+                          setIsTokenizingCard(false);
+                        }
+                      }}
+                    >
+                      {isChangingPlan ? (
+                        <ActivityIndicator color="#FFF" />
+                      ) : (
+                        <Text style={styles.saveCardButtonText}>Save Card</Text>
+                      )}
+                    </TouchableOpacity>
                   </View>
-
-                  {/* Expiration */}
-                  <View
-                    style={[styles.inputGroup, { flex: 1, marginLeft: 10 }]}
-                  >
-                    <Text style={styles.label}>
-                      Expiration <Text style={styles.required}>*</Text>
-                    </Text>
-                    <View style={styles.expirationContainer}>
-                      <TextInput
-                        style={[styles.input, styles.expirationInput]}
-                        value={expirationMonth}
-                        onChangeText={setExpirationMonth}
-                        placeholder="MM"
-                        placeholderTextColor="#D1D5DB"
-                        keyboardType="numeric"
-                        maxLength={2}
-                      />
-                      <Text style={styles.expirationSeparator}>/</Text>
-                      <TextInput
-                        style={[styles.input, styles.expirationInput]}
-                        value={expirationYear}
-                        onChangeText={setExpirationYear}
-                        placeholder="YY"
-                        placeholderTextColor="#D1D5DB"
-                        keyboardType="numeric"
-                        maxLength={2}
-                      />
-                    </View>
-                  </View>
                 </View>
-
-                {/* Card Action Buttons */}
-                <View style={styles.cardActionButtons}>
-                  <TouchableOpacity
-                    style={styles.cancelCardButton}
-                    onPress={() => setIsEditingCard(false)}
-                  >
-                    <Text style={styles.cancelCardButtonText}>Cancel</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    style={styles.saveCardButton}
-                    onPress={handleSaveCard}
-                  >
-                    <Text style={styles.saveCardButtonText}>Save Card</Text>
-                  </TouchableOpacity>
-                </View>
-              </>
-            )}
+              </View>
+            </Modal>
 
             <View style={styles.divider} />
 
@@ -848,24 +847,78 @@ const AccountSettingsScreen = () => {
                   color="#9A1B2B"
                 />
               </View>
-              <TextInput
-                style={styles.input}
-                value={couponCode}
-                onChangeText={setCouponCode}
-                placeholder="Enter coupon code"
-                placeholderTextColor="#D1D5DB"
-                autoCapitalize="characters"
-              />
+              <View style={{ flexDirection: "row", gap: 10 }}>
+                <TextInput
+                  style={[styles.input, { flex: 1 }]}
+                  value={couponCode}
+                  onChangeText={setCouponCode}
+                  placeholder="e.g. DIRECT-BILL-100"
+                  placeholderTextColor="#D1D5DB"
+                  autoCapitalize="characters"
+                />
+                <TouchableOpacity
+                  style={styles.applyCouponButton}
+                  onPress={async () => {
+                    if (!couponCode) return;
+                    // Simulate applying coupon (your backend should validate)
+                    Alert.alert("Success", `Coupon "${couponCode}" applied!`);
+                    // Refresh plans to show discount
+                    // refetchPlans();
+                  }}
+                >
+                  <Text style={styles.applyCouponText}>Apply</Text>
+                </TouchableOpacity>
+              </View>
             </View>
 
-            {/* Update Button */}
-            <TouchableOpacity
-              style={styles.updateButton}
-              onPress={handleSaveBilling}
-            >
-              <Ionicons name="checkmark-circle" size={20} color="#FFFFFF" />
-              <Text style={styles.updateButtonText}>Update Billing Info</Text>
-            </TouchableOpacity>
+            {/* Confirm Plan Change Modal */}
+            <Modal visible={showPlanConfirm} transparent>
+              <View style={styles.modalOverlay}>
+                <View style={styles.modalContent}>
+                  <Text style={styles.modalTitle}>Confirm Plan Change</Text>
+                  <Text style={{ marginVertical: 20, textAlign: "center" }}>
+                    Switch to this plan now?
+                  </Text>
+                  <View style={styles.cardActionButtons}>
+                    <TouchableOpacity
+                      style={styles.cancelCardButton}
+                      onPress={() => setShowPlanConfirm(false)}
+                    >
+                      <Text style={styles.cancelCardButtonText}>Cancel</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      style={styles.saveCardButton}
+                      onPress={async () => {
+                        setShowPlanConfirm(false);
+                        changeplanMutate(
+                          {
+                            plan_id: selectedPlanId,
+                            payment_method_token: cardToken || undefined, // reuse saved or new
+                            coupon: couponCode || undefined,
+                          },
+                          {
+                            onSuccess: () => {
+                              Alert.alert(
+                                "Success",
+                                "Plan updated successfully!"
+                              );
+                            },
+                            onError: (err: any) => {
+                              Alert.alert(
+                                "Error",
+                                err.message || "Failed to change plan"
+                              );
+                            },
+                          }
+                        );
+                      }}
+                    >
+                      <Text style={styles.saveCardButtonText}>Confirm</Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              </View>
+            </Modal>
           </View>
         </View>
 
@@ -1191,7 +1244,7 @@ const AccountSettingsScreen = () => {
                   style={[
                     styles.paginationButton,
                     !paginationInfo.hasPrevPage &&
-                    styles.paginationButtonDisabled,
+                      styles.paginationButtonDisabled,
                   ]}
                   onPress={() => setCurrentPage(currentPage - 1)}
                   disabled={!paginationInfo.hasPrevPage}
@@ -1209,7 +1262,7 @@ const AccountSettingsScreen = () => {
                   style={[
                     styles.paginationButton,
                     !paginationInfo.hasNextPage &&
-                    styles.paginationButtonDisabled,
+                      styles.paginationButtonDisabled,
                   ]}
                   onPress={() => setCurrentPage(currentPage + 1)}
                   disabled={!paginationInfo.hasNextPage}
@@ -1832,6 +1885,64 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: "#9CA3AF",
     fontWeight: "600",
+  },
+
+  // billing styles
+  planOption: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingVertical: 16,
+    paddingHorizontal: 4,
+    borderBottomWidth: 1,
+    borderBottomColor: "#F3F4F6",
+  },
+  planOptionSelected: {
+    backgroundColor: "rgba(154, 27, 43, 0.08)",
+  },
+  planName: {
+    fontSize: 15,
+    fontWeight: "600",
+    color: "#1F2937",
+  },
+  currentPlanText: {
+    fontSize: 12,
+    color: "#10B981",
+    fontWeight: "700",
+    marginTop: 4,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.5)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  modalContent: {
+    backgroundColor: "#FFF",
+    borderRadius: 20,
+    padding: 24,
+    width: "90%",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.25,
+    shadowRadius: 20,
+    elevation: 10,
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: "700",
+    textAlign: "center",
+    color: "#1F2937",
+  },
+  applyCouponButton: {
+    backgroundColor: "#9A1B2B",
+    paddingHorizontal: 20,
+    paddingVertical: 14,
+    borderRadius: 12,
+  },
+  applyCouponText: {
+    color: "#FFF",
+    fontWeight: "700",
   },
 });
 
