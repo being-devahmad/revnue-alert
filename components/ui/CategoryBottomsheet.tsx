@@ -29,13 +29,15 @@ interface CategoryItem {
 export const CategoryBottomSheet = ({
   visible,
   selectedValue,
+  setSelectedCategory,
   onSelect,
   onClose,
   title,
 }: {
   visible: boolean;
-  selectedValue: string;  // Now receives the NAME for display
-  onSelect: (categoryId: string) => void;  // Passes the ID
+  selectedValue: string;  
+  setSelectedCategory: (categoryName: string)=> void
+  onSelect: (categoryId: string) => void; 
   onClose: () => void;
   title: string;
 }) => {
@@ -131,12 +133,13 @@ export const CategoryBottomSheet = ({
   };
 
   // ✅ Pass the ID to parent
-  const handleSelect = (categoryId: string) => {
-    console.log("✅ Selected category ID:", categoryId);
-    onSelect(categoryId);  // ← Pass ID
-    setSearchQuery("");
-    onClose();
-  };
+const handleSelect = (category: CategoryItem) => {
+  onSelect(category?.id);      
+  setSelectedCategory(category?.name);   
+  setSearchQuery("");
+  onClose();
+};
+
 
   const handleClearSearch = () => {
     setSearchQuery("");
@@ -257,7 +260,7 @@ export const CategoryBottomSheet = ({
                     styles.bottomSheetOption,
                     selectedValue === item.name && styles.bottomSheetOptionSelected,  // ← Compare NAME
                   ]}
-                  onPress={() => handleSelect(item.id)}  // ← Pass ID
+                  onPress={() => handleSelect(item)}  // ← Pass ID
                 >
                   <Text
                     style={[

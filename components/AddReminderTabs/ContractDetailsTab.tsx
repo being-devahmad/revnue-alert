@@ -1,16 +1,13 @@
 "use client";
 
-import {
-  flattenCategories,
-  getSortedCategories,
-  useCategories
-} from "@/api/addReminder/useGetCategories";
+import { useCategories } from "@/api/addReminder/useGetCategories";
 import { useGetEnterpriseAccounts } from "@/api/reminders/timeline-details/useGetEnterpriseAccounts";
 import { Ionicons } from "@expo/vector-icons";
 import DateTimePicker from "@react-native-community/datetimepicker";
-import { Alert, useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import {
   ActivityIndicator,
+  Alert,
   ScrollView,
   StyleSheet,
   Switch,
@@ -97,67 +94,10 @@ export const ContractDetails: React.FC<ContractDetailsProps> = ({
   console.log("contractForm ======>", contractForm);
 
   // ============ CATEGORIES STATE ============
-  const [categories, setCategories] = useState<{ id: string; name: string }[]>(
-    []
-  );
-  const [selectedCategoryName, setSelectedCategoryName] = useState<string>("");
+  const [selectedCategory, setSelectedCategory] = useState<string>("");
 
   // Fetch categories using the hook
-  const { data } = useCategories();
-
-  // ============ PROCESS CATEGORIES WHEN DATA CHANGES ============
-  useEffect(() => {
-    console.log("\n🔄 ===== PROCESSING CATEGORIES IN ContractDetails =====");
-
-    if (!data?.pages || data.pages.length === 0) {
-      console.log("⚠️ No data pages available");
-      return;
-    }
-
-    // 1. Collect all categories from all pages
-    const allCategories: any[] = [];
-    data.pages.forEach((page) => {
-      if (page?.data?.categories) {
-        allCategories.push(...page.data.categories);
-      }
-    });
-
-    console.log("📊 Total categories collected:", allCategories.length);
-
-    if (allCategories.length === 0) {
-      console.log("⚠️ No categories found in pages");
-      return;
-    }
-
-    // 2. Flatten + Sort
-    const flattened = flattenCategories({ categories: allCategories });
-    const sortedNames = getSortedCategories(flattened);
-
-    // 3. Map to objects with id and name
-    const mappedCategories = sortedNames.map((name) => {
-      const cat = flattened.find((c: any) => c.name === name);
-      return {
-        id: String(cat?.id ?? ""),
-        name: cat?.name || name,
-      };
-    });
-
-    console.log("✅ Processed categories:", mappedCategories);
-    setCategories(mappedCategories);
-
-    // 4. If editing and category is already selected, set the name
-    if (contractForm?.category) {
-      const targetId = String(contractForm.category).trim();
-      const found = mappedCategories.find((c) => c.id === targetId);
-
-      if (found) {
-        setSelectedCategoryName(found.name);
-        console.log("✅ Category matched:", found.name, `(ID: ${targetId})`);
-      } else {
-        console.warn("⚠️ Category ID not found:", targetId);
-      }
-    }
-  }, [data]);
+  const { data: categories } = useCategories();
 
   const richTextRef = useRef<any>(null);
 
@@ -179,7 +119,7 @@ export const ContractDetails: React.FC<ContractDetailsProps> = ({
 
   // API Hooks
   const { data: accounts } = useGetEnterpriseAccounts();
-  console.log("accounts =====>", accounts);
+  console.log("accounts-->", accounts);
 
   const paymentIntervalOptions = [
     "Weekly",
@@ -230,32 +170,8 @@ export const ContractDetails: React.FC<ContractDetailsProps> = ({
     onContractChange(field, null);
   };
 
-  // ============ HANDLE CATEGORY SELECTION ============
-  const handleCategorySelect = (selectedCategoryId: string) => {
-    console.log("🎯 handleCategorySelect called with ID:", selectedCategoryId);
-    console.log("🔍 Looking in categories:", categories);
-
-    const categoryObj = categories.find(c => c.id === selectedCategoryId);
-
-    console.log("✅ Found category:", categoryObj);
-
-    if (categoryObj) {
-      console.log("📝 Setting name to:", categoryObj.name);
-      setSelectedCategoryName(categoryObj.name);
-      onContractChange("category", selectedCategoryId);
-      console.log("✅ State updated");
-    } else {
-      console.error("❌ Category not found in categories array");
-      console.error("All categories:", categories);
-    }
-
-    setShowCategoryModal(false);
-  };
-
   // ============ HANDLE ADD REMINDER TEMPLATE ============
   const handleAddReminderTemplate = () => {
-    console.log("\n🔄 ===== TEMPLATE GENERATION STARTED =====");
-
     const hasData =
       contractForm.reminderName?.trim() ||
       contractForm.accountNumber?.trim() ||
@@ -271,23 +187,32 @@ export const ContractDetails: React.FC<ContractDetailsProps> = ({
       return;
     }
 
-    const categoryName = selectedCategoryName || contractForm.category || "N/A";
+    const categoryName = selectedCategory || contractForm.category || "N/A";
     console.log("📋 Category Name:", categoryName);
 
-    const generatedNote = `<b>Reminder Name:</b> ${contractForm.reminderName?.trim() || "N/A"
-      }<br><b>Account Number:</b> ${contractForm.accountNumber?.trim() || "N/A"
-      }<br><b>Payment Amount:</b> ${contractForm.paymentAmount || "N/A"
-      }<br><b>Payment Interval:</b> ${contractForm.paymentInterval?.trim() || "N/A"
-      }<br><b>Expiration Date:</b> ${contractForm.expirationDate
+    const generatedNote = `<b>Reminder Name:</b> ${
+      contractForm.reminderName?.trim() || "N/A"
+    }<br><b>Account Number:</b> ${
+      contractForm.accountNumber?.trim() || "N/A"
+    }<br><b>Payment Amount:</b> ${
+      contractForm.paymentAmount || "N/A"
+    }<br><b>Payment Interval:</b> ${
+      contractForm.paymentInterval?.trim() || "N/A"
+    }<br><b>Expiration Date:</b> ${
+      contractForm.expirationDate
         ? contractForm.expirationDate.toISOString().split("T")[0]
         : "N/A"
-      }<br><b>Category:</b> ${categoryName}<br><b>Description:</b> ${contractForm.description?.trim() || "N/A"
-      }<br><b>Website / Email:</b> ${contractForm.emailWebsite?.trim() || "N/A"
-      }<br><b>Phone Number:</b> ${contractForm.phone?.trim() || "N/A"
-      }<br><b>Non-Renew Sent Date:</b> ${contractForm.nonRenewDate
+    }<br><b>Category:</b> ${categoryName}<br><b>Description:</b> ${
+      contractForm.description?.trim() || "N/A"
+    }<br><b>Website / Email:</b> ${
+      contractForm.emailWebsite?.trim() || "N/A"
+    }<br><b>Phone Number:</b> ${
+      contractForm.phone?.trim() || "N/A"
+    }<br><b>Non-Renew Sent Date:</b> ${
+      contractForm.nonRenewDate
         ? contractForm.nonRenewDate.toISOString().split("T")[0]
         : "N/A"
-      }<br>`;
+    }<br>`;
 
     console.log("📝 Generated Template:", generatedNote);
 
@@ -298,8 +223,8 @@ export const ContractDetails: React.FC<ContractDetailsProps> = ({
     const updatedNotes = hasExistingTemplate
       ? contractForm.notes.replace(templatePattern, generatedNote)
       : contractForm.notes
-        ? generatedNote + "<br><br>" + contractForm.notes
-        : generatedNote;
+      ? generatedNote + "<br><br>" + contractForm.notes
+      : generatedNote;
 
     console.log("✅ Updated Notes:", updatedNotes);
 
@@ -321,7 +246,10 @@ export const ContractDetails: React.FC<ContractDetailsProps> = ({
             richTextRef.current.setContentHTML(updatedNotes);
             console.log("✅ Successfully called setContentHTML");
           } else {
-            console.warn("❌ setContentHTML not found. Available methods:", Object.keys(richTextRef.current));
+            console.warn(
+              "❌ setContentHTML not found. Available methods:",
+              Object.keys(richTextRef.current)
+            );
           }
         } catch (error) {
           console.error("❌ Error calling setContentHTML:", error);
@@ -334,15 +262,20 @@ export const ContractDetails: React.FC<ContractDetailsProps> = ({
     console.log("✅ ===== TEMPLATE GENERATION COMPLETED =====\n");
   };
 
+  const handleSelectCategory = ()=>{
+    
+  }
+
   return (
     <>
       {/* Category Bottom Sheet Modal */}
       <CategoryBottomSheet
         visible={showCategoryModal}
-        selectedValue={selectedCategoryName}
-        onSelect={handleCategorySelect}
+        selectedValue={selectedCategory}
+        setSelectedCategory={setSelectedCategory}
+        onSelect={handleSelectCategory}
         onClose={() => setShowCategoryModal(false)}
-        title="Select Category"
+        title={selectedCategory ? selectedCategory : "Select Value"}
       />
 
       <ScrollView showsVerticalScrollIndicator={false}>
@@ -399,7 +332,7 @@ export const ContractDetails: React.FC<ContractDetailsProps> = ({
                 onPress={() => setShowCategoryModal(true)}
               >
                 <Text style={styles.selectText}>
-                  {selectedCategoryName || "Select Category"}
+                  {selectedCategory || "Select Category"}
                 </Text>
                 <Ionicons name="chevron-down" size={20} color="#9A1B2B" />
               </TouchableOpacity>
