@@ -253,28 +253,35 @@ export const ContractDetails: React.FC<ContractDetailsProps> = ({
     console.log("✅ ===== TEMPLATE GENERATION COMPLETED =====\n");
   };
 
-const handleSelectCategory = (categoryId: string) => {
-  const allCategories = flattenCategories(categories); // now always returns Category[]
-  const selectedCat = allCategories.find(
-    (cat: Category) => String(cat.id) === categoryId
-  );
+  const handleSelectCategory = (categoryId: string) => {
+    // Find the category name from the loaded data (optional, for display)
+    const allCategories = flattenCategories(categories);
+    const selectedCat = allCategories?.find((cat: any) => String(cat.id) === categoryId);
 
-  const categoryName = selectedCat?.name ?? "Unknown Category";
+    const categoryName = selectedCat?.name || "Unknown Category";
+
+    // Update local state (for display)
+    setSelectedCategory(categoryName);
+
+    // Update form state with the ID (this is what gets saved!)
+    onContractChange("category", categoryId);
+
+    // Optional: also store name if needed elsewhere
+    // setContractForm(prev => ({ ...prev, category: categoryId }));
+  };
 
 
-  setSelectedCategory(categoryName);                    // shown in UI
-  onContractChange("category", categoryId);            // saved ID
-};
-
-useEffect(() => {
-  if (!contractForm.category || !categories) return;
-
-  const all = flattenCategories(categories);
-  console.log('all---->', all)
-  const found = all.find((c: Category) => String(c.id) === contractForm.category);
-  console.log('found-->', found)
-  if (found) setSelectedCategory(found.name);
-}, [contractForm.category, categories]);
+  useEffect(() => {
+    if (contractForm.category && categories) {
+      const allCategories = flattenCategories(categories);
+      console.log('categories-->', categories)
+      const found = allCategories?.find((cat: any) => String(cat.id) === contractForm.category);
+      console.log('found-->', found)
+      if (found?.name) {
+        setSelectedCategory(found.name);
+      }
+    }
+  }, [contractForm.category, categories]);
 
 
   return (

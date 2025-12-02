@@ -75,6 +75,8 @@ useEffect(() => {
 }, [contract?.completed_at, contract?.completed_by]);
 
 
+    console.log('contract-details===?', contract);
+
   const handleEditReminder = () => {
     if (!contract) {
       console.warn('❌ No contract data for reminder edit');
@@ -88,6 +90,8 @@ useEffect(() => {
       params: {
         contractId: contract.id,
         contractName: contract.name,
+        categoryId: contract?.category?.id,
+        categotyName: contract?.category?.name
       },
     });
   };

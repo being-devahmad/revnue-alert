@@ -54,9 +54,10 @@ const EditReminder = () => {
     contractId,
     reminderId,
     contractName,
+    categoryId,
+    categoryName
   } = useLocalSearchParams();
 
-  console.log('contract-id-->', contractId)
 
     const { accountType} = useAuthStore();
     const isEnterprise = accountType === "enterprise";
@@ -115,7 +116,7 @@ const EditReminder = () => {
         reminderTo: "",
         reminderName: contractData.name || "",
         description: contractData.description || "",
-        category: contractData.category_id || "",
+        category: categoryId || "",
         deposits: "0.00",
         paymentAmount: String(contractData.amount || 0),
         paymentInterval: contractData.interval || "",
@@ -285,7 +286,7 @@ const EditReminder = () => {
     const contractPayload = {
       name: contractForm.reminderName,
       description: contractForm.description,
-      category_id: categoryMap[contractForm.category] || 1,
+      category_id: categoryMap[contractForm.category],
       started_at: contractForm.inceptionDate
         ?.toISOString()
         .split("T")[0] || "",
