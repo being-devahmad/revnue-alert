@@ -4,13 +4,6 @@ import {
   useGetUserDetails,
 } from "@/api/settings/useGetUserDetails";
 import {
-  getFormattedAmount,
-  getFormattedInvoiceData,
-  getPaginationInfo,
-  useDownloadInvoice,
-  useInvoices,
-} from "@/api/settings/useInvoices";
-import {
   getSubscriptionStatus,
   useChangePlan,
   usePlans,
@@ -26,6 +19,7 @@ import {
   useUpdateUserProfile,
   validateProfileData,
 } from "@/api/settings/useUpdateUserProfile";
+import { InvoicesSection } from "@/components/InvoiceSection";
 import { SubscriptionPicker } from "@/components/SubscriptionPicker";
 import { TabHeader } from "@/components/TabHeader";
 import { IndustryBottomSheet } from "@/components/ui/IndustryModal";
@@ -45,7 +39,6 @@ import {
 } from "react-native";
 
 // ============ SUBSCRIPTION SIMPLE PICKER ============
-
 
 const AccountSettingsScreen = () => {
   // ============ PERSONAL INFO STATE ============
@@ -94,15 +87,6 @@ const AccountSettingsScreen = () => {
 
   // ============ INVOICES STATE ============
   const [currentPage, setCurrentPage] = useState(1);
-  const {
-    data: invoicesData,
-    isLoading: isLoadingInvoices,
-    error: invoicesError,
-  } = useInvoices(currentPage);
-  const { mutate: downloadInvoiceMutate, isPending: isDownloading } =
-    useDownloadInvoice();
-  const [formattedInvoices, setFormattedInvoices] = useState<any[]>([]);
-  const [paginationInfo, setPaginationInfo] = useState<any>(null);
 
   // ============ MODAL STATES ============
   const [showIndustryModal, setShowIndustryModal] = useState(false);
@@ -218,23 +202,6 @@ const AccountSettingsScreen = () => {
     }
   }, [isProfileUpdateError]);
 
-  // Format invoices data
-  useEffect(() => {
-    if (invoicesData?.data?.invoices) {
-      console.log("📄 Formatting invoices data...");
-      const formatted = getFormattedInvoiceData(invoicesData.data.invoices);
-      setFormattedInvoices(formatted);
-
-      const pagination = getPaginationInfo(invoicesData.data.pagination);
-      setPaginationInfo(pagination);
-
-      console.log("✅ Invoices formatted:", {
-        count: formatted.length,
-        pagination,
-      });
-    }
-  }, [invoicesData]);
-
   // ============ SETTINGS DATA ============
   const subscriptionOptions = ["Free", "Basic", "Standard", "Enterprise"];
 
@@ -307,14 +274,6 @@ const AccountSettingsScreen = () => {
         { text: "Yes, Cancel", style: "destructive" },
       ]
     );
-  };
-
-  const handleDownloadInvoice = (invoiceId: string, downloadUrl: string) => {
-    if (!downloadUrl) {
-      Alert.alert("Error", "URL not available");
-      return;
-    }
-    downloadInvoiceMutate({ invoiceId, downloadUrl });
   };
 
   const handleChangePassword = async () => {
@@ -666,9 +625,8 @@ const AccountSettingsScreen = () => {
                     const date = new Date(
                       plan.discount_ends_at
                     ).toLocaleDateString();
-                    displayName += ` — ${
-                      plan.discount_description || "Discount"
-                    } (Expires: ${date})`;
+                    displayName += ` — ${plan.discount_description || "Discount"
+                      } (Expires: ${date})`;
                   }
 
                   return (
@@ -1120,160 +1078,10 @@ const AccountSettingsScreen = () => {
         </View>
 
         {/* Invoices Section */}
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <View style={styles.iconCircle}>
-              <Ionicons
-                name="document-text-outline"
-                size={20}
-                color="#FFFFFF"
-              />
-            </View>
-            <Text style={styles.sectionTitle}>Invoices</Text>
-            {paginationInfo && (
-              <Text style={styles.paginationBadge}>
-                {paginationInfo.totalInvoices}
-              </Text>
-            )}
-          </View>
-
-          <View style={styles.invoiceCard}>
-            {/* Loading State */}
-            {isLoadingInvoices && (
-              <View style={styles.loadingContainer}>
-                <ActivityIndicator size="large" color="#9A1B2B" />
-                <Text style={styles.loadingText}>Loading invoices...</Text>
-              </View>
-            )}
-
-            {/* Error State */}
-            {invoicesError && !isLoadingInvoices && (
-              <View style={styles.errorInvoiceContainer}>
-                <Ionicons name="alert-circle" size={24} color="#EF4444" />
-                <Text style={styles.errorInvoiceText}>
-                  {invoicesError.message || "Failed to load invoices"}
-                </Text>
-              </View>
-            )}
-
-            {/* Empty State */}
-            {!isLoadingInvoices &&
-              formattedInvoices.length === 0 &&
-              !invoicesError && (
-                <View style={styles.emptyInvoiceContainer}>
-                  <Ionicons name="document-outline" size={40} color="#D1D5DB" />
-                  <Text style={styles.emptyInvoiceText}>No invoices yet</Text>
-                  <Text style={styles.emptyInvoiceSubtext}>
-                    Your invoices will appear here once available
-                  </Text>
-                </View>
-              )}
-
-            {/* Invoices List */}
-            {!isLoadingInvoices &&
-              formattedInvoices.length > 0 &&
-              formattedInvoices.map((invoice, index) => (
-                <View key={invoice.id || index}>
-                  <View style={styles.invoiceItem}>
-                    <View style={styles.invoiceDetails}>
-                      <View style={styles.invoiceRow}>
-                        <Text style={styles.invoiceLabel}>Date:</Text>
-                        <Text style={styles.invoiceValue}>{invoice.date}</Text>
-                      </View>
-                      <View style={styles.invoiceRow}>
-                        <Text style={styles.invoiceLabel}>Subscription:</Text>
-                        <Text style={styles.invoiceValue}>
-                          {invoice.subscription}
-                        </Text>
-                      </View>
-                      <View style={styles.invoiceRow}>
-                        <Text style={styles.invoiceLabel}>Period Start:</Text>
-                        <Text style={styles.invoiceValue}>
-                          {invoice.periodStart}
-                        </Text>
-                      </View>
-                      <View style={styles.invoiceRow}>
-                        <Text style={styles.invoiceLabel}>Period End:</Text>
-                        <Text style={styles.invoiceValue}>
-                          {invoice.periodEnd}
-                        </Text>
-                      </View>
-                      <View style={styles.invoiceRow}>
-                        <Text style={styles.invoiceLabel}>Amount:</Text>
-                        <Text style={styles.invoiceAmount}>
-                          {getFormattedAmount(invoice.amount)}
-                        </Text>
-                      </View>
-                    </View>
-                    <TouchableOpacity
-                      style={[
-                        styles.downloadButton,
-                        isDownloading && styles.downloadButtonDisabled,
-                      ]}
-                      onPress={() =>
-                        handleDownloadInvoice(invoice.id, invoice.downloadUrl)
-                      }
-                      disabled={isDownloading}
-                    >
-                      {isDownloading ? (
-                        <ActivityIndicator color="#FFFFFF" size="small" />
-                      ) : (
-                        <>
-                          <Ionicons
-                            name="download-outline"
-                            size={18}
-                            color="#FFFFFF"
-                          />
-                          <Text style={styles.downloadButtonText}>
-                            Download
-                          </Text>
-                        </>
-                      )}
-                    </TouchableOpacity>
-                  </View>
-                  {index < formattedInvoices.length - 1 && (
-                    <View style={styles.invoiceDivider} />
-                  )}
-                </View>
-              ))}
-
-            {/* Pagination Controls */}
-            {paginationInfo && paginationInfo.totalPages > 1 && (
-              <View style={styles.paginationContainer}>
-                <TouchableOpacity
-                  style={[
-                    styles.paginationButton,
-                    !paginationInfo.hasPrevPage &&
-                      styles.paginationButtonDisabled,
-                  ]}
-                  onPress={() => setCurrentPage(currentPage - 1)}
-                  disabled={!paginationInfo.hasPrevPage}
-                >
-                  <Ionicons name="chevron-back" size={20} color="#9A1B2B" />
-                  <Text style={styles.paginationButtonText}>Previous</Text>
-                </TouchableOpacity>
-
-                <Text style={styles.paginationText}>
-                  Page {paginationInfo.currentPage} of{" "}
-                  {paginationInfo.totalPages}
-                </Text>
-
-                <TouchableOpacity
-                  style={[
-                    styles.paginationButton,
-                    !paginationInfo.hasNextPage &&
-                      styles.paginationButtonDisabled,
-                  ]}
-                  onPress={() => setCurrentPage(currentPage + 1)}
-                  disabled={!paginationInfo.hasNextPage}
-                >
-                  <Text style={styles.paginationButtonText}>Next</Text>
-                  <Ionicons name="chevron-forward" size={20} color="#9A1B2B" />
-                </TouchableOpacity>
-              </View>
-            )}
-          </View>
-        </View>
+        <InvoicesSection
+          currentPage={currentPage}
+          onPageChange={setCurrentPage}
+        />
 
         {/* Required Fields Note */}
         <View style={styles.noteSection}>
@@ -1741,138 +1549,8 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     letterSpacing: 0.3,
   },
-  invoiceCard: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 24,
-    overflow: "hidden",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.08,
-    shadowRadius: 16,
-    elevation: 4,
-    borderTopWidth: 1,
-    borderTopColor: "rgba(154, 27, 43, 0.05)",
-  },
-  loadingContainer: {
-    alignItems: "center",
-    justifyContent: "center",
-    paddingVertical: 40,
-    gap: 16,
-  },
-  errorInvoiceContainer: {
-    alignItems: "center",
-    justifyContent: "center",
-    paddingVertical: 40,
-    paddingHorizontal: 20,
-    gap: 12,
-  },
-  errorInvoiceText: {
-    fontSize: 16,
-    color: "#1F2937",
-    fontWeight: "600",
-    textAlign: "center",
-  },
-  emptyInvoiceContainer: {
-    alignItems: "center",
-    justifyContent: "center",
-    paddingVertical: 40,
-    gap: 12,
-  },
-  emptyInvoiceText: {
-    fontSize: 16,
-    color: "#1F2937",
-    fontWeight: "600",
-  },
-  emptyInvoiceSubtext: {
-    fontSize: 14,
-    color: "#9CA3AF",
-    textAlign: "center",
-  },
-  invoiceItem: {
-    padding: 24,
-  },
-  invoiceDivider: {
-    height: 1,
-    backgroundColor: "#F3F4F6",
-  },
-  invoiceDetails: {
-    marginBottom: 16,
-  },
-  invoiceRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 12,
-  },
-  invoiceLabel: {
-    fontSize: 14,
-    color: "#6B7280",
-    fontWeight: "700",
-  },
-  invoiceValue: {
-    fontSize: 14,
-    color: "#1F2937",
-    fontWeight: "600",
-  },
-  invoiceAmount: {
-    fontSize: 16,
-    color: "#9A1B2B",
-    fontWeight: "800",
-  },
-  downloadButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "#9A1B2B",
-    paddingVertical: 12,
-    borderRadius: 12,
-    gap: 8,
-    shadowColor: "#9A1B2B",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.15,
-    shadowRadius: 8,
-    elevation: 3,
-  },
-  downloadButtonDisabled: {
-    opacity: 0.6,
-  },
-  downloadButtonText: {
-    color: "#FFFFFF",
-    fontSize: 14,
-    fontWeight: "700",
-  },
-  paginationContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingVertical: 16,
-    paddingHorizontal: 24,
-    borderTopWidth: 1,
-    borderTopColor: "#F3F4F6",
-    gap: 12,
-  },
-  paginationButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    backgroundColor: "#F3F4F6",
-    borderRadius: 8,
-  },
-  paginationButtonDisabled: {
-    opacity: 0.5,
-  },
-  paginationButtonText: {
-    fontSize: 13,
-    fontWeight: "600",
-    color: "#9A1B2B",
-  },
-  paginationText: {
-    fontSize: 13,
-    fontWeight: "600",
-    color: "#6B7280",
-  },
+
+  // notes section
   noteSection: {
     flexDirection: "row",
     alignItems: "center",
