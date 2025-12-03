@@ -85,6 +85,8 @@ useEffect(() => {
 
     console.log('✏️ Editing reminder:', contract.name);
 
+    console.log('contact-->', contract)
+
     router.push({
       pathname: '/screens/EditReminder',
       params: {

@@ -59,6 +59,8 @@ const EditReminder = () => {
     categoryName
   } = useLocalSearchParams();
 
+  console.log('category-name-->', categoryName)
+
 
     const { accountType} = useAuthStore();
     const isEnterprise = accountType === "enterprise";
@@ -110,9 +112,8 @@ const EditReminder = () => {
   const [contactInputs, setContactInputs] = useState([""]);
 
     const { data: accounts } = useGetEnterpriseAccounts();
-    console.log("accounts----------->", accounts);
   
-  const assignedUser = accounts.find((account)=> account?.id === contractData?.user_id)
+  const assignedUser = accounts?.find((account)=> account?.id === contractData?.user_id)
   console.log('assigned-user-->', assignedUser)
 
   // Populate forms when contract data is loaded
@@ -123,7 +124,7 @@ const EditReminder = () => {
         reminderTo: assignedUser?.name || "",
         reminderName: contractData.name || "",
         description: contractData.description || "",
-        category: categoryId || "",
+        category: categoryName || "",
         deposits: "0.00",
         paymentAmount: String(contractData.amount || 0),
         paymentInterval: contractData.interval || "",
