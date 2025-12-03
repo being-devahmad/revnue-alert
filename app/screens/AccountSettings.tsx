@@ -1,3 +1,4 @@
+import { useIndustries } from "@/api/settings/useGetIndustries";
 import {
   getIndustryName,
   getSubscriptionPlanName,
@@ -44,8 +45,8 @@ const AccountSettingsScreen = () => {
   // ============ PERSONAL INFO STATE ============
   const [companyName, setCompanyName] = useState("");
   const [department, setDepartment] = useState("");
-  const [industry, setIndustry] = useState("");
-  const [industryId, setIndustryId] = useState(0);
+  const [industry, setIndustry] = useState(""); // ← display name
+  const [industryId, setIndustryId] = useState(0); // ← saved ID
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
@@ -98,6 +99,9 @@ const AccountSettingsScreen = () => {
     isLoading: isLoadingProfile,
     error: profileError,
   } = useGetUserDetails();
+
+  useIndustries(); // ← populates industriesMapCache automatically
+
   const {
     mutate: updateProfileMutate,
     isPending: isUpdatingProfile,
@@ -173,20 +177,6 @@ const AccountSettingsScreen = () => {
     }
   }, [profileData]);
 
-  // In your profile loading effect
-  useEffect(() => {
-    if (profileData?.user) {
-      const industryIdFromProfile = profileData.user.industry_id || 0;
-      console.log("🔍 Industry ID from backend:", industryIdFromProfile);
-
-      const industryName = getIndustryName(industryIdFromProfile);
-      console.log("🔍 getIndustryName returned:", industryName);
-
-      setIndustry(industryName);
-      setIndustryId(industryIdFromProfile);
-    }
-  }, [profileData]);
-
   // Show success message when profile updates
   useEffect(() => {
     if (isProfileUpdateSuccess) {
@@ -207,16 +197,13 @@ const AccountSettingsScreen = () => {
 
   // ============ HANDLERS ============
   const handleSavePersonalInfo = () => {
-    console.log("💾 Saving personal information...");
-
-    // Build request data
-    const profileRequest = buildProfileRequest(
+    const payload = buildProfileRequest(
       firstName,
       lastName,
       email,
       companyName,
       department,
-      industryId, // ✅ This now has the correct ID
+      industryId, // ← correct ID is sent
       phone,
       address,
       city,
@@ -224,26 +211,15 @@ const AccountSettingsScreen = () => {
       zipCode
     );
 
-    // Validate data
-    const validation = validateProfileData(profileRequest);
+    const validation = validateProfileData(payload);
     if (!validation.valid) {
       Alert.alert("Validation Error", validation.error);
       return;
     }
 
-    console.log("✅ Validation passed, sending update request...");
-    console.log("📦 Update payload:", { ...profileRequest, industryId });
-
-    // Send update request
-    updateProfileMutate(profileRequest, {
-      onSuccess: (data) => {
-        console.log("🎉 Profile update successful!", data);
-      },
-      onError: (error: any) => {
-        const errorMessage = formatErrorMessage(error);
-        console.error("❌ Profile update failed:", errorMessage);
-        Alert.alert("Error", errorMessage);
-      },
+    updateProfileMutate(payload, {
+      onSuccess: () => Alert.alert("Success", "Personal information updated!"),
+      onError: (err: any) => Alert.alert("Error", formatErrorMessage(err)),
     });
   };
 
@@ -625,8 +601,9 @@ const AccountSettingsScreen = () => {
                     const date = new Date(
                       plan.discount_ends_at
                     ).toLocaleDateString();
-                    displayName += ` — ${plan.discount_description || "Discount"
-                      } (Expires: ${date})`;
+                    displayName += ` — ${
+                      plan.discount_description || "Discount"
+                    } (Expires: ${date})`;
                   }
 
                   return (

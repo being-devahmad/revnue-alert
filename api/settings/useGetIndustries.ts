@@ -1,3 +1,4 @@
+import { initializeIndustriesMap } from '@/api/settings/useGetUserDetails';
 import axiosInstance from '@/utils/axios';
 import { useInfiniteQuery } from '@tanstack/react-query';
 
@@ -91,13 +92,19 @@ const fetchIndustries = async (
 export const useIndustries = (filters: IndustriesFilters = {}) => {
   return useInfiniteQuery({
     queryKey: ['industries', filters],
-    queryFn: ({ pageParam = 1 }) => fetchIndustries(pageParam, filters),
+    queryFn: async ({ pageParam = 1 }) => {
+      const response = await fetchIndustries(pageParam, filters);
+
+      // THIS IS THE KEY LINE THAT FIXES THE BUG
+      initializeIndustriesMap(response.data.industries);
+
+      return response;
+    },
+    
     getNextPageParam: (lastPage) => {
-      // If there's a next page URL, return the next page number
       if (lastPage.data.pagination.next_page_url) {
         return lastPage.data.pagination.current_page + 1;
       }
-      // Return undefined to signal no more pages
       return undefined;
     },
     initialPageParam: 1,
@@ -106,7 +113,7 @@ export const useIndustries = (filters: IndustriesFilters = {}) => {
   });
 };
 
-// ============ HELPER: FLATTEN ALL INDUSTRIES ============
+// ============ ALL YOUR EXISTING HELPERS (unchanged) ============
 export const flattenIndustries = (data: any): Industry[] => {
   if (!data?.pages) return [];
   return data.pages.reduce(
@@ -118,12 +125,10 @@ export const flattenIndustries = (data: any): Industry[] => {
   );
 };
 
-// ============ HELPER: GET INDUSTRY NAMES FROM FLATTENED DATA ============
 export const getIndustryNames = (flatIndustries: Industry[]): string[] => {
   return flatIndustries.map((industry) => industry.name);
 };
 
-// ============ HELPER: GET INDUSTRY BY NAME ============
 export const getIndustryByName = (
   flatIndustries: Industry[],
   name: string
@@ -131,7 +136,6 @@ export const getIndustryByName = (
   return flatIndustries.find((industry) => industry.name === name);
 };
 
-// ============ HELPER: SEARCH INDUSTRIES ============
 export const searchIndustries = (
   industries: Industry[],
   searchTerm: string
@@ -144,14 +148,12 @@ export const searchIndustries = (
   );
 };
 
-// ============ HELPER: GET SORTED INDUSTRIES ============
 export const getSortedIndustries = (industries: Industry[]): string[] => {
   return industries
     .map((industry) => industry.name)
     .sort((a, b) => a.localeCompare(b));
 };
 
-// ============ HELPER: GET PAGINATION INFO ============
 export const getPaginationInfo = (data: any) => {
   if (!data?.pages || data.pages?.length === 0) {
     return {
@@ -175,7 +177,6 @@ export const getPaginationInfo = (data: any) => {
   };
 };
 
-// ============ HELPER: GET CATEGORIES BY INDUSTRY ============
 export const getCategoriesByIndustry = (
   flatIndustries: Industry[],
   industryName: string
@@ -184,7 +185,6 @@ export const getCategoriesByIndustry = (
   return industry?.categories || [];
 };
 
-// ============ HELPER: GET CATEGORY NAMES BY INDUSTRY ============
 export const getCategoryNamesByIndustry = (
   flatIndustries: Industry[],
   industryName: string
