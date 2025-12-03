@@ -1,7 +1,6 @@
 "use client";
 
 import { flattenCategories, useCategories } from "@/api/addReminder/useGetCategories";
-import { useGetEnterpriseAccounts } from "@/api/reminders/timeline-details/useGetEnterpriseAccounts";
 import { Ionicons } from "@expo/vector-icons";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { useEffect, useRef, useState } from "react";
@@ -79,6 +78,7 @@ interface ContractDetailsProps {
   isLoading?: boolean;
   isEnterprise: boolean;
   user: any;
+  accounts: string[]
 }
 
 export const ContractDetails: React.FC<ContractDetailsProps> = ({
@@ -90,6 +90,7 @@ export const ContractDetails: React.FC<ContractDetailsProps> = ({
   isLoading,
   isEnterprise,
   user,
+  accounts
 }) => {
   console.log("contractForm ======>", contractForm);
 
@@ -118,8 +119,8 @@ export const ContractDetails: React.FC<ContractDetailsProps> = ({
   const [showCategoryModal, setShowCategoryModal] = useState(false);
 
   // API Hooks
-  const { data: accounts } = useGetEnterpriseAccounts();
-  console.log("accounts-->", accounts);
+  // const { data: accounts } = useGetEnterpriseAccounts();
+  // console.log("accounts-->", accounts);
 
   const paymentIntervalOptions = [
     "Weekly",

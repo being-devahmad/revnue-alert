@@ -1,6 +1,7 @@
 "use client";
 
 import { useFetchContractById } from "@/api/reminders/timeline-details/useGetContractById";
+import { useGetEnterpriseAccounts } from "@/api/reminders/timeline-details/useGetEnterpriseAccounts";
 import { useFetchReminderById } from "@/api/reminders/timeline-details/useGetReminderById";
 import { useUpdateContract } from "@/api/reminders/timeline-details/useUpdateContract";
 import { useUpdateReminder } from "@/api/reminders/timeline-details/useUpdateReminder";
@@ -108,12 +109,18 @@ const EditReminder = () => {
 
   const [contactInputs, setContactInputs] = useState([""]);
 
+    const { data: accounts } = useGetEnterpriseAccounts();
+    console.log("accounts----------->", accounts);
+  
+  const assignedUser = accounts.find((account)=> account?.id === contractData?.user_id)
+  console.log('assigned-user-->', assignedUser)
+
   // Populate forms when contract data is loaded
   useEffect(() => {
     if (contractData) {
       console.log("📋 Loading contract data:", contractData);
       setContractForm({
-        reminderTo: "",
+        reminderTo: assignedUser?.name || "",
         reminderName: contractData.name || "",
         description: contractData.description || "",
         category: categoryId || "",
@@ -456,6 +463,7 @@ const EditReminder = () => {
           onCancel={handleCancel}
           isLoading={isUpdatingContract}
           isEnterprise={isEnterprise}
+          accounts={accounts}
         />
       )}
 

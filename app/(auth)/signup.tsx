@@ -554,7 +554,7 @@ const SignupScreen = () => {
               </View>
 
               {/* ===== PROMO CODE ===== */}
-              <View style={styles.sectionDivider} />
+              {/* <View style={styles.sectionDivider} /> */}
 
               {/* Coupon Code */}
               <View style={styles.inputGroup}>
@@ -585,13 +585,13 @@ const SignupScreen = () => {
               </View>
 
               {/* Terms & Conditions */}
-              <View style={styles.termsContainer}>
+              {/* <View style={styles.termsContainer}>
                 <Text style={styles.termsText}>
                   By continuing, you agree to our{" "}
                   <Text style={styles.termsLink}>Terms of Service</Text> and{" "}
                   <Text style={styles.termsLink}>Privacy Policy</Text>
                 </Text>
-              </View>
+              </View> */}
 
               {/* Continue to Payment Button */}
               <TouchableOpacity
