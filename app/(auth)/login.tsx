@@ -156,9 +156,13 @@ const LoginScreen = () => {
               {/* Forgot */}
               <View style={styles.rowBetween}>
                 <View />
-                <TouchableOpacity disabled={isPending}>
+                <TouchableOpacity
+                  disabled={isPending}
+                  onPress={() => router.push("/(auth)/ForgetPasswordWebView")}
+                >
                   <Text style={styles.forgotText}>Forgot Password?</Text>
                 </TouchableOpacity>
+
               </View>
 
               {/* Login */}
