@@ -715,7 +715,7 @@ const ReminderScreen: React.FC = () => {
         </View>
       </Animated.View>
 
-      {/* Date Pickers */}
+      {/* Date Pickers
       {showInceptionPicker && (
         <DateTimePicker
           value={inceptionDate || new Date()}
@@ -742,7 +742,90 @@ const ReminderScreen: React.FC = () => {
             }
           }}
         />
-      )}
+      )} */}
+
+      <Modal
+        visible={showInceptionPicker}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setShowInceptionPicker(false)}
+      >
+        <View style={styles.modalOverlayFull}>
+          <View style={styles.datePickerContainer}>
+            <DateTimePicker
+              value={inceptionDate || new Date()}
+              mode="date"
+              display={Platform.OS === "ios" ? "spinner" : "default"}
+              onChange={(event, selectedDate) => {
+                if (selectedDate) {
+                  setInceptionDate(selectedDate);
+                }
+                if (Platform.OS === "android") {
+                  setShowInceptionPicker(false);
+                }
+              }}
+            />
+            {Platform.OS === "ios" && (
+              <View style={styles.datePickerActions}>
+                <TouchableOpacity
+                  style={styles.datePickerCancel}
+                  onPress={() => setShowInceptionPicker(false)}
+                >
+                  <Text style={styles.datePickerCancelText}>Cancel</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.datePickerDone}
+                  onPress={() => setShowInceptionPicker(false)}
+                >
+                  <Text style={styles.datePickerDoneText}>Done</Text>
+                </TouchableOpacity>
+              </View>
+            )}
+          </View>
+        </View>
+      </Modal>
+
+      {/* Expiration Date Picker */}
+      <Modal
+        visible={showExpirationPicker}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setShowExpirationPicker(false)}
+      >
+        <View style={styles.modalOverlayFull}>
+          <View style={styles.datePickerContainer}>
+            <DateTimePicker
+              value={expirationDate || new Date()}
+              mode="date"
+              display={Platform.OS === "ios" ? "spinner" : "default"}
+              onChange={(event, selectedDate) => {
+                if (selectedDate) {
+                  setExpirationDate(selectedDate);
+                }
+                if (Platform.OS === "android") {
+                  setShowExpirationPicker(false);
+                }
+              }}
+            />
+            {Platform.OS === "ios" && (
+              <View style={styles.datePickerActions}>
+                <TouchableOpacity
+                  style={styles.datePickerCancel}
+                  onPress={() => setShowExpirationPicker(false)}
+                >
+                  <Text style={styles.datePickerCancelText}>Cancel</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.datePickerDone}
+                  onPress={() => setShowExpirationPicker(false)}
+                >
+                  <Text style={styles.datePickerDoneText}>Done</Text>
+                </TouchableOpacity>
+              </View>
+            )}
+          </View>
+        </View>
+      </Modal>
 
       {/* Payment Interval Dropdown */}
       <Modal
@@ -1251,6 +1334,48 @@ const styles = StyleSheet.create({
     color: "#FFFFFF",
     fontSize: 14,
     fontWeight: "700",
+  },
+  // date options
+  modalOverlayFull: {
+    flex: 1,
+    backgroundColor: "rgba(0, 0, 0, 0.4)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  datePickerContainer: {
+    backgroundColor: "#FFFFFF",
+    borderRadius: 16,
+    padding: 20,
+    width: "90%",
+    maxWidth: 400,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.25,
+    shadowRadius: 20,
+    elevation: 10,
+  },
+  datePickerActions: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginTop: 20,
+    paddingTop: 10,
+    borderTopWidth: 1,
+    borderTopColor: "#E5E7EB",
+  },
+  datePickerCancel: {
+    padding: 10,
+  },
+  datePickerCancelText: {
+    fontSize: 17,
+    color: "#6B7280",
+  },
+  datePickerDone: {
+    padding: 10,
+  },
+  datePickerDoneText: {
+    fontSize: 17,
+    fontWeight: "600",
+    color: "#9A1B2B",
   },
 });
 
