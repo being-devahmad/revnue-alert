@@ -92,11 +92,13 @@ export const useFetchReminderById = (reminderId: number | string | undefined) =>
     queryKey: ['reminder', reminderId],
     queryFn: () => fetchReminderAPI(Number(reminderId)),
     enabled: !!reminderId,
-    staleTime: 5 * 60 * 1000, // 5 minutes
-    retry: 3,
-    onError: (error: any) => {
-      console.error('💥 Query error:', error.message);
-    },
+    // 🔁 Optional: prevent auto retries if you don’t want retries
+    retry: 0,
+
+    // 🔄 Always refetch when screen refocuses (useful for mobile)
+    refetchOnWindowFocus: true,
+    refetchOnMount: true,
+    refetchOnReconnect: true,
   });
 
   console.log('🎯 useFetchReminderById Hook State:', {

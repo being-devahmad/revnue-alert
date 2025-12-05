@@ -15,7 +15,8 @@
         "ITSAppUsesNonExemptEncryption": false,
         "NSCameraUsageDescription": "We need camera access to let you upload images if required.",
         "NSPhotoLibraryUsageDescription": "We need permission to select photos from your gallery.",
-        "NSPhotoLibraryAddUsageDescription": "We need permission to save images to your photo library."
+        "NSPhotoLibraryAddUsageDescription": "We need permission to save images to your photo library.",
+        "NSAppTransportSecurity": { "NSAllowsArbitraryLoads": true }
       },
       "icon": "./assets/icons/Ios-logo.png"
     },
@@ -27,7 +28,8 @@
       "icon": "./assets/icons/andriod.png",
       "package": "com.devahmad41.revnuealert",
       "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "usesCleartextTraffic": true
     },
     "web": {
       "output": "static",

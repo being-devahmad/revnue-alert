@@ -24,3 +24,46 @@ export const formatISODuration = (duration: string): string => {
       return duration;
   }
 };
+
+
+export const normalizeParam = (param?: string | string[]) =>
+  Array.isArray(param) ? param[0] : param;
+
+
+// convert normal to iso
+
+/**
+ * Converts a human-readable duration to ISO format.
+ * Examples:
+ *  "30 days"   => "P30D"
+ *  "2 weeks"   => "P14D"  (optional: weeks converted to days)
+ *  "3 months"  => "P3M"
+ *  "1 year"    => "P1Y"
+ */
+export const formatToISO = (label: string): string => {
+  console.log('label->', label)
+  if (!label) return "";
+
+  const match = label.trim().toLowerCase().match(/(\d+)\s*(day|days|week|weeks|month|months|year|years)/);
+  if (!match) return "";
+
+  const value = parseInt(match[1], 10);
+  const unit = match[2];
+
+  switch (unit) {
+    case "day":
+    case "days":
+      return `P${value}D`;
+    case "week":
+    case "weeks":
+      return `P${value * 7}D`; // convert weeks to days
+    case "month":
+    case "months":
+      return `P${value}M`;
+    case "year":
+    case "years":
+      return `P${value}Y`;
+    default:
+      return "";
+  }
+};

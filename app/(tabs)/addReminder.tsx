@@ -1,5 +1,6 @@
 import { useAddContract } from "@/api/addReminder/useAddContract";
 import { useAddReminder } from "@/api/addReminder/useAddReminder";
+import { useGetEnterpriseAccounts } from "@/api/reminders/timeline-details/useGetEnterpriseAccounts";
 import { ContractDetails } from "@/components/AddReminderTabs/ContractDetailsTab";
 import { ReminderDetails } from "@/components/AddReminderTabs/ReminderDetailsTab";
 import { TabHeader } from "@/components/TabHeader";
@@ -36,6 +37,9 @@ const AddReminderScreen = () => {
   // API Mutations
   const { mutate: addContract, isPending: isAddingContract } = useAddContract();
   const { mutate: addReminder, isPending: isAddingReminder } = useAddReminder();
+
+    const { data: accounts } = useGetEnterpriseAccounts();
+    console.log('accounts==>', accounts)
 
   // Store contract ID after creation
   const [createdContractId, setCreatedContractId] = useState<number | null>(
@@ -391,6 +395,7 @@ const AddReminderScreen = () => {
           isLoading={isAddingContract}
           isEnterprise={isEnterprise}
           user={user}
+          accounts={accounts}
         />
       )}
 

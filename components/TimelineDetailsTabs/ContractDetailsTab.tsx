@@ -42,12 +42,12 @@ const ContractDetailsTab: React.FC<ContractDetailsTabProps> = ({
   const completedBy = store?.user?.id === contract?.completed_by && `${store?.user?.first_name} ${store?.user?.last_name}`
 
   // ✅ Get reminder active status - primary source of truth
-  const reminderActiveStatus = useMemo(() => {
-    if (!contract?.reminders || contract.reminders.length === 0) {
-      return true;
-    }
-    return contract.reminders[0]?.active ?? true;
-  }, [contract?.reminders]);
+  // const reminderActiveStatus = useMemo(() => {
+  //   if (!contract?.reminders || contract.reminders.length === 0) {
+  //     return true;
+  //   }
+  //   return contract.reminders[0]?.active ?? true;
+  // }, [contract?.reminders]);
 
   const toggleTimeline = () => {
     setTimelineEnabled((prev) => !prev);
@@ -58,23 +58,23 @@ const ContractDetailsTab: React.FC<ContractDetailsTabProps> = ({
   const daysLeft = useMemo(() => {
     if (!contract) return 0;
     return getDaysLeft(contract.expired_at);
-  }, [contract?.expired_at]);
+  }, [contract]);
 
   // Get status
-  const getStatus = (): string => {
-    if (!timelineEnabled) return "Disabled";
-    if (daysLeft < 0) return "Expired";
-    if (daysLeft < 30) return "Expiring Soon";
-    return "Active";
-  };
+  // const getStatus = (): string => {
+  //   if (!timelineEnabled) return "Disabled";
+  //   if (daysLeft < 0) return "Expired";
+  //   if (daysLeft < 30) return "Expiring Soon";
+  //   return "Active";
+  // };
 
   // Get status color
-  const getStatusColor = (): string => {
-    if (!timelineEnabled) return "#6B7280";
-    if (daysLeft < 0) return "#EF4444";
-    if (daysLeft < 30) return "#F59E0B";
-    return "#10B981";
-  };
+  // const getStatusColor = (): string => {
+  //   if (!timelineEnabled) return "#6B7280";
+  //   if (daysLeft < 0) return "#EF4444";
+  //   if (daysLeft < 30) return "#F59E0B";
+  //   return "#10B981";
+  // };
 
   // Handle Toggle
 
@@ -94,8 +94,8 @@ const ContractDetailsTab: React.FC<ContractDetailsTabProps> = ({
     );
   }
 
-  const statusColor = getStatusColor();
-  const status = getStatus();
+  // const statusColor = getStatusColor();
+  // const status = getStatus();
 
   const contractDetails = [
     {
@@ -154,7 +154,7 @@ const ContractDetailsTab: React.FC<ContractDetailsTabProps> = ({
     },
     {
       label: "Deposits / Advance Pmnts",
-      value: contract.last_payment_at ? formatDate(contract.payments) : "N/A",
+      value: contract?.payments,
       icon: "checkmark-circle-outline" as const,
     },
     // {

@@ -1,5 +1,3 @@
-"use client";
-
 import { useFetchContractById } from "@/api/reminders/timeline-details/useGetContractById";
 import { useGetEnterpriseAccounts } from "@/api/reminders/timeline-details/useGetEnterpriseAccounts";
 import { useFetchReminderById } from "@/api/reminders/timeline-details/useGetReminderById";
@@ -9,6 +7,7 @@ import { ContractDetails } from "@/components/AddReminderTabs/ContractDetailsTab
 import { ReminderDetails } from "@/components/AddReminderTabs/ReminderDetailsTab";
 import { TabHeader } from "@/components/TabHeader";
 import { useAuthStore } from "@/store/authStore";
+import { formatISODuration, normalizeParam } from "@/utils";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useState } from "react";
 import {
@@ -23,22 +22,6 @@ import {
 type TabType = "details" | "reminder";
 
 
-const getIntervalLabelFromPeriod = (period: string): string => {
-  const reverseMap: Record<string, string> = {
-    "P30D": "30 days",
-    "P60D": "60 days",
-    "P90D": "90 days",
-    "P1M": "1 Month",
-    "P3M": "3 Months",
-    "P6M": "6 Months",
-    "P1Y": "1 Year",
-    "P18M": "18 Months",
-    "P2Y": "2 Years",
-    "P3Y": "3 Years",
-  };
-  return reverseMap[period] || period;
-};
-
 const getRemindersToSendLabel = (quantity: number): string => {
   const map: Record<number, string> = {
     0: "0 - Send no reminders",
@@ -49,6 +32,8 @@ const getRemindersToSendLabel = (quantity: number): string => {
   return map[quantity] || "1 - Send single reminder";
 };
 
+
+
 const EditReminder = () => {
   const router = useRouter();
   const {
@@ -56,21 +41,20 @@ const EditReminder = () => {
     reminderId,
     contractName,
     categoryId,
-    categoryName
+    categoryName,
   } = useLocalSearchParams();
 
-  console.log('category-name-->', categoryName)
+  console.log('reminder-id---------------->', reminderId)
 
-
-    const { accountType} = useAuthStore();
-    const isEnterprise = accountType === "enterprise";
+  const { accountType } = useAuthStore();
+  const isEnterprise = accountType === "enterprise";
 
   const [activeTab, setActiveTab] = useState<TabType>("details");
 
   // Fetch contract and reminder data
-  const { data: contractData, isLoading: isLoadingContract } = useFetchContractById(contractId);
+  const { data: contractData, isLoading: isLoadingContract } = useFetchContractById(normalizeParam(contractId));
   console.log("📋 Fetched contract data:", contractData);
-  const { data: reminderData, isLoading: isLoadingReminder } = useFetchReminderById(reminderId);
+  const { data: reminderData, isLoading: isLoadingReminder } = useFetchReminderById(normalizeParam(reminderId));
 
   // API Mutations
   const { mutate: updateContract, isPending: isUpdatingContract } = useUpdateContract();
@@ -82,7 +66,7 @@ const EditReminder = () => {
     reminderName: "",
     description: "",
     category: "",
-    deposits: "0.00",
+    payments: 0,
     paymentAmount: "0.00",
     paymentInterval: "",
     lastPaymentAmount: "0.00",
@@ -111,79 +95,83 @@ const EditReminder = () => {
 
   const [contactInputs, setContactInputs] = useState([""]);
 
-    const { data: accounts } = useGetEnterpriseAccounts();
-  
-  const assignedUser = accounts?.find((account)=> account?.id === contractData?.user_id)
+  const { data: accounts } = useGetEnterpriseAccounts();
+  console.log('accounts==>', accounts)
+
+  const assignedUser = accounts?.find((account) => account?.id === contractData?.user_id)
   console.log('assigned-user-->', assignedUser)
 
   // Populate forms when contract data is loaded
   useEffect(() => {
-    if (contractData) {
+    if (contractData  || reminderData) {
       console.log("📋 Loading contract data:", contractData);
       setContractForm({
         reminderTo: assignedUser?.name || "",
-        reminderName: contractData.name || "",
-        description: contractData.description || "",
-        category: categoryName || "",
-        deposits: "0.00",
-        paymentAmount: String(contractData.amount || 0),
-        paymentInterval: contractData.interval || "",
-        lastPaymentAmount: String(contractData.last_payment_amount || 0),
-        lastPaymentDate: contractData.last_payment_at
-          ? new Date(contractData.last_payment_at)
+        reminderName: contractData?.name || "",
+        description: contractData?.description || "",
+        category: String(categoryName),
+        payments: contractData?.payments || 0,
+        paymentAmount: String(contractData?.amount || 0),
+        paymentInterval: contractData?.interval || "",
+        lastPaymentAmount: String(contractData?.last_payment_amount || 0),
+        lastPaymentDate: contractData?.last_payment_at
+          ? new Date(contractData?.last_payment_at)
           : null,
-        accountNumber: contractData.account_number || "",
-        inceptionDate: contractData.started_at
-          ? new Date(contractData.started_at)
+        accountNumber: contractData?.account_number || "",
+        inceptionDate: contractData?.started_at
+          ? new Date(contractData?.started_at)
           : null,
-        expirationDate: contractData.expired_at
-          ? new Date(contractData.expired_at)
+        expirationDate: contractData?.expired_at
+          ? new Date(contractData?.expired_at)
           : null,
-        nonRenewDate: contractData.non_renew_sent_at
-          ? new Date(contractData.non_renew_sent_at)
+        nonRenewDate: contractData?.non_renew_sent_at
+          ? new Date(contractData?.non_renew_sent_at)
           : null,
-        renewal: Boolean(contractData.auto_renew),
-        renewalPeriod: contractData.auto_renew_period || "",
-        supplierRating: contractData.supplier_rating || 0,
-        emailWebsite: contractData.website_email || "",
-        phone: contractData.phone_number || "",
-        supplierNotes: "",
-        notes: contractData.notes || "",
+        renewal: Boolean(contractData?.auto_renew),
+        renewalPeriod: formatISODuration(contractData?.auto_renew_period) || "",
+        supplierRating: contractData?.supplier_rating || 0,
+        emailWebsite: contractData?.website_email || "",
+        phone: contractData?.phone_number || "",
+        supplierNotes: contractData?.last_payment_notes ||"",
+        notes: contractData?.notes || "",
         enabled: true,
       });
 
-      // Auto-populate reminder data from contract reminders if available
-      if (contractData.reminders && contractData.reminders.length > 0) {
-        const firstReminder = contractData.reminders[0];
-        setReminderForm({
-          reminderPeriod: getIntervalLabelFromPeriod(firstReminder.period),
-          remindersToSend: getRemindersToSendLabel(firstReminder.quantity),
-          notes: firstReminder.notes || "",
-          resendICal: Boolean(firstReminder.ical),
-        });
-        setContactInputs(firstReminder.contacts || [""]);
-      }
+       setReminderForm({
+           reminderPeriod: formatISODuration(reminderData?.period) || "",
+          remindersToSend: getRemindersToSendLabel(reminderData?.quantity),
+          notes: reminderData.notes || "",
+          resendICal: Boolean(reminderData.ical),
+      })
     }
-  }, [contractData]);
+  }, [contractData, categoryName, assignedUser?.name]);
 
 
-  useEffect(()=>{
-    console.log("contractForm changed:", contractForm);
-  },[contractForm])
+  // useEffect(()=>{
+  //   if(reminderData){
+  //     setReminderForm({
+  //          reminderPeriod: formatISODuration(reminderData.period) || "",
+  //         remindersToSend: getRemindersToSendLabel(reminderData.quantity),
+  //         notes: reminderData.notes || "",
+  //         resendICal: Boolean(reminderData.ical),
+  //     })
+  //   }
+  // }, [])
 
-  // Populate reminder form when reminder data is loaded
-  useEffect(() => {
-    if (reminderData) {
-      console.log("📋 Loading reminder data:", reminderData);
-      setReminderForm({
-        reminderPeriod: getIntervalLabelFromPeriod(reminderData.period),
-        remindersToSend: getRemindersToSendLabel(reminderData.quantity),
-        notes: reminderData.notes || "",
-        resendICal: Boolean(reminderData.ical),
-      });
-      setContactInputs(reminderData.contacts && reminderData.contacts.length > 0 ? reminderData.contacts : [""]);
-    }
-  }, [reminderData]);
+useEffect(() => {
+  if (reminderData) {
+    setReminderForm({
+      // Human-readable for UI
+      reminderPeriod: formatISODuration(reminderData?.period) || "",
+      remindersToSend: getRemindersToSendLabel(reminderData.quantity),
+      notes: reminderData.notes || "",
+      resendICal: Boolean(reminderData.ical),
+    });
+
+    setContactInputs(reminderData.contacts && reminderData.contacts.length > 0 ? reminderData.contacts : [""]);
+  }
+}, [reminderData]);
+
 
   const handleContractChange = (
     field: string,
@@ -220,19 +208,6 @@ const EditReminder = () => {
     "Lease, Office Equipment": 2,
     "License, Liquor": 3,
     "Software License": 4,
-  };
-
-  const periodMap: Record<string, string> = {
-    "30 days": "P30D",
-    "60 days": "P60D",
-    "90 days": "P90D",
-    "1 Month": "P1M",
-    "3 Months": "P3M",
-    "6 Months": "P6M",
-    "1 Year": "P1Y",
-    "18 Months": "P18M",
-    "2 Years": "P2Y",
-    "3 Years": "P3Y",
   };
 
   const quantityMap: Record<string, number> = {
@@ -304,7 +279,7 @@ const EditReminder = () => {
       account_number: contractForm.accountNumber,
       amount: parseFloat(contractForm.paymentAmount) || 0,
       interval: contractForm.paymentInterval,
-      payments: 0,
+      payments: contractForm.payments || 0,
       auto_renew: contractForm.renewal ? 1 : 0,
       auto_renew_period: contractForm.renewal ? "P1Y" : null,
       supplier_rating: contractForm.supplierRating,
@@ -360,7 +335,7 @@ const EditReminder = () => {
       contract_id: parseInt(contractId as string),
       name: contractForm.reminderName,
       quantity: quantityMap[reminderForm.remindersToSend] || 1,
-      period: periodMap[reminderForm.reminderPeriod] || "P30D",
+      period: reminderForm.reminderPeriod,
       contacts: validContacts,
       active: true,
       ical: reminderForm.resendICal,

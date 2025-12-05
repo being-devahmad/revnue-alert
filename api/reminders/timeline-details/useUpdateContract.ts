@@ -1,5 +1,5 @@
 import axiosInstance from '@/utils/axios';
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 
 export interface UpdateContractRequest {
   name: string;
@@ -102,6 +102,7 @@ const updateContractAPI = async ({ contractId, payload }: UpdateContractParams):
 };
 
 export const useUpdateContract = () => {
+  const queryClient = useQueryClient();
   const mutation = useMutation({
     mutationFn: updateContractAPI,
     onMutate: () => {
@@ -109,6 +110,7 @@ export const useUpdateContract = () => {
     },
     onSuccess: (data) => {
       console.log('🎉 Mutation success:', data);
+      queryClient.invalidateQueries({ queryKey: ['timelineDetails'] });
     },
     onError: (error: any) => {
       console.error('💥 Mutation error:', error.message);

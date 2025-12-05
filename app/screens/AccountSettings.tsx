@@ -223,34 +223,34 @@ const AccountSettingsScreen = () => {
     });
   };
 
-  const handleSaveBilling = () => {
-    Alert.alert("Success", "Billing information saved successfully!");
-    setIsEditingCard(false);
-  };
+  // const handleSaveBilling = () => {
+  //   Alert.alert("Success", "Billing information saved successfully!");
+  //   setIsEditingCard(false);
+  // };
 
-  const handleSaveCard = () => {
-    if (!cardNumber || !cvc || !expirationMonth || !expirationYear) {
-      Alert.alert("Error", "Please fill in all card details");
-      return;
-    }
-    Alert.alert("Success", "Payment card updated successfully!");
-    setCardNumber("");
-    setCvc("");
-    setExpirationMonth("");
-    setExpirationYear("");
-    setIsEditingCard(false);
-  };
+  // const handleSaveCard = () => {
+  //   if (!cardNumber || !cvc || !expirationMonth || !expirationYear) {
+  //     Alert.alert("Error", "Please fill in all card details");
+  //     return;
+  //   }
+  //   Alert.alert("Success", "Payment card updated successfully!");
+  //   setCardNumber("");
+  //   setCvc("");
+  //   setExpirationMonth("");
+  //   setExpirationYear("");
+  //   setIsEditingCard(false);
+  // };
 
-  const handleCancelSubscription = () => {
-    Alert.alert(
-      "Cancel Subscription",
-      "Are you sure you want to cancel your subscription?",
-      [
-        { text: "No", style: "cancel" },
-        { text: "Yes, Cancel", style: "destructive" },
-      ]
-    );
-  };
+  // const handleCancelSubscription = () => {
+  //   Alert.alert(
+  //     "Cancel Subscription",
+  //     "Are you sure you want to cancel your subscription?",
+  //     [
+  //       { text: "No", style: "cancel" },
+  //       { text: "Yes, Cancel", style: "destructive" },
+  //     ]
+  //   );
+  // };
 
   const handleChangePassword = async () => {
     // Reset error
@@ -571,7 +571,6 @@ const AccountSettingsScreen = () => {
         </View>
 
         {/* Billing Section */}
-        {/* Billing Section - FULLY FIXED */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <View style={styles.iconCircle}>
@@ -679,7 +678,8 @@ const AccountSettingsScreen = () => {
                 </Text>
                 <TouchableOpacity
                   style={styles.editCardButton}
-                  onPress={() => setIsEditingCard(true)}
+                  // onPress={() => setIsEditingCard(true)}
+                  onPress={()=> Alert.alert("This feature is currently not available in the mobile app. To change your subscription, please log in through the web portal.")}
                 >
                   <Ionicons name="pencil" size={18} color="#FFFFFF" />
                 </TouchableOpacity>
@@ -771,7 +771,7 @@ const AccountSettingsScreen = () => {
             <View style={styles.divider} />
 
             {/* Coupon Code */}
-            <View style={styles.inputGroup}>
+            {/* <View style={styles.inputGroup}>
               <View style={styles.labelWithIcon}>
                 <Text style={[styles.label, { marginBottom: 0 }]}>
                   Coupon Code
@@ -804,7 +804,7 @@ const AccountSettingsScreen = () => {
                   <Text style={styles.applyCouponText}>Apply</Text>
                 </TouchableOpacity>
               </View>
-            </View>
+            </View> */}
 
             {/* Confirm Plan Change Modal */}
             <Modal visible={showPlanConfirm} transparent>

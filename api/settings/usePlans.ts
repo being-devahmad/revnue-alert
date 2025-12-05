@@ -1,5 +1,5 @@
 import axiosInstance from '@/utils/axios';
-import { useMutation, useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 // ============ TYPE DEFINITIONS ============
 export interface Plan {
@@ -145,18 +145,18 @@ export const usePlans = () => {
   return useQuery({
     queryKey: ['plans'],
     queryFn: fetchPlans,
-    staleTime: 1000 * 60 * 10, // 10 minutes
-    retry: 2,
     enabled: true,
   });
 };
 
 // ============ USE CHANGE PLAN MUTATION ============
 export const useChangePlan = () => {
+  const queryClient = useQueryClient()
   return useMutation({
     mutationFn: changePlan,
     onSuccess: (data) => {
       console.log('🎉 Plan change mutation successful');
+       queryClient.invalidateQueries({ queryKey: ['plans'] });
     },
     onError: (error: any) => {
       console.error('❌ Plan change mutation failed:', error.message);

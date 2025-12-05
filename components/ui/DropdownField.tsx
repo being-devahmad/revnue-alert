@@ -61,11 +61,11 @@ export const DropdownField = ({
                     <ScrollView 
                         style={[styles.dropdownScroll , Platform.OS === 'ios' && {maxHeight: 180}]}
                         nestedScrollEnabled
-                        scrollEnabled={options.length > 5}
+                        scrollEnabled={options?.length > 3}
                         keyboardShouldPersistTaps="handled"
                         showsVerticalScrollIndicator={Platform.OS === 'ios'}
                     >
-                        {options.map((option, index) => (
+                        {options?.map((option, index) => (
                             <TouchableOpacity
                                 key={index}
                                 style={[styles.dropdownItem, option === value && styles.dropdownItemSelected]}

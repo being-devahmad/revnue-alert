@@ -45,6 +45,9 @@ export const ReminderDetails: React.FC<ReminderDetailsProps> = ({
     onCancel,
     isLoading,
 }) => {
+
+    console.log('reminder-form==>', reminderForm)
+
     const [showDropdowns, setShowDropdowns] = useState({
         remindersToSend: false,
         templates: false,
@@ -52,7 +55,6 @@ export const ReminderDetails: React.FC<ReminderDetailsProps> = ({
 
     const [selectedTemplate, setSelectedTemplate] = useState<string>("");
 
-    const reminderPeriodOptions = ["30 days", "60 days", "90 days"];
     const remindersToSendOptions = [
         "0 - Send no reminders",
         "1 - Send single reminder",
@@ -165,7 +167,6 @@ export const ReminderDetails: React.FC<ReminderDetailsProps> = ({
                         </View>
 
                         {/* Notes with Rich Text Editor */}
-                        {/* Notes Section */}
                         <View style={styles.inputGroup}>
                             {/* Header */}
                             <View style={styles.notesHeaderWrapper}>

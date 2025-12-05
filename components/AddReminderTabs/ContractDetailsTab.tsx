@@ -26,7 +26,7 @@ interface ContractDetailsProps {
     reminderName: string;
     description: string;
     category: string;
-    deposits: string;
+    payments: number;
     paymentAmount: string;
     paymentInterval: string;
     lastPaymentAmount: string;
@@ -50,7 +50,7 @@ interface ContractDetailsProps {
       reminderName: string;
       description: string;
       category: string;
-      deposits: string;
+      payments: number;
       paymentAmount: string;
       paymentInterval: string;
       lastPaymentAmount: string;
@@ -258,17 +258,9 @@ export const ContractDetails: React.FC<ContractDetailsProps> = ({
     // Find the category name from the loaded data (optional, for display)
     const allCategories = flattenCategories(categories);
     const selectedCat = allCategories?.find((cat: any) => String(cat.id) === categoryId);
-
     const categoryName = selectedCat?.name || "Unknown Category";
-
-    // Update local state (for display)
     setSelectedCategory(categoryName);
-
-    // Update form state with the ID (this is what gets saved!)
-    onContractChange("category", categoryId);
-
-    // Optional: also store name if needed elsewhere
-    // setContractForm(prev => ({ ...prev, category: categoryId }));
+    onContractChange("category", categoryId)
   };
 
 
@@ -350,7 +342,7 @@ export const ContractDetails: React.FC<ContractDetailsProps> = ({
                 style={styles.selectInput}
                 onPress={() => setShowCategoryModal(true)}
               >
-                <Text style={[styles.selectText, !selectedCategory && {color:'#9CA3AF'}]}>
+                <Text style={[styles.selectText, !selectedCategory && { color: '#9CA3AF' }]}>
                   {selectedCategory || "Select Category"}
                 </Text>
                 <Ionicons name="chevron-down" size={20} color="#9A1B2B" />
@@ -373,10 +365,15 @@ export const ContractDetails: React.FC<ContractDetailsProps> = ({
           <View style={styles.section}>
             <FormField
               label="Deposits/Advance Pmts ($)"
-              value={contractForm.deposits}
-              onChangeText={(text) => onContractChange("deposits", text)}
+              value={String(contractForm?.payments ?? "")}
+              onChangeText={(text) => {
+                const numeric = text.replace(/[^0-9.]/g, ""); // only allow numbers + decimal
+                onContractChange("payments", numeric ? Number(numeric) : 0);
+              }}
+              keyboardType="numeric"
               placeholder="Enter deposits/advance payments"
             />
+
             <View style={styles.row}>
               <View style={styles.halfWidth}>
                 <FormField
@@ -651,7 +648,7 @@ export const ContractDetails: React.FC<ContractDetailsProps> = ({
           <View style={styles.section}>
             <View style={styles.toggleRow}>
               <View>
-                <Text style={styles.label}>Auto Renewal </Text>
+                <Text style={styles.label}>Reminder Renewal </Text>
                 <Text style={styles.toggleDesc}>
                   Enable automatic renewal for this contract
                 </Text>

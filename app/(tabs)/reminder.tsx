@@ -186,20 +186,20 @@ const ReminderScreen: React.FC = () => {
     {
       id: "active",
       label: "Active",
-      count: activeCount,
+      count: '',
       icon: "checkmark-circle",
     },
     {
       id: "expiring",
       label: "Expiring",
-      count: expiringCount,
+      count: '',
       icon: "alert-circle",
     },
-    { id: "inactive", label: "Inactive", count: disabledCount, icon: "ban" },
+    { id: "inactive", label: "Inactive", count: '', icon: "ban" },
     {
       id: "expired",
       label: "Expired",
-      count: expiredCount,
+      count: '',
       icon: "close-circle",
     },
   ];
@@ -543,22 +543,26 @@ const ReminderScreen: React.FC = () => {
               >
                 {filterItem.label}
               </Text>
-              <View
-                style={[
-                  styles.filterBadge,
-                  selectedFilter === filterItem.id && styles.filterBadgeActive,
-                ]}
-              >
-                <Text
-                  style={[
-                    styles.filterBadgeText,
-                    selectedFilter === filterItem.id &&
-                    styles.filterBadgeTextActive,
-                  ]}
-                >
-                  {filterItem.count}
-                </Text>
-              </View>
+              {
+                filterItem.count && (
+                  <View
+                    style={[
+                      styles.filterBadge,
+                      selectedFilter === filterItem.id && styles.filterBadgeActive,
+                    ]}
+                  >
+                    <Text
+                      style={[
+                        styles.filterBadgeText,
+                        selectedFilter === filterItem.id &&
+                        styles.filterBadgeTextActive,
+                      ]}
+                    >
+                      {filterItem.count}
+                    </Text>
+                  </View>
+                )
+              }
             </TouchableOpacity>
           ))}
         </ScrollView>

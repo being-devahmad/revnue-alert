@@ -92,8 +92,13 @@ export const useFetchContractById = (contractId: number | string | undefined) =>
     queryKey: ['contract', contractId],
     queryFn: () => fetchContractAPI(Number(contractId)),
     enabled: !!contractId,
-    staleTime: 5 * 60 * 1000, // 5 minutes
-    retry: 3,
+    // 🔁 Optional: prevent auto retries if you don’t want retries
+    retry: 0,
+
+    // 🔄 Always refetch when screen refocuses (useful for mobile)
+    refetchOnWindowFocus: true,
+    refetchOnMount: true,
+    refetchOnReconnect: true,
   });
 
   console.log('🎯 useFetchContractById Hook State:', {
