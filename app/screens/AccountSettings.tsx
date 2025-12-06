@@ -70,6 +70,8 @@ const AccountSettingsScreen = () => {
   const [showPlanConfirm, setShowPlanConfirm] = useState(false);
   const [cardComplete, setCardComplete] = useState(false);
   const [cardDetails, setCardDetails] = useState<any>(null);
+  const [isPlansDropdownOpen, setIsPlansDropdownOpen] = useState(false);
+
 
   const [savedCard, setSavedCard] = useState({
     lastFour: "",
@@ -112,6 +114,8 @@ const AccountSettingsScreen = () => {
   const { data: plansData, isLoading: isLoadingPlans } = usePlans();
 
   console.log("plans-data-->", plansData);
+
+
 
   const { mutate: changeplanMutate, isPending: isChangingPlan } =
     useChangePlan();
@@ -587,55 +591,60 @@ const AccountSettingsScreen = () => {
               </View>
             ) : (
               <>
-                {plansData?.data?.plans?.map((plan: any) => {
-                  const isCurrent = plan.id === profileData?.user?.stripe_plan;
-                  const amount = (plan.amount / 100).toFixed(2);
+                {/* Plans Dropdown */}
+                <TouchableOpacity
+                  style={styles.dropdownButton}
+                  onPress={() => setIsPlansDropdownOpen(prev => !prev)}
+                >
+                  <Text style={styles.dropdownButtonText}>
+                    {plansData?.data?.current_plan?.name || "Select Plan"}
+                  </Text>
+                  <Ionicons
+                    name={isPlansDropdownOpen ? "chevron-up" : "chevron-down"}
+                    size={20}
+                    color="#6B7280"
+                  />
+                </TouchableOpacity>
 
-                  let displayName = `${plan.name} - ${amount} $`;
+                {/* Dropdown List */}
+                {isPlansDropdownOpen && (
+                  <View style={styles.dropdownList}>
+                    {plansData?.data?.plans?.map((plan: any) => {
+                      const isCurrent = plan.id === profileData?.user?.stripe_plan;
+                      const amount = (plan.amount / 100).toFixed(2);
 
-                  // Discount Logic
-                  if (plan.on_full_discount) {
-                    displayName += " — 100% off (Forever)";
-                  } else if (plan.discount_ends_at) {
-                    const date = new Date(
-                      plan.discount_ends_at
-                    ).toLocaleDateString();
-                    displayName += ` — ${plan.discount_description || "Discount"
-                      } (Expires: ${date})`;
-                  }
+                      let displayName = `${plan.name} - ${amount} $`;
 
-                  return (
-                    <TouchableOpacity
-                      key={plan.id}
-                      style={[
-                        styles.planOption,
-                        isCurrent && styles.planOptionSelected,
-                      ]}
-                      onPress={() => {
-                        if (!isCurrent) {
-                          setSelectedPlanId(plan.id);
-                          setShowPlanConfirm(true);
-                        }
-                      }}
-                    >
-                      <View>
-                        <Text style={styles.planName}>{displayName}</Text>
-                        {isCurrent && (
-                          <Text style={styles.currentPlanText}>
-                            Current Plan
-                          </Text>
-                        )}
-                      </View>
-                      {isCurrent && (
-                        <Ionicons
-                          name="checkmark-circle"
-                          size={24}
-                          color="#10B981"
-                        />
-                      )}
-                    </TouchableOpacity>
-                  );
-                })}
+                      if (plan.on_full_discount) {
+                        displayName += " — 100% off (Forever)";
+                      } else if (plan.discount_ends_at) {
+                        const date = new Date(plan.discount_ends_at).toLocaleDateString();
+                        displayName += ` — ${plan.discount_description || "Discount"} (Expires: ${date})`;
+                      }
+
+                      return (
+                        <TouchableOpacity
+                          key={plan.id}
+                          style={[
+                            styles.planOption,
+                            plan.id === selectedPlanId && styles.planOptionSelected,
+                          ]}
+                          onPress={() => {
+                            setSelectedPlanId(plan.id);
+                            setIsPlansDropdownOpen(false);
+                            setShowPlanConfirm(true);
+                          }}
+                        >
+                          <Text style={styles.planName}>{displayName}</Text>
+                          {isCurrent && (
+                            <Ionicons name="checkmark-circle" size={24} color="#10B981" />
+                          )}
+                        </TouchableOpacity>
+                      );
+                    })}
+                  </View>
+                )}
+
               </>
             )}
 
@@ -680,7 +689,7 @@ const AccountSettingsScreen = () => {
                   // onPress={() => setIsEditingCard(true)}
                   // onPress={() => Alert.alert("This feature is currently not available in the mobile app. To change your subscription, please log in through the web portal.")}
 
-                    onPress={() => {
+                  onPress={() => {
                     Alert.alert(
                       "Payment Method",
                       "This feature is currently not available in the mobile app. To update your card information, please log in through the web portal.",
@@ -794,7 +803,7 @@ const AccountSettingsScreen = () => {
                   style={[styles.input, { flex: 1 }]}
                   value={couponCode}
                   onChangeText={setCouponCode}
-                  placeholder="e.g. DIRECT-BILL-100"
+                  placeholder="Enter coupon code"
                   placeholderTextColor="#D1D5DB"
                   autoCapitalize="characters"
                 />
@@ -822,18 +831,18 @@ const AccountSettingsScreen = () => {
               </View>
             </View>
 
-             <TouchableOpacity
-                  style={styles.applyCouponButton}
-                  onPress={() => {
-                    Alert.alert(
-                      "Chnage Subscription Plan",
-                      "This feature is currently not available in the mobile app. To change your subscription, please log in through the web portal.",
-                      [{ text: "OK", style: "default" }]
-                    );
-                  }}
-                >
-                  <Text style={[styles.applyCouponText, {textAlign:'center'}]}>Submit</Text>
-                </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.applyCouponButton}
+              onPress={() => {
+                Alert.alert(
+                  "Chnage Subscription Plan",
+                  "This feature is currently not available in the mobile app. To change your subscription, please log in through the web portal.",
+                  [{ text: "OK", style: "default" }]
+                );
+              }}
+            >
+              <Text style={[styles.applyCouponText, { textAlign: 'center' }]}>Submit</Text>
+            </TouchableOpacity>
 
             {/* Confirm Plan Change Modal */}
             <Modal visible={showPlanConfirm} transparent>
@@ -1628,6 +1637,56 @@ const styles = StyleSheet.create({
     color: "#FFF",
     fontWeight: "700",
   },
+
+
+  // Dropdown & Billing Styles
+dropdownButton: {
+  flexDirection: "row",
+  justifyContent: "space-between",
+  alignItems: "center",
+  paddingVertical: 14,
+  paddingHorizontal: 16,
+  backgroundColor: "#F3F4F6",
+  borderRadius: 12,
+  borderWidth: 1,
+  borderColor: "#E5E7EB",
+  marginVertical: 8,
+},
+dropdownButtonText: {
+  fontSize: 15,
+  fontWeight: "600",
+  color: "#1F2937",
+},
+dropdownList: {
+  backgroundColor: "#FFFFFF",
+  borderWidth: 1,
+  borderColor: "#E5E7EB",
+  borderRadius: 12,
+  marginTop: 4,
+  maxHeight: 200, // scrollable if many options
+  overflow: "hidden",
+},
+dropdownItem: {
+  paddingVertical: 12,
+  paddingHorizontal: 16,
+  flexDirection: "row",
+  justifyContent: "space-between",
+  alignItems: "center",
+  borderBottomWidth: 1,
+  borderBottomColor: "#F3F4F6",
+},
+dropdownItemText: {
+  fontSize: 14,
+  color: "#1F2937",
+},
+dropdownItemSelected: {
+  backgroundColor: "rgba(154, 27, 43, 0.08)",
+},
+dropdownItemSelectedText: {
+  color: "#9A1B2B",
+  fontWeight: "700",
+},
+
 });
 
 export default AccountSettingsScreen;

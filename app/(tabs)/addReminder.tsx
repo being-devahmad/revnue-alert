@@ -38,8 +38,8 @@ const AddReminderScreen = () => {
   const { mutate: addContract, isPending: isAddingContract } = useAddContract();
   const { mutate: addReminder, isPending: isAddingReminder } = useAddReminder();
 
-    const { data: accounts } = useGetEnterpriseAccounts();
-    console.log('accounts==>', accounts)
+  const { data: accounts } = useGetEnterpriseAccounts();
+  console.log('accounts==>', accounts)
 
   // Store contract ID after creation
   const [createdContractId, setCreatedContractId] = useState<number | null>(
@@ -199,6 +199,45 @@ const AddReminderScreen = () => {
     return true;
   };
 
+
+  const resetForms = () => {
+    setContractForm({
+      reminderTo: "",
+      reminderName: "",
+      description: "",
+      category: "",
+      payments: 0,
+      paymentAmount: "0.00",
+      paymentInterval: "",
+      lastPaymentAmount: "0.00",
+      lastPaymentDate: null,
+      accountNumber: "",
+      inceptionDate: null,
+      expirationDate: null,
+      nonRenewDate: null,
+      renewal: false,
+      renewalPeriod: "",
+      supplierRating: 0,
+      emailWebsite: "",
+      phone: "",
+      lastPaymentNotes: "",
+      notes: "",
+      enabled: true,
+    });
+
+    setReminderForm({
+      period: "",
+      quantity: "1 - Send single reminder",
+      notes: "",
+      resendICal: true,
+    });
+
+    setContactInputs([""]);
+    setCreatedContractId(null);
+    setActiveTab("details"); // Optional: go back to Step 1
+  };
+
+
   // ============ ADD CONTRACT ============
   const handleSaveContract = () => {
     console.log("💾 Saving contract...");
@@ -246,6 +285,9 @@ const AddReminderScreen = () => {
 
         // Store contract ID
         setCreatedContractId(data.data.contract_id);
+
+        // Clear all fields
+        resetForms();
 
         // Show success alert
         Alert.alert("Success", "Contract added successfully!", [
