@@ -5,6 +5,7 @@ import { WebView } from "react-native-webview";
 
 export default function ForgotPasswordWebview() {
   const url = "https://development.renewalert.com/password/email";
+
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
 
@@ -13,7 +14,8 @@ export default function ForgotPasswordWebview() {
       {error ? (
         <View style={styles.errorContainer}>
           <Text style={styles.errorText}>
-            Failed to load the page. Please check your connection or try again later.
+            Failed to load the page. Please check your connection or try again
+            later.
           </Text>
         </View>
       ) : (
