@@ -19,8 +19,8 @@ import { DropdownField } from "../ui/DropdownField";
 
 interface ReminderDetailsProps {
     reminderForm: {
-        reminderPeriod: string;
-        remindersToSend: string;
+        period: string;
+        quantity: string;
         notes: string;
         resendICal: boolean;
     };
@@ -49,7 +49,7 @@ export const ReminderDetails: React.FC<ReminderDetailsProps> = ({
     console.log('reminder-form==>', reminderForm)
 
     const [showDropdowns, setShowDropdowns] = useState({
-        remindersToSend: false,
+        quantity: false,
         templates: false,
     });
 
@@ -72,7 +72,7 @@ export const ReminderDetails: React.FC<ReminderDetailsProps> = ({
 
     const closeAllDropdowns = () => {
         setShowDropdowns({
-            remindersToSend: false,
+            quantity: false,
             templates: false,
         });
     };
@@ -96,7 +96,7 @@ export const ReminderDetails: React.FC<ReminderDetailsProps> = ({
                 <View
                     style={[
                         styles.card,
-                        (showDropdowns.remindersToSend || showDropdowns.templates) &&
+                        (showDropdowns.quantity || showDropdowns.templates) &&
                         styles.cardActive,
                     ]}
                 >
@@ -108,26 +108,26 @@ export const ReminderDetails: React.FC<ReminderDetailsProps> = ({
                     <View style={styles.section}>
                         {/* New Dynamic Reminder Period Input */}
                         <ReminderPeriodInput
-                            value={reminderForm.reminderPeriod}
-                            onChange={(value) => onReminderChange("reminderPeriod", value)}
+                            value={reminderForm.period}
+                            onChange={(value) => onReminderChange("period", value)}
                             label="Reminder Period"
                             required={true}
                             placeholder="Enter number (e.g., 30, 5, 90...)"
                         />
                         <DropdownField
                             label="Reminders to Send"
-                            value={reminderForm.remindersToSend}
+                            value={reminderForm.quantity}
                             options={remindersToSendOptions}
-                            showDropdown={showDropdowns.remindersToSend}
+                            showDropdown={showDropdowns.quantity}
                             onToggle={() => {
-                                if (!showDropdowns.remindersToSend) {
+                                if (!showDropdowns.quantity) {
                                     closeAllDropdowns();
                                 }
-                                toggleDropdown("remindersToSend");
+                                toggleDropdown("quantity");
                             }}
                             onSelect={(value) => {
-                                onReminderChange("remindersToSend", value);
-                                toggleDropdown("remindersToSend");
+                                onReminderChange("quantity", value);
+                                toggleDropdown("quantity");
                             }}
                             required={true}
                         />

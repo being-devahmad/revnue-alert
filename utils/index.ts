@@ -67,3 +67,8 @@ export const formatToISO = (label: string): string => {
       return "";
   }
 };
+
+
+export const stripHtml = (html: string) => {
+  return html.replace(/<[^>]*>/g, "").trim();
+};

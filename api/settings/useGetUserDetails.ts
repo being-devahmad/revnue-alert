@@ -2,6 +2,12 @@ import axiosInstance from '@/utils/axios';
 import { useQuery } from '@tanstack/react-query';
 
 // ============ TYPE DEFINITIONS ============
+
+export interface Industry {
+  id: number,
+  name: string
+}
+
 export interface UserProfile {
   id: number;
   first_name: string;
@@ -26,6 +32,7 @@ export interface UserProfile {
   trial_ends_at: string;
   subscription_ends_at: string | null;
   industry_id: number;
+  industry: Industry
 }
 
 export interface UserProfileResponse {
@@ -80,14 +87,14 @@ export const initializeIndustriesMap = (industries: { id: number; name: string }
  */
 export const getIndustryName = (industryId: number): string => {
   if (industryId === 0) return 'Not Selected';
-  
+
   const name = industriesMapCache.get(industryId);
-  
+
   if (!name) {
     console.warn(`⚠️ Industry ID ${industryId} not found in map`);
     return 'Unknown Industry';
   }
-  
+
   return name;
 };
 

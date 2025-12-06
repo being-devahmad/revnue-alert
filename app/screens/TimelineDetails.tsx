@@ -64,17 +64,12 @@ const TimelineDetailsScreen: React.FC = () => {
   const contract = data?.data?.contract;
   const timeline = data?.data?.timeline;
 
-
-  console.log('contract-->', contract)
-
   const initialCompleted = !!(contract?.completed_at || contract?.completed_by);
   const [isTaskCompleted, setIsTaskCompleted] = useState(initialCompleted);
 
   useEffect(() => {
     setIsTaskCompleted(!!(contract?.completed_at || contract?.completed_by));
   }, [contract?.completed_at, contract?.completed_by]);
-
-  console.log("contract-details===?", contract);
 
   const handleEditReminder = () => {
     if (!contract) {

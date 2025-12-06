@@ -7,7 +7,7 @@ import { ContractDetails } from "@/components/AddReminderTabs/ContractDetailsTab
 import { ReminderDetails } from "@/components/AddReminderTabs/ReminderDetailsTab";
 import { TabHeader } from "@/components/TabHeader";
 import { useAuthStore } from "@/store/authStore";
-import { formatISODuration, normalizeParam } from "@/utils";
+import { formatISODuration, normalizeParam, stripHtml } from "@/utils";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useState } from "react";
 import {
@@ -22,7 +22,7 @@ import {
 type TabType = "details" | "reminder";
 
 
-const getRemindersToSendLabel = (quantity: number): string => {
+const getquantityLabel = (quantity: number): string => {
   const map: Record<number, string> = {
     0: "0 - Send no reminders",
     1: "1 - Send single reminder",
@@ -60,6 +60,8 @@ const EditReminder = () => {
   const { mutate: updateContract, isPending: isUpdatingContract } = useUpdateContract();
   const { mutate: updateReminder, isPending: isUpdatingReminder } = useUpdateReminder();
 
+  const currentCategory = contractData?.category?.name
+
   // Step 1: Contract Details
   const [contractForm, setContractForm] = useState({
     reminderTo: "",
@@ -80,15 +82,15 @@ const EditReminder = () => {
     supplierRating: 0,
     emailWebsite: "",
     phone: "",
-    supplierNotes: "",
+    lastPaymentNotes: "",
     notes: "",
     enabled: true,
   });
 
   // Step 2: Reminder Details
   const [reminderForm, setReminderForm] = useState({
-    reminderPeriod: "",
-    remindersToSend: "1 - Send single reminder",
+    period: "",
+    quantity: "1 - Send single reminder",
     notes: "",
     resendICal: true,
   });
@@ -103,74 +105,61 @@ const EditReminder = () => {
 
   // Populate forms when contract data is loaded
   useEffect(() => {
-    if (contractData  || reminderData) {
-      console.log("📋 Loading contract data:", contractData);
+    if (contractData) {
+      console.log("Loading contract data for edit:", contractData);
+
       setContractForm({
         reminderTo: assignedUser?.name || "",
-        reminderName: contractData?.name || "",
-        description: contractData?.description || "",
-        category: String(categoryName),
-        payments: contractData?.payments || 0,
-        paymentAmount: String(contractData?.amount || 0),
-        paymentInterval: contractData?.interval || "",
-        lastPaymentAmount: String(contractData?.last_payment_amount || 0),
-        lastPaymentDate: contractData?.last_payment_at
-          ? new Date(contractData?.last_payment_at)
-          : null,
-        accountNumber: contractData?.account_number || "",
-        inceptionDate: contractData?.started_at
-          ? new Date(contractData?.started_at)
-          : null,
-        expirationDate: contractData?.expired_at
-          ? new Date(contractData?.expired_at)
-          : null,
-        nonRenewDate: contractData?.non_renew_sent_at
-          ? new Date(contractData?.non_renew_sent_at)
-          : null,
-        renewal: Boolean(contractData?.auto_renew),
-        renewalPeriod: formatISODuration(contractData?.auto_renew_period) || "",
-        supplierRating: contractData?.supplier_rating || 0,
-        emailWebsite: contractData?.website_email || "",
-        phone: contractData?.phone_number || "",
-        supplierNotes: contractData?.last_payment_notes ||"",
-        notes: contractData?.notes || "",
+        reminderName: contractData.name || "",
+        description: contractData.description || "",
+        category: String(contractData.category_id), // ← Store ID as string
+        payments: contractData.payments || 0,
+        paymentAmount: contractData.amount ? String(contractData.amount) : "0.00",
+        paymentInterval: contractData.interval || "",
+        lastPaymentAmount: contractData.last_payment_amount ? String(contractData.last_payment_amount) : "0.00",
+        lastPaymentDate: contractData.last_payment_at ? new Date(contractData.last_payment_at) : null,
+        accountNumber: contractData.account_number || "",
+        inceptionDate: contractData.started_at ? new Date(contractData.started_at) : null,
+        expirationDate: contractData.expired_at ? new Date(contractData.expired_at) : null,
+        nonRenewDate: contractData.non_renew_sent_at ? new Date(contractData.non_renew_sent_at) : null,
+        renewal: Boolean(contractData.auto_renew),
+        renewalPeriod: contractData.auto_renew_period ? formatISODuration(contractData.auto_renew_period) : "",
+        supplierRating: contractData.supplier_rating || 0,
+        emailWebsite: contractData.website_email || "",
+        phone: contractData.phone_number || "",
+        lastPaymentNotes: contractData.last_payment_notes || "",
+        notes: contractData.notes || "",
         enabled: true,
       });
-
-       setReminderForm({
-           reminderPeriod: formatISODuration(reminderData?.period) || "",
-          remindersToSend: getRemindersToSendLabel(reminderData?.quantity),
-          notes: reminderData.notes || "",
-          resendICal: Boolean(reminderData.ical),
-      })
     }
-  }, [contractData, categoryName, assignedUser?.name]);
 
+    if (reminderData) {
+      setReminderForm({
+        period: formatISODuration(reminderData.period) || "",
+        quantity: getquantityLabel(reminderData.quantity),
+        notes: reminderData.notes || "",
+        resendICal: Boolean(reminderData.ical),
+      });
 
-  // useEffect(()=>{
-  //   if(reminderData){
-  //     setReminderForm({
-  //          reminderPeriod: formatISODuration(reminderData.period) || "",
-  //         remindersToSend: getRemindersToSendLabel(reminderData.quantity),
-  //         notes: reminderData.notes || "",
-  //         resendICal: Boolean(reminderData.ical),
-  //     })
-  //   }
-  // }, [])
+      setContactInputs(reminderData.contacts && reminderData.contacts.length > 0
+        ? reminderData.contacts
+        : [""]
+      );
+    }
+  }, [contractData, reminderData, assignedUser?.name]);
 
-useEffect(() => {
-  if (reminderData) {
-    setReminderForm({
-      // Human-readable for UI
-      reminderPeriod: formatISODuration(reminderData?.period) || "",
-      remindersToSend: getRemindersToSendLabel(reminderData.quantity),
-      notes: reminderData.notes || "",
-      resendICal: Boolean(reminderData.ical),
-    });
+  useEffect(() => {
+    if (reminderData) {
+      setReminderForm({
+        period: reminderData.period || "",
+        quantity: getquantityLabel(reminderData.quantity),
+        notes: reminderData.notes || "",
+        resendICal: Boolean(reminderData.ical),
+      });
 
-    setContactInputs(reminderData.contacts && reminderData.contacts.length > 0 ? reminderData.contacts : [""]);
-  }
-}, [reminderData]);
+      setContactInputs(reminderData.contacts && reminderData.contacts.length > 0 ? reminderData.contacts : [""]);
+    }
+  }, [reminderData]);
 
 
   const handleContractChange = (
@@ -244,7 +233,7 @@ useEffect(() => {
       return false;
     }
 
-    if (!reminderForm.reminderPeriod) {
+    if (!reminderForm.period) {
       Alert.alert("Validation Error", "Reminder period is required");
       return false;
     }
@@ -269,7 +258,7 @@ useEffect(() => {
     const contractPayload = {
       name: contractForm.reminderName,
       description: contractForm.description,
-      category_id: categoryMap[contractForm.category],
+      category_id: parseInt(contractForm.category) || null,
       started_at: contractForm.inceptionDate
         ?.toISOString()
         .split("T")[0] || "",
@@ -287,7 +276,7 @@ useEffect(() => {
       last_payment_at: contractForm.lastPaymentDate
         ?.toISOString()
         .split("T")[0] || "",
-      last_payment_notes: "",
+      last_payment_notes: contractForm?.lastPaymentNotes || "",
       website_email: contractForm.emailWebsite,
       phone_number: contractForm.phone,
       non_renew_sent_at: contractForm.nonRenewDate
@@ -321,6 +310,9 @@ useEffect(() => {
     );
   };
 
+
+
+
   // ============ UPDATE REMINDER ============
   const handleSaveReminder = () => {
     console.log("💾 Updating reminder...");
@@ -332,15 +324,16 @@ useEffect(() => {
     const validContacts = contactInputs.filter((c) => c.trim());
 
     const reminderPayload = {
-      contract_id: parseInt(contractId as string),
+      contract_id: Number(contractId),
       name: contractForm.reminderName,
-      quantity: quantityMap[reminderForm.remindersToSend] || 1,
-      period: reminderForm.reminderPeriod,
+      quantity: quantityMap[reminderForm.quantity] || 1,
+      period: reminderForm.period || '',
       contacts: validContacts,
       active: true,
       ical: reminderForm.resendICal,
-      notes: reminderForm.notes,
+      notes: stripHtml(reminderForm.notes),
     };
+
 
     console.log("📦 Reminder payload:", reminderPayload);
 
@@ -440,6 +433,7 @@ useEffect(() => {
           isLoading={isUpdatingContract}
           isEnterprise={isEnterprise}
           accounts={accounts}
+          currentCategory={currentCategory}
         />
       )}
 
@@ -487,7 +481,7 @@ const styles = StyleSheet.create({
   loadingText: {
     marginTop: 12,
     fontSize: 14,
-    color: "#6B7280",
+    color: "#000000",
     fontWeight: "600",
   },
   tabContainer: {

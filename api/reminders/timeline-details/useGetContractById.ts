@@ -15,6 +15,11 @@ export interface ReminderItem {
   deleted_at: string | null;
 }
 
+export interface Category {
+  id: number,
+  name: string
+}
+
 export interface ContractData {
   id: number;
   name: string;
@@ -43,6 +48,7 @@ export interface ContractData {
   updated_at: string;
   deleted_at: string | null;
   reminders: ReminderItem[];
+  category: Category
 }
 
 interface FetchContractResponse {

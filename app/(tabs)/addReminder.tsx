@@ -52,7 +52,7 @@ const AddReminderScreen = () => {
     reminderName: "",
     description: "",
     category: "",
-    deposits: "0.00",
+    payments: 0,
     paymentAmount: "0.00",
     paymentInterval: "",
     lastPaymentAmount: "0.00",
@@ -66,15 +66,15 @@ const AddReminderScreen = () => {
     supplierRating: 0,
     emailWebsite: "",
     phone: "",
-    supplierNotes: "",
+    lastPaymentNotes: "",
     notes: "",
     enabled: true,
   });
 
   // Step 2: Reminder Details
   const [reminderForm, setReminderForm] = useState({
-    reminderPeriod: "",
-    remindersToSend: "1 - Send single reminder",
+    period: "",
+    quantity: "1 - Send single reminder",
     notes: "",
     resendICal: true,
   });
@@ -93,7 +93,7 @@ const AddReminderScreen = () => {
     value: (typeof contractForm)[K]
   ) => {
     const moneyFields: (keyof typeof contractForm)[] = [
-      "deposits",
+      "payments",
       "paymentAmount",
       "lastPaymentAmount",
     ];
@@ -151,20 +151,6 @@ const AddReminderScreen = () => {
   };
 
   // ============ CATEGORY & PERIOD MAPPING ============
-
-  const periodMap: Record<string, string> = {
-    "30 days": "P30D",
-    "60 days": "P60D",
-    "90 days": "P90D",
-    "1 Month": "P1M",
-    "3 Months": "P3M",
-    "6 Months": "P6M",
-    "1 Year": "P1Y",
-    "18 Months": "P18M",
-    "2 Years": "P2Y",
-    "3 Years": "P3Y",
-  };
-
   const quantityMap: Record<string, number> = {
     "0 - Send no reminders": 0,
     "1 - Send single reminder": 1,
@@ -199,7 +185,7 @@ const AddReminderScreen = () => {
       return false;
     }
 
-    if (!reminderForm.reminderPeriod) {
+    if (!reminderForm.period) {
       Alert.alert("Validation Error", "Reminder period is required");
       return false;
     }
@@ -235,14 +221,14 @@ const AddReminderScreen = () => {
       account_number: contractForm.accountNumber,
       amount: parseFloat(contractForm.paymentAmount) || 0,
       interval: contractForm.paymentInterval,
-      payments: 0,
+      payments: contractForm?.payments,
       auto_renew: contractForm.renewal ? 1 : 0,
       auto_renew_period: contractForm.renewal ? "P1Y" : null,
       supplier_rating: contractForm.supplierRating,
       last_payment_amount: parseFloat(contractForm.lastPaymentAmount) || 0,
       last_payment_at:
         contractForm.lastPaymentDate?.toISOString().split("T")[0] || "",
-      last_payment_notes: "",
+      last_payment_notes: contractForm.lastPaymentNotes || '',
       website_email: contractForm.emailWebsite,
       phone_number: contractForm.phone,
       non_renew_sent_at:
@@ -294,8 +280,8 @@ const AddReminderScreen = () => {
     const reminderPayload = {
       contract_id: createdContractId!,
       name: contractForm.reminderName,
-      quantity: quantityMap[reminderForm.remindersToSend] || 1,
-      period: periodMap[reminderForm.reminderPeriod] || "P30D",
+      quantity: quantityMap[reminderForm.quantity] || 1,
+      period: reminderForm.period || '',
       contacts: validContacts,
       active: true,
       ical: reminderForm.resendICal,

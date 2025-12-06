@@ -544,7 +544,7 @@ const ReminderScreen: React.FC = () => {
                 {filterItem.label}
               </Text>
               {
-                filterItem.count && (
+                Boolean(filterItem.count) && (
                   <View
                     style={[
                       styles.filterBadge,

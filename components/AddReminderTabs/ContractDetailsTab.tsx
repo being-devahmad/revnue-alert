@@ -1,6 +1,7 @@
-"use client";
-
-import { flattenCategories, useCategories } from "@/api/addReminder/useGetCategories";
+import {
+  flattenCategories,
+  useCategories,
+} from "@/api/addReminder/useGetCategories";
 import { Ionicons } from "@expo/vector-icons";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { useEffect, useRef, useState } from "react";
@@ -40,7 +41,7 @@ interface ContractDetailsProps {
     supplierRating: number;
     emailWebsite: string;
     phone: string;
-    supplierNotes: string;
+    lastPaymentNotes: string;
     notes: string;
     enabled: boolean;
   };
@@ -64,7 +65,7 @@ interface ContractDetailsProps {
       supplierRating: number;
       emailWebsite: string;
       phone: string;
-      supplierNotes: string;
+      lastPaymentNotes: string;
       notes: string;
       enabled: boolean;
     }>
@@ -78,7 +79,8 @@ interface ContractDetailsProps {
   isLoading?: boolean;
   isEnterprise: boolean;
   user: any;
-  accounts: string[]
+  accounts: string[];
+  currentCategory: string;
 }
 
 export const ContractDetails: React.FC<ContractDetailsProps> = ({
@@ -90,12 +92,16 @@ export const ContractDetails: React.FC<ContractDetailsProps> = ({
   isLoading,
   isEnterprise,
   user,
-  accounts
+  accounts,
+  currentCategory,
 }) => {
-  console.log("contractForm ======>", contractForm);
+  console.log("current-category ====================>", currentCategory);
 
   // ============ CATEGORIES STATE ============
   const [selectedCategory, setSelectedCategory] = useState<string>("");
+  const [selectedCategoryName, setSelectedCategoryName] = useState<string>(
+    currentCategory || ""
+  );
 
   // Fetch categories using the hook
   const { data: categories } = useCategories();
@@ -254,27 +260,44 @@ export const ContractDetails: React.FC<ContractDetailsProps> = ({
     console.log("✅ ===== TEMPLATE GENERATION COMPLETED =====\n");
   };
 
-  const handleSelectCategory = (categoryId: string) => {
-    // Find the category name from the loaded data (optional, for display)
-    const allCategories = flattenCategories(categories);
-    const selectedCat = allCategories?.find((cat: any) => String(cat.id) === categoryId);
-    const categoryName = selectedCat?.name || "Unknown Category";
-    setSelectedCategory(categoryName);
-    onContractChange("category", categoryId)
-  };
+const handleSelectCategory = (categoryId: string) => {
+  if (!categories) return;
 
+  const all = flattenCategories(categories);
+  const found = all.find(
+    (c: any) => String(c.id ?? c.value) === String(categoryId)
+  );
+
+  const displayName = found?.name || found?.label || currentCategory || "";
+
+  setSelectedCategoryName(displayName);
+
+  // Make sure we save the underlying ID/value so backend gets the correct category_id
+  onContractChange("category", String(found?.id ?? found?.value ?? categoryId));
+};
 
   useEffect(() => {
-    if (contractForm.category && categories) {
-      const allCategories = flattenCategories(categories);
-      console.log('categories-->', categories)
-      const found = allCategories?.find((cat: any) => String(cat.id) === contractForm.category);
-      console.log('found-->', found)
-      if (found?.name) {
-        setSelectedCategory(found.name);
-      }
+    // If we already know the category name from the contract, prefer that
+    if (currentCategory && !contractForm.category && !selectedCategoryName) {
+      setSelectedCategoryName(currentCategory);
+      return;
     }
-  }, [contractForm.category, categories]);
+
+    // If we have an ID and categories list, try to resolve by ID
+    if (contractForm.category && categories) {
+      const all = flattenCategories(categories);
+      const found = all.find(
+        (c: any) =>
+          String(c.id ?? c.value) === String(contractForm.category) // handle id or value
+      );
+
+      console.log("found>>>>", found);
+
+      setSelectedCategoryName(
+        found?.name || found?.label || currentCategory || ""
+      );
+    }
+  }, [contractForm.category, categories, currentCategory]);
 
 
   return (
@@ -282,11 +305,11 @@ export const ContractDetails: React.FC<ContractDetailsProps> = ({
       {/* Category Bottom Sheet Modal */}
       <CategoryBottomSheet
         visible={showCategoryModal}
-        selectedValue={selectedCategory}
-        setSelectedCategory={setSelectedCategory}
+        selectedValue={selectedCategoryName}
+        setSelectedCategory={setSelectedCategoryName}
         onSelect={handleSelectCategory}
         onClose={() => setShowCategoryModal(false)}
-        title={selectedCategory ? selectedCategory : "Select Value"}
+        title={selectedCategoryName || "Select Category"}
       />
 
       <ScrollView showsVerticalScrollIndicator={false}>
@@ -342,8 +365,13 @@ export const ContractDetails: React.FC<ContractDetailsProps> = ({
                 style={styles.selectInput}
                 onPress={() => setShowCategoryModal(true)}
               >
-                <Text style={[styles.selectText, !selectedCategory && { color: '#9CA3AF' }]}>
-                  {selectedCategory || "Select Category"}
+                <Text
+                  style={[
+                    styles.selectText,
+                    !selectedCategoryName && { color: "#9CA3AF" },
+                  ]}
+                >
+                  {selectedCategoryName || "Select Category"}
                 </Text>
                 <Ionicons name="chevron-down" size={20} color="#9A1B2B" />
               </TouchableOpacity>
@@ -754,8 +782,8 @@ export const ContractDetails: React.FC<ContractDetailsProps> = ({
               style={[styles.input, styles.textArea]}
               multiline
               numberOfLines={3}
-              value={contractForm.supplierNotes}
-              onChangeText={(text) => onContractChange("supplierNotes", text)}
+              value={contractForm.lastPaymentNotes}
+              onChangeText={(text) => onContractChange("lastPaymentNotes", text)}
               placeholderTextColor="#9CA3AF"
               placeholder="notes"
             />

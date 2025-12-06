@@ -181,7 +181,7 @@ const ContractDetailsTab: React.FC<ContractDetailsTabProps> = ({
       icon: "information-circle-outline" as const,
     },
     {
-      label: "Website/Email",
+      label: "Website / Email",
       value: contract.website_email || "N/A",
       icon: "globe-outline" as const,
     },

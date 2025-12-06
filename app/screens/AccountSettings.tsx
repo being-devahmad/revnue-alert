@@ -154,7 +154,7 @@ const AccountSettingsScreen = () => {
 
       // Get industry name from ID
       const industryName = getIndustryName(industryIdFromProfile);
-      setIndustry(industryName);
+      setIndustry(profileData?.user?.industry?.name);
 
       console.log(
         `✅ Industry loaded: ${industryName} (ID: ${industryIdFromProfile})`
@@ -600,9 +600,8 @@ const AccountSettingsScreen = () => {
                     const date = new Date(
                       plan.discount_ends_at
                     ).toLocaleDateString();
-                    displayName += ` — ${
-                      plan.discount_description || "Discount"
-                    } (Expires: ${date})`;
+                    displayName += ` — ${plan.discount_description || "Discount"
+                      } (Expires: ${date})`;
                   }
 
                   return (
@@ -679,7 +678,15 @@ const AccountSettingsScreen = () => {
                 <TouchableOpacity
                   style={styles.editCardButton}
                   // onPress={() => setIsEditingCard(true)}
-                  onPress={()=> Alert.alert("This feature is currently not available in the mobile app. To change your subscription, please log in through the web portal.")}
+                  // onPress={() => Alert.alert("This feature is currently not available in the mobile app. To change your subscription, please log in through the web portal.")}
+
+                    onPress={() => {
+                    Alert.alert(
+                      "Payment Method",
+                      "This feature is currently not available in the mobile app. To update your card information, please log in through the web portal.",
+                      [{ text: "OK", style: "default" }]
+                    );
+                  }}
                 >
                   <Ionicons name="pencil" size={18} color="#FFFFFF" />
                 </TouchableOpacity>
@@ -771,7 +778,7 @@ const AccountSettingsScreen = () => {
             <View style={styles.divider} />
 
             {/* Coupon Code */}
-            {/* <View style={styles.inputGroup}>
+            <View style={styles.inputGroup}>
               <View style={styles.labelWithIcon}>
                 <Text style={[styles.label, { marginBottom: 0 }]}>
                   Coupon Code
@@ -793,18 +800,40 @@ const AccountSettingsScreen = () => {
                 />
                 <TouchableOpacity
                   style={styles.applyCouponButton}
-                  onPress={async () => {
+                  // onPress={async () => {
+                  //   if (!couponCode) return;
+                  //   // Simulate applying coupon (your backend should validate)
+                  //   Alert.alert("Success", `Coupon "${couponCode}" applied!`);
+                  //   // Refresh plans to show discount
+                  //   // refetchPlans();
+                  // }}
+
+                  onPress={() => {
                     if (!couponCode) return;
-                    // Simulate applying coupon (your backend should validate)
-                    Alert.alert("Success", `Coupon "${couponCode}" applied!`);
-                    // Refresh plans to show discount
-                    // refetchPlans();
+                    Alert.alert(
+                      "Apply Coupon Code",
+                      "This feature is not available in the mobile app. To apply coupon code, please log in through the web portal",
+                      [{ text: "OK", style: "default" }]
+                    );
                   }}
                 >
                   <Text style={styles.applyCouponText}>Apply</Text>
                 </TouchableOpacity>
               </View>
-            </View> */}
+            </View>
+
+             <TouchableOpacity
+                  style={styles.applyCouponButton}
+                  onPress={() => {
+                    Alert.alert(
+                      "Chnage Subscription Plan",
+                      "This feature is currently not available in the mobile app. To change your subscription, please log in through the web portal.",
+                      [{ text: "OK", style: "default" }]
+                    );
+                  }}
+                >
+                  <Text style={[styles.applyCouponText, {textAlign:'center'}]}>Submit</Text>
+                </TouchableOpacity>
 
             {/* Confirm Plan Change Modal */}
             <Modal visible={showPlanConfirm} transparent>
