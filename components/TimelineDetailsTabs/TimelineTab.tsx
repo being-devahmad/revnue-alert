@@ -103,7 +103,7 @@ const TimelineTab: React.FC<TimelineTabProps> = ({
   }, [contract?.auto_renew, contract?.auto_renew_period]);
 
   // Determine timeline color based on days left
-  const getTimelineColors = (): string[] => {
+  const getTimelineColors = (): readonly [string, string, ...string[]] => {
     if (daysLeft < 0) {
       return ["#EF4444", "#EF4444", "#EF4444"];
     } else if (daysLeft < 30) {
@@ -567,7 +567,7 @@ const styles = StyleSheet.create({
     padding: 16,
     borderLeftWidth: 3,
     borderLeftColor: "#3B82F6",
-    marginBottom: 20,
+    marginBottom: 60
   },
   expiredBanner: {
     backgroundColor: "#FEF2F2",
