@@ -24,6 +24,7 @@ import { InvoicesSection } from "@/components/InvoiceSection";
 import { SubscriptionPicker } from "@/components/SubscriptionPicker";
 import { TabHeader } from "@/components/TabHeader";
 import { IndustryBottomSheet } from "@/components/ui/IndustryModal";
+import { getDiscountLabel } from "@/utils";
 import { Ionicons } from "@expo/vector-icons";
 import { CardField, createToken } from "@stripe/stripe-react-native";
 import { useEffect, useState } from "react";
@@ -112,6 +113,13 @@ const AccountSettingsScreen = () => {
   } = useUpdateUserProfile();
 
   const { data: plansData, isLoading: isLoadingPlans } = usePlans();
+
+  const discountLabel = getDiscountLabel(plansData?.data);
+
+  const currentPlanDisplayName = discountLabel
+    ? `${plansData?.data?.current_plan?.name} - ${discountLabel}`
+    : plansData?.data?.current_plan?.name;
+
 
   console.log("plans-data-->", plansData);
 
@@ -356,22 +364,24 @@ const AccountSettingsScreen = () => {
   return (
     <View style={styles.container}>
       {/* Industry Bottom Sheet Modal */}
-      <IndustryBottomSheet
-        visible={showIndustryModal}
-        selectedValue={industry}
-        onSelect={(selectedIndustry) => {
-          console.log("🏢 Industry selected:", selectedIndustry);
+      {
+        plansData?.data?.is_home_and_family && <IndustryBottomSheet
+          visible={showIndustryModal}
+          selectedValue={industry}
+          onSelect={(selectedIndustry) => {
+            console.log("🏢 Industry selected:", selectedIndustry);
 
-          // Set industry name
-          handleIndustrySelect(selectedIndustry);
+            // Set industry name
+            handleIndustrySelect(selectedIndustry);
 
-          // Close modal
-          setShowIndustryModal(false);
-        }}
-        onClose={() => setShowIndustryModal(false)}
-        title="Select Industry"
-      />
+            // Close modal
+            setShowIndustryModal(false);
+          }}
+          onClose={() => setShowIndustryModal(false)}
+          title="Select Industry"
+        />
 
+      }
       {/* Subscription Simple Picker Modal */}
       <SubscriptionPicker
         visible={showSubscriptionModal}
@@ -597,7 +607,7 @@ const AccountSettingsScreen = () => {
                   onPress={() => setIsPlansDropdownOpen(prev => !prev)}
                 >
                   <Text style={styles.dropdownButtonText}>
-                    {plansData?.data?.current_plan?.name || "Select Plan"}
+                    {currentPlanDisplayName || "Select Plan"}
                   </Text>
                   <Ionicons
                     name={isPlansDropdownOpen ? "chevron-up" : "chevron-down"}
@@ -621,6 +631,8 @@ const AccountSettingsScreen = () => {
                         const date = new Date(plan.discount_ends_at).toLocaleDateString();
                         displayName += ` — ${plan.discount_description || "Discount"} (Expires: ${date})`;
                       }
+
+                      console.log('display-name=======================>', displayName)
 
                       return (
                         <TouchableOpacity
@@ -1640,52 +1652,52 @@ const styles = StyleSheet.create({
 
 
   // Dropdown & Billing Styles
-dropdownButton: {
-  flexDirection: "row",
-  justifyContent: "space-between",
-  alignItems: "center",
-  paddingVertical: 14,
-  paddingHorizontal: 16,
-  backgroundColor: "#F3F4F6",
-  borderRadius: 12,
-  borderWidth: 1,
-  borderColor: "#E5E7EB",
-  marginVertical: 8,
-},
-dropdownButtonText: {
-  fontSize: 15,
-  fontWeight: "600",
-  color: "#1F2937",
-},
-dropdownList: {
-  backgroundColor: "#FFFFFF",
-  borderWidth: 1,
-  borderColor: "#E5E7EB",
-  borderRadius: 12,
-  marginTop: 4,
-  maxHeight: 200, // scrollable if many options
-  overflow: "hidden",
-},
-dropdownItem: {
-  paddingVertical: 12,
-  paddingHorizontal: 16,
-  flexDirection: "row",
-  justifyContent: "space-between",
-  alignItems: "center",
-  borderBottomWidth: 1,
-  borderBottomColor: "#F3F4F6",
-},
-dropdownItemText: {
-  fontSize: 14,
-  color: "#1F2937",
-},
-dropdownItemSelected: {
-  backgroundColor: "rgba(154, 27, 43, 0.08)",
-},
-dropdownItemSelectedText: {
-  color: "#9A1B2B",
-  fontWeight: "700",
-},
+  dropdownButton: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    backgroundColor: "#F3F4F6",
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "#E5E7EB",
+    marginVertical: 8,
+  },
+  dropdownButtonText: {
+    fontSize: 15,
+    fontWeight: "600",
+    color: "#1F2937",
+  },
+  dropdownList: {
+    backgroundColor: "#FFFFFF",
+    borderWidth: 1,
+    borderColor: "#E5E7EB",
+    borderRadius: 12,
+    marginTop: 4,
+    maxHeight: 200, // scrollable if many options
+    overflow: "hidden",
+  },
+  dropdownItem: {
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    borderBottomWidth: 1,
+    borderBottomColor: "#F3F4F6",
+  },
+  dropdownItemText: {
+    fontSize: 14,
+    color: "#1F2937",
+  },
+  dropdownItemSelected: {
+    backgroundColor: "rgba(154, 27, 43, 0.08)",
+  },
+  dropdownItemSelectedText: {
+    color: "#9A1B2B",
+    fontWeight: "700",
+  },
 
 });
 

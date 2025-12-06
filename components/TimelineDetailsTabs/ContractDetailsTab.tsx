@@ -154,7 +154,7 @@ const ContractDetailsTab: React.FC<ContractDetailsTabProps> = ({
     },
     {
       label: "Deposits / Advance Pmnts",
-      value: contract?.payments,
+      value: `$${contract.payments.toFixed(2)}`,
       icon: "checkmark-circle-outline" as const,
     },
     // {
@@ -192,7 +192,9 @@ const ContractDetailsTab: React.FC<ContractDetailsTabProps> = ({
     },
     {
       label: "Non Renew Sent Date",
-      value: contract.non_renew_sent_date || "N/A",
+      value: contract.non_renew_sent_at
+        ? formatDate(contract.non_renew_sent_at)
+        : "N/A",
       icon: "calendar-outline" as const,
     },
     // {
@@ -347,12 +349,12 @@ const ContractDetailsTab: React.FC<ContractDetailsTabProps> = ({
                   styles.detailValue,
                   detail.value === "N/A" && styles.detailValueNA,
                   detail.label === "Days Left" &&
-                    daysLeft < 0 &&
-                    styles.expiredValue,
+                  daysLeft < 0 &&
+                  styles.expiredValue,
                   detail.label === "Days Left" &&
-                    daysLeft >= 0 &&
-                    daysLeft < 30 &&
-                    styles.urgentValue,
+                  daysLeft >= 0 &&
+                  daysLeft < 30 &&
+                  styles.urgentValue,
                 ]}
               >
                 {detail.value}
@@ -373,7 +375,7 @@ const ContractDetailsTab: React.FC<ContractDetailsTabProps> = ({
               {/* Last Completed */}
               <View style={styles.detailItem}>
                 <Text style={styles.detailLabel}>Last Completed</Text>
-               <Text style={[styles.detailValue, {marginTop:7}]}>
+                <Text style={[styles.detailValue, { marginTop: 7 }]}>
                   {contract?.completed_at
                     ? dayjs(contract.completed_at).format("DD MMM YYYY")
                     : "—"}
@@ -383,7 +385,7 @@ const ContractDetailsTab: React.FC<ContractDetailsTabProps> = ({
               {/* Last Completed By */}
               <View style={styles.detailItem}>
                 <Text style={styles.detailLabel}>Last Completed By</Text>
-                <Text style={[styles.detailValue, {marginTop:7}]}>
+                <Text style={[styles.detailValue, { marginTop: 7 }]}>
                   {completedBy ?? "—"}
                 </Text>
               </View>

@@ -95,7 +95,7 @@ export const ContractDetails: React.FC<ContractDetailsProps> = ({
   accounts,
   currentCategory,
 }) => {
-  console.log("current-category ====================>", currentCategory);
+  console.log("current-category ====================>", contractForm);
 
   // ============ CATEGORIES STATE ============
   const [selectedCategory, setSelectedCategory] = useState<string>("");
@@ -169,8 +169,9 @@ export const ContractDetails: React.FC<ContractDetailsProps> = ({
   // Format date helper that handles null dates
   const formatDate = (date: Date | null) => {
     if (!date) return "YYYY-MM-DD";
-    return date?.toISOString()?.split("T")[0];
+    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
   };
+
 
   // Clear date handler
   const clearDate = (field: string) => {
@@ -260,21 +261,21 @@ export const ContractDetails: React.FC<ContractDetailsProps> = ({
     console.log("✅ ===== TEMPLATE GENERATION COMPLETED =====\n");
   };
 
-const handleSelectCategory = (categoryId: string) => {
-  if (!categories) return;
+  const handleSelectCategory = (categoryId: string) => {
+    if (!categories) return;
 
-  const all = flattenCategories(categories);
-  const found = all.find(
-    (c: any) => String(c.id ?? c.value) === String(categoryId)
-  );
+    const all = flattenCategories(categories);
+    const found = all.find(
+      (c: any) => String(c.id ?? c.value) === String(categoryId)
+    );
 
-  const displayName = found?.name || found?.label || currentCategory || "";
+    const displayName = found?.name || found?.label || currentCategory || "";
 
-  setSelectedCategoryName(displayName);
+    setSelectedCategoryName(displayName);
 
-  // Make sure we save the underlying ID/value so backend gets the correct category_id
-  onContractChange("category", String(found?.id ?? found?.value ?? categoryId));
-};
+    // Make sure we save the underlying ID/value so backend gets the correct category_id
+    onContractChange("category", String(found?.id ?? found?.value ?? categoryId));
+  };
 
   useEffect(() => {
     // If we already know the category name from the contract, prefer that

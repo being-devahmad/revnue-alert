@@ -1,5 +1,5 @@
 import axiosInstance from '@/utils/axios';
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 
 interface AddReminderRequest {
   contract_id: number;
@@ -61,6 +61,7 @@ const addReminderAPI = async (reminderData: AddReminderRequest): Promise<AddRemi
 };
 
 export const useAddReminder = () => {
+  const queryClient = useQueryClient();
   const mutation = useMutation({
     mutationFn: addReminderAPI,
     onMutate: () => {
@@ -68,6 +69,23 @@ export const useAddReminder = () => {
     },
     onSuccess: (data) => {
       console.log('🎉 Mutation success:', data);
+
+
+      // ✅ 1️⃣ Timeline details refresh
+      queryClient.invalidateQueries({
+        queryKey: ['timelineDetails'],
+      });
+
+      // ✅ 2️⃣ Reminder related lists (if any list screen exists)
+      queryClient.invalidateQueries({
+        queryKey: ['reminders'],
+      });
+
+      // ✅ 3️⃣ Contract related data (list / details)
+      queryClient.invalidateQueries({
+        queryKey: ['contracts'],
+      });
+
     },
     onError: (error: any) => {
       console.error('💥 Mutation error:', error.message);

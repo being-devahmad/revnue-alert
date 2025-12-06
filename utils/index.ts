@@ -72,3 +72,29 @@ export const formatToISO = (label: string): string => {
 export const stripHtml = (html: string) => {
   return html.replace(/<[^>]*>/g, "").trim();
 };
+
+
+export const formatLocalDate = (date: Date | null) => {
+  if (!date) return null;
+
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+};
+
+export const getDiscountLabel = (data: any): string | null => {
+  if (!data) return null;
+
+  if (data.on_full_discount) {
+    return '100% off (Forever)';
+  }
+
+  if (data.discount_ends_at) {
+    const expiresDate = new Date(data.discount_ends_at).toLocaleDateString(
+      'en-US',
+      { year: 'numeric', month: 'short', day: 'numeric' }
+    );
+
+    return `${data.discount_description} (Expires: ${expiresDate})`;
+  }
+
+  return null;
+};

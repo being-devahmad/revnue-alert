@@ -42,12 +42,12 @@ export default function RootLayout() {
   }, [appIsReady]);
 
   if (!appIsReady) {
-    return <SplashScreen />; 
+    return <SplashScreen />;
   }
 
   return (
     <StripeProvider
-      publishableKey={process.env.EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY || ""}
+      publishableKey={"pk_test_51SHknHI8Xjdh0k1MqhPNksWxi985u7AyKA3cYvmOaFgtB12TaNNKAskfVkjgiEC8UprCHWAeOZEfYxli7IvsZ5ut00GOHlrljC"}
       threeDSecureParams={{
         backgroundColor: "#FFF",
       }}

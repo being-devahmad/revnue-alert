@@ -2,7 +2,7 @@ import { useRegister } from "@/api/auth/useRegister";
 import { TabHeader } from "@/components/TabHeader";
 import { Industry } from "@/components/ui/IndustryDropdown";
 import { Ionicons } from "@expo/vector-icons";
-import { CardForm, useStripe } from "@stripe/stripe-react-native";
+import { CardField, useStripe } from "@stripe/stripe-react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useRef, useState } from "react";
 import {
@@ -16,15 +16,15 @@ import {
 } from "react-native";
 
 interface UserFormData {
-  firstName: string;
-  middleName: string;
-  lastName: string;
-  industry: Industry;
-  companyName: string;
-  email: string;
-  password: string;
-  confirmPassword: string;
-  couponCode: string;
+    firstName: string;
+    middleName: string;
+    lastName: string;
+    industry: Industry;
+    companyName: string;
+    email: string;
+    password: string;
+    confirmPassword: string;
+    couponCode: string;
 }
 
 interface PaymentData {
@@ -76,7 +76,7 @@ const PaymentScreen = () => {
     // State
     const [isProcessing, setIsProcessing] = useState(false);
     const [stripeError, setStripeError] = useState<string | null>(null);
-    
+
     // ✅ Get Stripe methods
     const { createToken } = useStripe();
     const cardFormRef = useRef(null);
@@ -113,12 +113,10 @@ const PaymentScreen = () => {
     const createStripeToken = async (): Promise<string | null> => {
         try {
             console.log("\n💳 ===== CREATING STRIPE TOKEN =====");
-            
+
             // Validate inputs
-            if (!cardFormRef.current) {
-                Alert.alert("Error", "Card form not ready");
-                return null;
-            }
+            // Note: createToken will return an error if the card is incomplete, 
+            // so we rely on Stripe's internal state.
 
             // ✅ Use Stripe's createToken method
             const { token, error } = await createToken({
@@ -137,7 +135,6 @@ const PaymentScreen = () => {
                 setStripeError(null);
                 return token.id;
             }
-
             console.error("❌ No token received from Stripe");
             return null;
         } catch (error: any) {
@@ -160,10 +157,10 @@ const PaymentScreen = () => {
 
         try {
             console.log("\n💳 ===== PROCESSING PAYMENT & REGISTRATION =====");
-            
+
             // ✅ Step 1: Create Stripe token from CardForm
             const token = await createStripeToken();
-            
+
             if (!token) {
                 setIsProcessing(false);
                 return;
@@ -196,8 +193,8 @@ const PaymentScreen = () => {
                 onSuccess: (data) => {
                     console.log("✅ Registration & Payment SUCCESSFUL!");
                     setIsProcessing(false);
-                    
-                    Alert.alert("Success", data.message || 
+
+                    Alert.alert("Success", data.message ||
                         "Account created successfully! Please verify your email first before login", [
                         {
                             text: "Continue",
@@ -228,7 +225,7 @@ const PaymentScreen = () => {
 
     return (
         <View style={styles.container}>
-           <TabHeader title="Payment Information" isChild={true} />
+            <TabHeader title="Payment Information" isChild={true} />
 
             <ScrollView
                 style={styles.scrollView}
@@ -300,7 +297,7 @@ const PaymentScreen = () => {
 
                         <View style={styles.summaryRow}>
                             <Text style={styles.summaryLabel}>Industry:</Text>
-                            <Text style={[styles.summaryValue, {width: "39%"}]}>{userFormData.industry.name}</Text>
+                            <Text style={[styles.summaryValue, { width: "39%" }]}>{userFormData.industry.name}</Text>
                         </View>
                     </View>
                 )}
@@ -315,32 +312,24 @@ const PaymentScreen = () => {
                         </Text>
                     </View>
 
-                    {/* ✅ Stripe CardForm with custom styling */}
-                         <CardForm
-                            ref={cardFormRef}
-                            onFormComplete={(cardDetails) => {
-                                console.log("✅ Card form complete:", cardDetails);
-                            }}
-                            dangerouslyGetFullCardDetails={true}
-                            style={styles.cardFormStyle}
-                            cardStyle={{
-                                backgroundColor: "#333",
-                                textColor: "#1F2937",
-                                placeholderColor: "#000",
-                                borderColor: "#E5E7EB",
-                                borderWidth: 1.5,
-                                borderRadius: 12,
-                                cursorColor: "#800000",
-                                fontSize: 16,
-                                textErrorColor: "#EF4444",
-                            }}
-                            placeholders={{
-                                number: "Card Number",
-                                expiration: "MM/YY",
-                                cvc: "CVC",
-                                postalCode: "Postal Code",
-                            }}
-                        />
+                    {/* ✅ Stripe CardField for legacy token support */}
+                    <CardField
+                        postalCodeEnabled={true}
+                        style={styles.cardFormStyle}
+                        cardStyle={{
+                            backgroundColor: "#FFFFFF",
+                            textColor: "#1F2937",
+                            placeholderColor: "#6B7280",
+                            borderColor: "#E5E7EB",
+                            borderWidth: 1,
+                            borderRadius: 12,
+                            fontSize: 16,
+                            textErrorColor: "#EF4444",
+                        }}
+                        onCardChange={(cardDetails) => {
+                            console.log("✅ Card field changed:", cardDetails);
+                        }}
+                    />
                 </View>
 
                 {/* Error Display */}

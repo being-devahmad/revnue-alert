@@ -109,7 +109,7 @@ const EditReminder = () => {
       console.log("Loading contract data for edit:", contractData);
 
       setContractForm({
-        reminderTo: assignedUser?.name || "",
+        reminderTo: assignedUser?.department ? assignedUser?.department : assignedUser?.name,
         reminderName: contractData.name || "",
         description: contractData.description || "",
         category: String(contractData.category_id), // ← Store ID as string

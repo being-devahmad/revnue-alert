@@ -95,7 +95,6 @@ const ReminderDetailsTab: React.FC<ReminderDetailsTabProps> = ({
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
       <View style={styles.detailsContainer}>
         {/* Header */}
-        {/* Header */}
         <View style={styles.detailsHeader}>
           <View style={styles.headerLeft}>
             <Ionicons name="notifications" size={24} color="#9A1B2B" />
@@ -105,7 +104,7 @@ const ReminderDetailsTab: React.FC<ReminderDetailsTabProps> = ({
             </View>
           </View>
 
-          <View style={{gap:5}}>
+          <View style={{ gap: 5 }}>
             {onResendIcal && (
               <TouchableOpacity
                 style={styles.actionButton}
@@ -190,7 +189,7 @@ const ReminderDetailsTab: React.FC<ReminderDetailsTabProps> = ({
                 </View>
 
                 {/* Quantity */}
-                {reminder.quantity > 0 && (
+                {/* {reminder.quantity > 0 && (
                   <View style={styles.detailRow}>
                     <View style={styles.detailLabel}>
                       <Ionicons name="list" size={16} color="#6B7280" />
@@ -198,7 +197,7 @@ const ReminderDetailsTab: React.FC<ReminderDetailsTabProps> = ({
                     </View>
                     <Text style={styles.detailValue}>{reminder.quantity}</Text>
                   </View>
-                )}
+                )} */}
 
                 {/* Contacts */}
                 {reminder.contacts && reminder.contacts.length > 0 && (

@@ -5,8 +5,9 @@ import { ContractDetails } from "@/components/AddReminderTabs/ContractDetailsTab
 import { ReminderDetails } from "@/components/AddReminderTabs/ReminderDetailsTab";
 import { TabHeader } from "@/components/TabHeader";
 import { useAuthStore } from "@/store/authStore";
+import { formatLocalDate } from "@/utils";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -41,10 +42,14 @@ const AddReminderScreen = () => {
   const { data: accounts } = useGetEnterpriseAccounts();
   console.log('accounts==>', accounts)
 
-  // Store contract ID after creation
-  const [createdContractId, setCreatedContractId] = useState<number | null>(
-    null
-  );
+  // Store contract ID after creation (or from params if adding to existing)
+  const [createdContractId, setCreatedContractId] = useState<number | null>(() => {
+    if (params.contractId) {
+      const id = Number(Array.isArray(params.contractId) ? params.contractId[0] : params.contractId);
+      return isNaN(id) ? null : id;
+    }
+    return null;
+  });
 
   // Step 1: Contract Details
   const [contractForm, setContractForm] = useState({
@@ -254,24 +259,24 @@ const AddReminderScreen = () => {
       name: contractForm.reminderName,
       description: contractForm.description,
       category_id: contractForm?.category,
-      started_at: contractForm.inceptionDate?.toISOString().split("T")[0] || "",
+      started_at: formatLocalDate(contractForm.inceptionDate) || "",
       expired_at:
-        contractForm.expirationDate?.toISOString().split("T")[0] || "",
+        formatLocalDate(contractForm.expirationDate) || "",
       account_number: contractForm.accountNumber,
       amount: parseFloat(contractForm.paymentAmount) || 0,
       interval: contractForm.paymentInterval,
       payments: contractForm?.payments,
       auto_renew: contractForm.renewal ? 1 : 0,
-      auto_renew_period: contractForm.renewal ? "P1Y" : null,
+      auto_renew_period: contractForm.renewal ? "P2Y" : null,
       supplier_rating: contractForm.supplierRating,
       last_payment_amount: parseFloat(contractForm.lastPaymentAmount) || 0,
       last_payment_at:
-        contractForm.lastPaymentDate?.toISOString().split("T")[0] || "",
+        formatLocalDate(contractForm.lastPaymentDate) || null,
       last_payment_notes: contractForm.lastPaymentNotes || '',
       website_email: contractForm.emailWebsite,
       phone_number: contractForm.phone,
       non_renew_sent_at:
-        contractForm.nonRenewDate?.toISOString().split("T")[0] || null,
+        formatLocalDate(contractForm.nonRenewDate) || null,
       notes: contractForm.notes,
     };
 
@@ -286,8 +291,7 @@ const AddReminderScreen = () => {
         // Store contract ID
         setCreatedContractId(data.data.contract_id);
 
-        // Clear all fields
-        resetForms();
+
 
         // Show success alert
         Alert.alert("Success", "Contract added successfully!", [
@@ -306,9 +310,18 @@ const AddReminderScreen = () => {
     });
   };
 
+  useEffect(() => {
+    console.log('createdContractId-->', createdContractId)
+  }, [createdContractId])
+
   // ============ ADD REMINDER ============
   const handleSaveReminder = () => {
-    console.log("💾 Saving reminder...");
+    console.log("🧩 Saving reminder, contractId =>", createdContractId);
+
+    if (!createdContractId) {
+      Alert.alert("Error", "Contract ID missing. Please re-create contract.");
+      return;
+    }
 
     // Validate
     if (!validateReminderForm()) {
@@ -337,6 +350,9 @@ const AddReminderScreen = () => {
       onSuccess: (data) => {
         console.log("✅ Reminder created successfully!");
         console.log("📋 Reminder ID:", data.data.id);
+
+        // Clear all fields
+        resetForms();
 
         // Show success alert and navigate
         Alert.alert("Success", "Reminder added successfully!", [
