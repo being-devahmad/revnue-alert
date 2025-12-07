@@ -268,7 +268,7 @@ const AddReminderScreen = () => {
       payments: contractForm?.payments,
       auto_renew: contractForm.renewal ? 1 : 0,
       auto_renew_period: contractForm.renewal ? "P2Y" : null,
-      supplier_rating: contractForm.supplierRating,
+      supplier_rating: contractForm.supplierRating || "",
       last_payment_amount: parseFloat(contractForm.lastPaymentAmount) || 0,
       last_payment_at:
         formatLocalDate(contractForm.lastPaymentDate) || null,

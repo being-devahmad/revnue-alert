@@ -116,10 +116,9 @@ const AccountSettingsScreen = () => {
 
   const discountLabel = getDiscountLabel(plansData?.data);
 
-  const currentPlanDisplayName = discountLabel
-    ? `${plansData?.data?.current_plan?.name} - ${discountLabel}`
+  const currentPlanDisplayName = `${discountLabel}`
+    ? `${plansData?.data?.current_plan?.name} - $${plansData?.data?.current_plan?.amount?.toFixed(2) / 100}`
     : plansData?.data?.current_plan?.name;
-
 
   console.log("plans-data-->", plansData);
 
@@ -365,7 +364,7 @@ const AccountSettingsScreen = () => {
     <View style={styles.container}>
       {/* Industry Bottom Sheet Modal */}
       {
-        plansData?.data?.is_home_and_family && <IndustryBottomSheet
+        !plansData?.data?.is_home_and_family && <IndustryBottomSheet
           visible={showIndustryModal}
           selectedValue={industry}
           onSelect={(selectedIndustry) => {

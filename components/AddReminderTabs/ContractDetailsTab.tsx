@@ -95,7 +95,7 @@ export const ContractDetails: React.FC<ContractDetailsProps> = ({
   accounts,
   currentCategory,
 }) => {
-  console.log("current-category ====================>", contractForm);
+  console.log("current-category ====================>", currentCategory);
 
   // ============ CATEGORIES STATE ============
   const [selectedCategory, setSelectedCategory] = useState<string>("");
@@ -195,22 +195,20 @@ export const ContractDetails: React.FC<ContractDetailsProps> = ({
       return;
     }
 
-    const categoryName = selectedCategory || contractForm.category || "N/A";
+    const categoryName = selectedCategory || contractForm.category;
     console.log("📋 Category Name:", categoryName);
 
-    const generatedNote = `<b>Reminder Name:</b> ${contractForm.reminderName?.trim() || "N/A"
-      }<br><b>Account Number:</b> ${contractForm.accountNumber?.trim() || "N/A"
-      }<br><b>Payment Amount:</b> ${contractForm.paymentAmount || "N/A"
-      }<br><b>Payment Interval:</b> ${contractForm.paymentInterval?.trim() || "N/A"
+    const generatedNote = `<b>Reminder Name:</b> ${contractForm.reminderName?.trim()
+      }<br><b>Account Number:</b> ${contractForm.accountNumber?.trim()
+      }<br><b>Payment Amount:</b> ${contractForm.paymentAmount
+      }<br><b>Payment Interval:</b> ${contractForm.paymentInterval?.trim()
       }<br><b>Expiration Date:</b> ${contractForm.expirationDate
-        ? contractForm.expirationDate.toISOString().split("T")[0]
-        : "N/A"
-      }<br><b>Category:</b> ${categoryName}<br><b>Description:</b> ${contractForm.description?.trim() || "N/A"
-      }<br><b>Website / Email:</b> ${contractForm.emailWebsite?.trim() || "N/A"
-      }<br><b>Phone Number:</b> ${contractForm.phone?.trim() || "N/A"
+      && contractForm.expirationDate.toISOString().split("T")[0]
+      }<br><b>Category:</b> ${currentCategory}<br><b>Description:</b> ${contractForm.description?.trim()
+      }<br><b>Website / Email:</b> ${contractForm.emailWebsite?.trim()
+      }<br><b>Phone Number:</b> ${contractForm.phone?.trim()
       }<br><b>Non-Renew Sent Date:</b> ${contractForm.nonRenewDate
-        ? contractForm.nonRenewDate.toISOString().split("T")[0]
-        : "N/A"
+      && contractForm.nonRenewDate.toISOString().split("T")[0]
       }<br>`;
 
     console.log("📝 Generated Template:", generatedNote);
