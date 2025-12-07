@@ -307,7 +307,7 @@ const ReminderScreen: React.FC = () => {
   // ============ RENDER FUNCTIONS ============
   const maxHeight = filterHeight.interpolate({
     inputRange: [0, 1],
-    outputRange: [0, 600],
+    outputRange: [0, 900],
   });
 
   const renderReminderCard = ({ item: reminder }: { item: ReminderData }) => {
@@ -587,7 +587,10 @@ const ReminderScreen: React.FC = () => {
             </TouchableOpacity>
           </View>
 
-          <View style={styles.filtersScrollView}>
+          <ScrollView
+            style={styles.filtersScrollView}
+            nestedScrollEnabled={true}
+            showsVerticalScrollIndicator={true}>
             <View style={{ flexDirection: "row", gap: 12 }}>
               {/* Name Filter */}
               <View style={styles.filterInputGroup}>
@@ -708,7 +711,7 @@ const ReminderScreen: React.FC = () => {
                 />
               </View>
             </View>
-          </View>
+          </ScrollView>
 
           <TouchableOpacity
             style={styles.applyFiltersButton}
@@ -1074,6 +1077,7 @@ const styles = StyleSheet.create({
   },
   filterInputGroup: {
     marginBottom: 16,
+    flex: 1,
   },
   filterLabel: {
     fontSize: 13,
@@ -1090,7 +1094,7 @@ const styles = StyleSheet.create({
     color: "#1F2937",
     borderWidth: 1,
     borderColor: "#E5E7EB",
-    width: 170,
+    width: "100%",
   },
   dateText: {
     fontSize: 14,

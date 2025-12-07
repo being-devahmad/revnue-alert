@@ -215,14 +215,19 @@ const AccountSettingsScreen = () => {
       setSubscriptionStatus(statusDisplay);
 
       // Card Info
+      const cardFromPlans = plansData?.data?.card;
+      const lastFour = cardFromPlans?.last4 || profileData.user.last_four || "";
+      const brand = cardFromPlans?.brand || "";
+
       setSavedCard({
-        lastFour: profileData.user.last_four || "",
+        lastFour: lastFour,
         expiration: "**/**",
+        brand: brand
       });
 
       console.log("✅ Profile data loaded successfully");
     }
-  }, [profileData]);
+  }, [profileData, plansData]);
 
 
   // Show error message when profile update fails
@@ -905,7 +910,7 @@ const AccountSettingsScreen = () => {
                         setShowPlanConfirm(false);
                         changeplanMutate(
                           {
-                            plan_id: selectedPlanId,
+                            plan_id: selectedPlanId!,
                             payment_method_token: cardToken || undefined, // reuse saved or new
                             coupon: couponCode || undefined,
                           },

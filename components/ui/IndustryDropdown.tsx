@@ -337,13 +337,12 @@ const styles = StyleSheet.create({
   modalContainer: {
     flex: 1,
     justifyContent: 'flex-end',
-    // height: 500,
+    height: 800,
   },
   modalContent: {
     backgroundColor: '#FFFFFF',
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
-    maxHeight: '85%', // ⬆️ INCREASED from 90% to 85% to give more content space
     paddingHorizontal: 20,
     paddingTop: 16,
     paddingBottom: 16,

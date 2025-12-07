@@ -1,22 +1,22 @@
 import { getPaginationInfo } from "@/api/reminders/useGetReminders";
 import {
-    flattenIndustries,
-    searchIndustries,
-    useIndustries,
+  flattenIndustries,
+  searchIndustries,
+  useIndustries,
 } from "@/api/settings/useGetIndustries";
 import { initializeIndustriesMap } from "@/api/settings/useGetUserDetails";
 import { Ionicons } from "@expo/vector-icons";
 import { useEffect, useState } from "react";
 import {
-    ActivityIndicator,
-    Animated,
-    FlatList,
-    Modal,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  Animated,
+  FlatList,
+  Modal,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from "react-native";
 
 // ✅ Updated type to accept industry objects with id
@@ -214,7 +214,6 @@ export const IndustryBottomSheet = ({
               data={filteredIndustries}
               keyExtractor={(item) => `${item.id}`} // ✅ Use id as key
               scrollEnabled={filteredIndustries?.length > 6}
-              style={styles.bottomSheetList}
               onEndReached={handleEndReached}
               onEndReachedThreshold={0.3}
               ListFooterComponent={
@@ -230,7 +229,7 @@ export const IndustryBottomSheet = ({
                   style={[
                     styles.bottomSheetOption,
                     selectedValue === item.name &&
-                      styles.bottomSheetOptionSelected,
+                    styles.bottomSheetOptionSelected,
                   ]}
                   onPress={() => handleSelect(item)} // ✅ Pass whole object
                 >
@@ -238,7 +237,7 @@ export const IndustryBottomSheet = ({
                     style={[
                       styles.bottomSheetOptionText,
                       selectedValue === item.name &&
-                        styles.bottomSheetOptionTextSelected,
+                      styles.bottomSheetOptionTextSelected,
                     ]}
                   >
                     {item.name}
@@ -365,7 +364,7 @@ const styles = StyleSheet.create({
 
   // ============ LIST STYLES ============
   bottomSheetList: {
-    maxHeight: 400,
+    maxHeight: 800,
   },
   bottomSheetOption: {
     flexDirection: "row",
