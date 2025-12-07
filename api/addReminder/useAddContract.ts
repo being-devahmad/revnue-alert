@@ -13,7 +13,7 @@ interface AddContractRequest {
   payments?: number;
   auto_renew: boolean | number;
   auto_renew_period?: string | null;
-  supplier_rating: number;
+  supplier_rating: string;
   last_payment_amount: number;
   last_payment_at: string;
   last_payment_notes: string;

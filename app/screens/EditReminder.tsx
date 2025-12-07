@@ -7,7 +7,7 @@ import { ContractDetails } from "@/components/AddReminderTabs/ContractDetailsTab
 import { ReminderDetails } from "@/components/AddReminderTabs/ReminderDetailsTab";
 import { TabHeader } from "@/components/TabHeader";
 import { useAuthStore } from "@/store/authStore";
-import { formatISODuration, normalizeParam, stripHtml } from "@/utils";
+import { formatISODuration, formatToISO, normalizeParam, stripHtml } from "@/utils";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useState } from "react";
 import {
@@ -270,7 +270,7 @@ const EditReminder = () => {
       interval: contractForm.paymentInterval,
       payments: contractForm.payments || 0,
       auto_renew: contractForm.renewal ? 1 : 0,
-      auto_renew_period: contractForm.renewalPeriod,
+      auto_renew_period: formatToISO(contractForm.renewalPeriod),
       supplier_rating: contractForm.supplierRating,
       last_payment_amount: parseFloat(contractForm.lastPaymentAmount) || 0,
       last_payment_at: contractForm.lastPaymentDate
@@ -327,7 +327,7 @@ const EditReminder = () => {
       contract_id: Number(contractId),
       name: contractForm.reminderName,
       quantity: quantityMap[reminderForm.quantity] || 1,
-      period: reminderForm.period || '',
+      period: formatToISO(reminderForm.period || ''),
       contacts: validContacts,
       active: true,
       ical: reminderForm.resendICal,
@@ -434,6 +434,7 @@ const EditReminder = () => {
           isEnterprise={isEnterprise}
           accounts={accounts}
           currentCategory={currentCategory}
+          contractData={contractData}
         />
       )}
 

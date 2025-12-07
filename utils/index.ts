@@ -44,6 +44,9 @@ export const formatToISO = (label: string): string => {
   console.log('label->', label)
   if (!label) return "";
 
+  // If already in ISO format (starts with P), return as is
+  if (label.startsWith("P")) return label;
+
   const match = label.trim().toLowerCase().match(/(\d+)\s*(day|days|week|weeks|month|months|year|years)/);
   if (!match) return "";
 

@@ -38,7 +38,7 @@ interface ContractDetailsProps {
     nonRenewDate: Date | null;
     renewal: boolean;
     renewalPeriod: string;
-    supplierRating: number;
+    supplierRating: string;
     emailWebsite: string;
     phone: string;
     lastPaymentNotes: string;
@@ -62,7 +62,7 @@ interface ContractDetailsProps {
       nonRenewDate: Date | null;
       renewal: boolean;
       renewalPeriod: string;
-      supplierRating: number;
+      supplierRating: string;
       emailWebsite: string;
       phone: string;
       lastPaymentNotes: string;
@@ -81,6 +81,7 @@ interface ContractDetailsProps {
   user: any;
   accounts: string[];
   currentCategory: string;
+  contractData: any
 }
 
 export const ContractDetails: React.FC<ContractDetailsProps> = ({
@@ -94,6 +95,7 @@ export const ContractDetails: React.FC<ContractDetailsProps> = ({
   user,
   accounts,
   currentCategory,
+  contractData
 }) => {
   console.log("current-category ====================>", currentCategory);
 
@@ -195,6 +197,8 @@ export const ContractDetails: React.FC<ContractDetailsProps> = ({
       return;
     }
 
+
+
     const categoryName = selectedCategory || contractForm.category;
     console.log("📋 Category Name:", categoryName);
 
@@ -202,18 +206,18 @@ export const ContractDetails: React.FC<ContractDetailsProps> = ({
       }<br><b>Account Number:</b> ${contractForm.accountNumber?.trim()
       }<br><b>Payment Amount:</b> ${contractForm.paymentAmount
       }<br><b>Payment Interval:</b> ${contractForm.paymentInterval?.trim()
-      }<br><b>Expiration Date:</b> ${contractForm.expirationDate
-      && contractForm.expirationDate.toISOString().split("T")[0]
-      }<br><b>Category:</b> ${currentCategory}<br><b>Description:</b> ${contractForm.description?.trim()
+      }<br><b>Expiration Date:</b> ${(contractForm.expirationDate
+        && contractForm.expirationDate.toISOString().split("T")[0]) || ""
+      }<br><b>Category:</b> ${selectedCategoryName}<br><b>Description:</b> ${contractForm.description?.trim()
       }<br><b>Website / Email:</b> ${contractForm.emailWebsite?.trim()
       }<br><b>Phone Number:</b> ${contractForm.phone?.trim()
-      }<br><b>Non-Renew Sent Date:</b> ${contractForm.nonRenewDate
-      && contractForm.nonRenewDate.toISOString().split("T")[0]
+      }<br><b>Non-Renew Sent Date:</b> ${(contractForm.nonRenewDate
+        && contractForm.nonRenewDate.toISOString().split("T")[0]) || ""
       }<br>`;
 
     console.log("📝 Generated Template:", generatedNote);
 
-    const templatePattern = /<b>Reminder Name:<\/b>[\s\S]*?(<br><br>|$)/;
+    const templatePattern = /<b>Reminder Name:<\/b>[\s\S]*?<b>Non-Renew Sent Date:<\/b>[\s\S]*?<br>/;
     const hasExistingTemplate = templatePattern.test(contractForm.notes);
     console.log("🔍 Has existing template:", hasExistingTemplate);
 

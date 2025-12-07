@@ -44,7 +44,7 @@ export interface UpdateContractResponse {
     last_payment_amount: number | null;
     last_payment_at: string;
     last_payment_notes: string;
-    supplier_rating: number | null;
+    supplier_rating: string;
     category_id: number;
     user_id: number;
     completed_at: string | null;
