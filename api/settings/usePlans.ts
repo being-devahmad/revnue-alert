@@ -156,7 +156,7 @@ export const useChangePlan = () => {
     mutationFn: changePlan,
     onSuccess: (data) => {
       console.log('🎉 Plan change mutation successful');
-       queryClient.invalidateQueries({ queryKey: ['plans'] });
+      queryClient.invalidateQueries({ queryKey: ['plans'] });
     },
     onError: (error: any) => {
       console.error('❌ Plan change mutation failed:', error.message);

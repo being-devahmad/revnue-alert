@@ -5,9 +5,8 @@ import {
   useGetUserDetails,
 } from "@/api/settings/useGetUserDetails";
 import {
-  getSubscriptionStatus,
   useChangePlan,
-  usePlans,
+  usePlans
 } from "@/api/settings/usePlans";
 import {
   getPasswordStrength,
@@ -27,7 +26,7 @@ import { IndustryBottomSheet } from "@/components/ui/IndustryModal";
 import { getDiscountLabel } from "@/utils";
 import { Ionicons } from "@expo/vector-icons";
 import { CardField, createToken } from "@stripe/stripe-react-native";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -114,13 +113,35 @@ const AccountSettingsScreen = () => {
 
   const { data: plansData, isLoading: isLoadingPlans } = usePlans();
 
+  // Filter out duplicate plans (same name + amount + interval)
+  const uniquePlans = useMemo(() => {
+    if (!plansData?.data?.plans) return [];
+
+    const seen = new Set();
+    return plansData.data.plans.filter((plan: any) => {
+      const key = `${plan.name}-${plan.amount}-${plan.interval}`;
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+  }, [plansData?.data?.plans]);
+
   const discountLabel = getDiscountLabel(plansData?.data);
 
-  const currentPlanDisplayName = `${discountLabel}`
-    ? `${plansData?.data?.current_plan?.name} - $${plansData?.data?.current_plan?.amount?.toFixed(2) / 100}`
-    : plansData?.data?.current_plan?.name;
+  const currentPlan = useMemo(() => {
+    if (selectedPlanId && plansData?.data?.plans) {
+      const selected = plansData.data.plans.find((p: any) => p.id === selectedPlanId);
+      if (selected) return selected;
+    }
+    return plansData?.data?.current_plan;
+  }, [selectedPlanId, plansData?.data?.plans, plansData?.data?.current_plan]);
 
-  console.log("plans-data-->", plansData);
+  console.log('current-plan-->', currentPlan)
+
+  const formattedPrice = ((currentPlan?.amount ?? 0) / 100).toFixed(2);
+  const currentPlanDisplayName = discountLabel
+    ? `${currentPlan?.name} - $${formattedPrice} (${discountLabel})`
+    : `${currentPlan?.name} - $${formattedPrice}`;
 
 
 
@@ -175,8 +196,23 @@ const AccountSettingsScreen = () => {
       const planName = getSubscriptionPlanName(profileData.user.stripe_plan);
       setSubscriptionPlan(planName);
 
-      const status = getSubscriptionStatus(profileData.user);
-      setSubscriptionStatus(status);
+      // Custom Subscription Status Logic
+      let statusDisplay = "Inactive";
+      if (profileData.user.stripe_active === 1) {
+        statusDisplay = "Active";
+      }
+
+      const trialEnd = profileData.user.trial_ends_at ? new Date(profileData.user.trial_ends_at) : null;
+      if (trialEnd && trialEnd > new Date()) {
+        const dateStr = trialEnd.toLocaleDateString("en-US", {
+          month: "short",
+          day: "numeric",
+          year: "numeric",
+        });
+        statusDisplay = `Trial Period (Expires: ${dateStr})`;
+      }
+
+      setSubscriptionStatus(statusDisplay);
 
       // Card Info
       setSavedCard({
@@ -188,13 +224,6 @@ const AccountSettingsScreen = () => {
     }
   }, [profileData]);
 
-  // Show success message when profile updates
-  useEffect(() => {
-    if (isProfileUpdateSuccess) {
-      console.log("✨ Profile updated successfully!");
-      Alert.alert("Success", "Personal information updated successfully!");
-    }
-  }, [isProfileUpdateSuccess]);
 
   // Show error message when profile update fails
   useEffect(() => {
@@ -229,7 +258,7 @@ const AccountSettingsScreen = () => {
     }
 
     updateProfileMutate(payload, {
-      onSuccess: () => Alert.alert("Success", "Personal information updated!"),
+      onSuccess: () => Alert.alert("Success", "Personal information updated successfully!"),
       onError: (err: any) => Alert.alert("Error", formatErrorMessage(err)),
     });
   };
@@ -618,7 +647,7 @@ const AccountSettingsScreen = () => {
                 {/* Dropdown List */}
                 {isPlansDropdownOpen && (
                   <View style={styles.dropdownList}>
-                    {plansData?.data?.plans?.map((plan: any) => {
+                    {uniquePlans.map((plan: any) => {
                       const isCurrent = plan.id === profileData?.user?.stripe_plan;
                       const amount = (plan.amount / 100).toFixed(2);
 
@@ -643,7 +672,7 @@ const AccountSettingsScreen = () => {
                           onPress={() => {
                             setSelectedPlanId(plan.id);
                             setIsPlansDropdownOpen(false);
-                            setShowPlanConfirm(true);
+                            // setShowPlanConfirm(true); // Disable API confirmation for now
                           }}
                         >
                           <Text style={styles.planName}>{displayName}</Text>
@@ -1308,6 +1337,9 @@ const styles = StyleSheet.create({
     marginVertical: 16,
   },
   statusContainer: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     borderWidth: 1.5,
     borderColor: "#E5E7EB",
     borderRadius: 12,
@@ -1318,7 +1350,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 10,
-    marginBottom: 12,
+    flex: 1,
   },
   statusText: {
     fontSize: 14,

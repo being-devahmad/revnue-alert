@@ -1,10 +1,10 @@
 import React, { useMemo } from 'react';
 import {
-    Linking,
-    ScrollView,
-    StyleSheet,
-    Text,
-    View
+  Linking,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View
 } from 'react-native';
 
 interface HtmlNode {
@@ -136,142 +136,156 @@ const HtmlRichTextNoteDisplay: React.FC<HtmlRichTextNoteDisplayProps> = ({
     }
   }, [content]);
 
-  const renderNode = (node: HtmlNode, key: string): React.ReactNode => {
-    switch (node.type) {
-      case 'br':
-        return <View key={key} style={styles.lineBreak} />;
+  const isInlineNode = (node: HtmlNode): boolean => {
+    if (node.type === 'text') return true;
+    if (node.type === 'br') return true; // Treat br as inline (newline)
+    if (node.type === 'element') {
+      const inlineTags = ['b', 'strong', 'i', 'em', 'u', 'a', 'span', 'small'];
+      return inlineTags.includes(node.tag?.toLowerCase() || '');
+    }
+    return false;
+  };
 
-      case 'text':
-        return (
-          <Text key={key} style={styles.text} selectable>
-            {cleanText(node.content as string)}
+  const renderInlineNode = (node: HtmlNode, key: string): React.ReactNode => {
+    if (node.type === 'text') {
+      return <Text key={key}>{cleanText(node.content as string)}</Text>;
+    }
+    if (node.type === 'br') {
+      return <Text key={key}>{'\n'}</Text>;
+    }
+
+    if (node.type === 'element') {
+      const children = Array.isArray(node.content)
+        ? node.content.map((child, idx) => renderInlineNode(child, `${key}-${idx}`))
+        : node.content;
+
+      const tag = node.tag?.toLowerCase();
+
+      switch (tag) {
+        case 'strong':
+        case 'b':
+          return <Text key={key} style={styles.bold}>{children}</Text>;
+        case 'em':
+        case 'i':
+          return <Text key={key} style={styles.italic}>{children}</Text>;
+        case 'a':
+          return (
+            <Text
+              key={key}
+              style={styles.link}
+              onPress={() => {
+                const href = node.attrs?.href;
+                if (href) Linking.openURL(href).catch(console.error);
+              }}
+            >
+              {children}
+            </Text>
+          );
+        case 'span':
+        default:
+          return <Text key={key}>{children}</Text>;
+      }
+    }
+    return null;
+  };
+
+  const renderBlockNode = (node: HtmlNode, key: string): React.ReactNode => {
+    // Re-use existing renderNode logic for blocks, simplified
+    if (node.type === 'element') {
+      const tag = node.tag?.toLowerCase();
+      // ... helper to render children ...
+      const renderChildren = () => Array.isArray(node.content)
+        ? node.content.map((child, idx) => {
+          // Block children might need full renderNode logic if we supported nested blocks,
+          // but for now let's keep it simple or call a recursive generic render.
+          // Actually, best to recursively call the main grouping logic if the block contains blocks,
+          // but usually p/h1/ul contain inline stuff.
+          // For safety/speed in this fix, let's just map to recursive call or simplified inline if we know it's text-only content.
+          // Re-using the top-level logic is safer but complex.
+          // Let's rely on a simplified 'renderNode' that delegates.
+          return renderAnyNode(child, `${key}-${idx}`);
+        })
+        : node.content;
+
+      switch (tag) {
+        case 'p': return <View key={key} style={styles.paragraph}><Text style={styles.text}>{renderChildren()}</Text></View>;
+        case 'h1': return <Text key={key} style={styles.h1}>{renderChildren()}</Text>;
+        case 'h2': return <Text key={key} style={styles.h2}>{renderChildren()}</Text>;
+        case 'h3': return <Text key={key} style={styles.h3}>{renderChildren()}</Text>;
+        case 'ul': return <View key={key} style={styles.bulletList}>{renderChildren()}</View>;
+        case 'ol': return <View key={key} style={styles.numberedList}>{renderChildren()}</View>;
+        case 'li':
+          // This usually inside ul/ol, handled there? No, current logic handles children recursively.
+          // We need to render the LI marker + content.
+          // The parent ul/ol renderer in original code handled creating the bullet View.
+          // If we here, we are just rendering the LI node.
+          return <Text key={key}>{renderChildren()}</Text>; // Fallback if regular Text
+        case 'div': return <View key={key}>{renderChildren()}</View>;
+      }
+    }
+    return null;
+  };
+
+  // We need a unified render function that can be called recursively for children of blocks
+  const renderAnyNode = (node: HtmlNode, key: string): React.ReactNode => {
+    if (isInlineNode(node)) {
+      return renderInlineNode(node, key);
+    }
+    // For block nodes (ul, ol) specifically that iterate their own children in a specific way (bullets)
+    if (node.type === 'element' && (node.tag === 'ul' || node.tag === 'ol')) {
+      const tag = node.tag;
+      return (
+        <View key={key} style={tag === 'ul' ? styles.bulletList : styles.numberedList}>
+          {Array.isArray(node.content) && node.content.map((child, idx) => (
+            child.tag === 'li' ? (
+              <View key={`${key}-${idx}`} style={tag === 'ul' ? styles.bulletItem : styles.numberedItem}>
+                <Text style={tag === 'ul' ? styles.bullet : styles.number}>
+                  {tag === 'ul' ? '•' : `${idx + 1}.`}
+                </Text>
+                <Text style={styles.text}>
+                  {/* LI content is usually text/inline, so we group it */}
+                  {groupAndRenderInline([child], `${key}-${idx}-content`)}
+                </Text>
+              </View>
+            ) : (
+              renderAnyNode(child, `${key}-${idx}`)
+            )
+          ))}
+        </View>
+      );
+    }
+    return renderBlockNode(node, key);
+  };
+
+  // The helper to process a list of nodes and group inline ones
+  const groupAndRenderInline = (nodeList: HtmlNode[], baseKey: string) => {
+    const result: React.ReactNode[] = [];
+    let currentGroup: HtmlNode[] = [];
+
+    const flushGroup = (idx: number) => {
+      if (currentGroup.length > 0) {
+        result.push(
+          <Text key={`${baseKey}-group-${idx}`} style={styles.text}>
+            {currentGroup.map((n, i) => renderInlineNode(n, `${baseKey}-inline-${idx}-${i}`))}
           </Text>
         );
-
-      case 'element': {
-        const tag = node.tag?.toLowerCase();
-        const children = Array.isArray(node.content)
-          ? node.content.map((child, idx) =>
-              renderNode(child, `${key}-${idx}`)
-            )
-          : node.content;
-
-        switch (tag) {
-          case 'strong':
-          case 'b':
-            return (
-              <Text key={key} style={styles.bold}>
-                {children}
-              </Text>
-            );
-
-          case 'em':
-          case 'i':
-            return (
-              <Text key={key} style={styles.italic}>
-                {children}
-              </Text>
-            );
-
-          case 'a':
-            return (
-              <Text
-                key={key}
-                style={styles.link}
-                onPress={() => {
-                  const href = node.attrs?.href;
-                  if (href) {
-                    Linking.openURL(href).catch((err) =>
-                      console.error('Error opening URL:', err)
-                    );
-                  }
-                }}
-              >
-                {children}
-              </Text>
-            );
-
-          case 'p':
-            return (
-              <View key={key} style={styles.paragraph}>
-                <Text style={styles.text}>{children}</Text>
-              </View>
-            );
-
-          case 'ul':
-            return (
-              <View key={key} style={styles.bulletList}>
-                {Array.isArray(node.content) &&
-                  node.content.map((child, idx) =>
-                    child.tag === 'li' ? (
-                      <View key={idx} style={styles.bulletItem}>
-                        <Text style={styles.bullet}>•</Text>
-                        <Text style={styles.text}>
-                          {renderNode(child, `${key}-${idx}`)}
-                        </Text>
-                      </View>
-                    ) : (
-                      renderNode(child, `${key}-${idx}`)
-                    )
-                  )}
-              </View>
-            );
-
-          case 'ol':
-            return (
-              <View key={key} style={styles.numberedList}>
-                {Array.isArray(node.content) &&
-                  node.content.map((child, idx) =>
-                    child.tag === 'li' ? (
-                      <View key={idx} style={styles.numberedItem}>
-                        <Text style={styles.number}>{idx + 1}.</Text>
-                        <Text style={styles.text}>
-                          {renderNode(child, `${key}-${idx}`)}
-                        </Text>
-                      </View>
-                    ) : (
-                      renderNode(child, `${key}-${idx}`)
-                    )
-                  )}
-              </View>
-            );
-
-          case 'li':
-            return <>{children}</>;
-
-          case 'div':
-          case 'span':
-            return <Text key={key}>{children}</Text>;
-
-          case 'h1':
-            return (
-              <Text key={key} style={styles.h1}>
-                {children}
-              </Text>
-            );
-
-          case 'h2':
-            return (
-              <Text key={key} style={styles.h2}>
-                {children}
-              </Text>
-            );
-
-          case 'h3':
-            return (
-              <Text key={key} style={styles.h3}>
-                {children}
-              </Text>
-            );
-
-          default:
-            return <Text key={key}>{children}</Text>;
-        }
+        currentGroup = [];
       }
+    };
 
-      default:
-        return null;
-    }
+    nodeList.forEach((node, index) => {
+      if (isInlineNode(node)) {
+        // Special case: if node is an element like <li> content, we might recurse.
+        // But here we are assuming flattened structure effectively.
+        // Wait, if <li> contains <p>, that's invalid HTML usually but possible.
+        currentGroup.push(node);
+      } else {
+        flushGroup(index);
+        result.push(renderAnyNode(node, `${baseKey}-block-${index}`));
+      }
+    });
+    flushGroup(nodeList.length);
+    return result;
   };
 
   if (!nodes || nodes.length === 0) {
@@ -290,7 +304,7 @@ const HtmlRichTextNoteDisplay: React.FC<HtmlRichTextNoteDisplayProps> = ({
       showsVerticalScrollIndicator={true}
     >
       <View style={styles.content}>
-        {nodes.map((node, idx) => renderNode(node, `node-${idx}`))}
+        {groupAndRenderInline(nodes, 'root')}
       </View>
     </ScrollView>
   );

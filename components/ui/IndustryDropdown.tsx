@@ -73,7 +73,7 @@ export const SearchableIndustryDropdown: React.FC<SearchableIndustryDropdownProp
   const handleSelect = (industry: Industry) => {
     // Prevent selection if locked
     if (isLocked) return;
-    
+
     onSelect(industry);
     setIsModalVisible(false);
     setSearchQuery('');
@@ -285,7 +285,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#F9FAFB',
     borderRadius: 12,
     paddingHorizontal: 16,
-    paddingVertical: 14,
+    height: 52, // Match input height
     borderWidth: 1.5,
     borderColor: '#E5E7EB',
     marginBottom: 20,
@@ -337,7 +337,7 @@ const styles = StyleSheet.create({
   modalContainer: {
     flex: 1,
     justifyContent: 'flex-end',
-    height: 500,
+    // height: 500,
   },
   modalContent: {
     backgroundColor: '#FFFFFF',

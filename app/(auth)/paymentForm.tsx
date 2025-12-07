@@ -8,6 +8,8 @@ import React, { useRef, useState } from "react";
 import {
     ActivityIndicator,
     Alert,
+    KeyboardAvoidingView,
+    Platform,
     ScrollView,
     StyleSheet,
     Text,
@@ -227,113 +229,119 @@ const PaymentScreen = () => {
         <View style={styles.container}>
             <TabHeader title="Payment Information" isChild={true} />
 
-            <ScrollView
-                style={styles.scrollView}
-                contentContainerStyle={styles.scrollContent}
-                showsVerticalScrollIndicator={false}
+            <KeyboardAvoidingView
+                behavior={Platform.OS === "ios" ? "padding" : "height"}
+                style={{ flex: 1 }}
+                keyboardVerticalOffset={Platform.OS === "ios" ? 1 : 0}
             >
-                {/* Order Summary Card */}
-                <View style={styles.summaryCard}>
-                    <View style={styles.summaryHeader}>
-                        <Ionicons name="receipt-outline" size={24} color="#800000" />
-                        <Text style={styles.summaryTitle}>Order Summary</Text>
-                    </View>
-
-                    <View style={styles.summaryDivider} />
-
-                    {/* Plan Details */}
-                    <View style={styles.summaryRow}>
-                        <Text style={styles.summaryLabel}>Plan:</Text>
-                        <Text style={styles.summaryValue}>{paymentData.planName}</Text>
-                    </View>
-
-                    <View style={styles.summaryRow}>
-                        <Text style={styles.summaryLabel}>Billing Cycle:</Text>
-                        <Text style={styles.summaryValue}>
-                            {paymentData.billingCycle === "month" ? "Monthly" : "Annual"}
-                        </Text>
-                    </View>
-
-                    {/* Pricing */}
-                    <View style={styles.summaryRow}>
-                        <Text style={styles.summaryLabel}>Price:</Text>
-                        <Text style={styles.summaryPrice}>
-                            ${parseFloat(paymentData.price).toFixed(2)}
-                        </Text>
-                    </View>
-
-                    {/* Free Trial Note */}
-                    <View style={styles.freeTrialNote}>
-                        <Ionicons name="gift" size={16} color="#10B981" />
-                        <Text style={styles.freeTrialText}>
-                            First 30 days are free. Cancel anytime.
-                        </Text>
-                    </View>
-                </View>
-
-                {/* User Information Summary */}
-                {userFormData && (
-                    <View style={styles.userSummaryCard}>
-                        <View style={styles.userSummaryHeader}>
-                            <Ionicons name="person-circle-outline" size={24} color="#800000" />
-                            <Text style={styles.userSummaryTitle}>Account Information</Text>
+                <ScrollView
+                    style={styles.scrollView}
+                    contentContainerStyle={styles.scrollContent}
+                    showsVerticalScrollIndicator={false}
+                    keyboardShouldPersistTaps="handled"
+                >
+                    {/* Order Summary Card */}
+                    <View style={styles.summaryCard}>
+                        <View style={styles.summaryHeader}>
+                            <Ionicons name="receipt-outline" size={24} color="#800000" />
+                            <Text style={styles.summaryTitle}>Order Summary</Text>
                         </View>
 
                         <View style={styles.summaryDivider} />
 
+                        {/* Plan Details */}
                         <View style={styles.summaryRow}>
-                            <Text style={styles.summaryLabel}>Name:</Text>
+                            <Text style={styles.summaryLabel}>Plan:</Text>
+                            <Text style={styles.summaryValue}>{paymentData.planName}</Text>
+                        </View>
+
+                        <View style={styles.summaryRow}>
+                            <Text style={styles.summaryLabel}>Billing Cycle:</Text>
                             <Text style={styles.summaryValue}>
-                                {userFormData.firstName} {userFormData.lastName}
+                                {paymentData.billingCycle === "month" ? "Monthly" : "Annual"}
                             </Text>
                         </View>
 
+                        {/* Pricing */}
                         <View style={styles.summaryRow}>
-                            <Text style={styles.summaryLabel}>Email:</Text>
-                            <Text style={[styles.summaryValue, { fontSize: 12 }]}>
-                                {userFormData.email}
+                            <Text style={styles.summaryLabel}>Price:</Text>
+                            <Text style={styles.summaryPrice}>
+                                ${parseFloat(paymentData.price).toFixed(2)}
                             </Text>
                         </View>
 
-                        <View style={styles.summaryRow}>
-                            <Text style={styles.summaryLabel}>Industry:</Text>
-                            <Text style={[styles.summaryValue, { width: "39%" }]}>{userFormData.industry.name}</Text>
+                        {/* Free Trial Note */}
+                        <View style={styles.freeTrialNote}>
+                            <Ionicons name="gift" size={16} color="#10B981" />
+                            <Text style={styles.freeTrialText}>
+                                First 30 days are free. Cancel anytime.
+                            </Text>
                         </View>
                     </View>
-                )}
 
-                {/* Payment Information Section - Stripe CardForm */}
-                <View style={styles.paymentSection}>
-                    <View style={styles.paymentHeader}>
-                        <Ionicons name="card" size={24} color="#800000" />
-                        <Text style={styles.paymentTitle}>
-                            Payment Information
-                            <Text style={styles.requiredStar}>*</Text>
-                        </Text>
+                    {/* User Information Summary */}
+                    {userFormData && (
+                        <View style={styles.userSummaryCard}>
+                            <View style={styles.userSummaryHeader}>
+                                <Ionicons name="person-circle-outline" size={24} color="#800000" />
+                                <Text style={styles.userSummaryTitle}>Account Information</Text>
+                            </View>
+
+                            <View style={styles.summaryDivider} />
+
+                            <View style={styles.summaryRow}>
+                                <Text style={styles.summaryLabel}>Name:</Text>
+                                <Text style={styles.summaryValue}>
+                                    {userFormData.firstName} {userFormData.lastName}
+                                </Text>
+                            </View>
+
+                            <View style={styles.summaryRow}>
+                                <Text style={styles.summaryLabel}>Email:</Text>
+                                <Text style={[styles.summaryValue, { fontSize: 12 }]}>
+                                    {userFormData.email}
+                                </Text>
+                            </View>
+
+                            <View style={styles.summaryRow}>
+                                <Text style={styles.summaryLabel}>Industry:</Text>
+                                <Text style={[styles.summaryValue, { width: "39%" }]}>{userFormData.industry.name}</Text>
+                            </View>
+                        </View>
+                    )}
+
+                    {/* Payment Information Section - Stripe CardForm */}
+                    <View style={styles.paymentSection}>
+                        <View style={styles.paymentHeader}>
+                            <Ionicons name="card" size={24} color="#800000" />
+                            <Text style={styles.paymentTitle}>
+                                Payment Information
+                                <Text style={styles.requiredStar}>*</Text>
+                            </Text>
+                        </View>
+
+                        {/* ✅ Stripe CardField for legacy token support */}
+                        <CardField
+                            postalCodeEnabled={true}
+                            style={styles.cardFormStyle}
+                            cardStyle={{
+                                backgroundColor: "#F9FAFB",
+                                textColor: "#1F2937",
+                                placeholderColor: "#9CA3AF",
+                                borderColor: "#E5E7EB",
+                                borderWidth: 1,
+                                borderRadius: 12,
+                                fontSize: 16,
+                                textErrorColor: "#EF4444",
+                            }}
+                            onCardChange={(cardDetails) => {
+                                console.log("✅ Card field changed:", cardDetails);
+                            }}
+                        />
                     </View>
 
-                    {/* ✅ Stripe CardField for legacy token support */}
-                    <CardField
-                        postalCodeEnabled={true}
-                        style={styles.cardFormStyle}
-                        cardStyle={{
-                            backgroundColor: "#FFFFFF",
-                            textColor: "#1F2937",
-                            placeholderColor: "#6B7280",
-                            borderColor: "#E5E7EB",
-                            borderWidth: 1,
-                            borderRadius: 12,
-                            fontSize: 16,
-                            textErrorColor: "#EF4444",
-                        }}
-                        onCardChange={(cardDetails) => {
-                            console.log("✅ Card field changed:", cardDetails);
-                        }}
-                    />
-                </View>
-
-                {/* Error Display */}
-                {/* {(registerError || stripeError) && (
+                    {/* Error Display */}
+                    {/* {(registerError || stripeError) && (
                     <View style={styles.errorBanner}>
                         <Ionicons name="alert-circle" size={18} color="#EF4444" />
                         <Text style={styles.errorBannerText}>
@@ -344,40 +352,41 @@ const PaymentScreen = () => {
                     </View>
                 )} */}
 
-                {/* Security Note */}
-                <View style={styles.securityNote}>
-                    <Ionicons name="shield-checkmark" size={16} color="#10B981" />
-                    <Text style={styles.securityText}>
-                        Your payment information is secure and encrypted by Stripe.
-                    </Text>
-                </View>
+                    {/* Security Note */}
+                    <View style={styles.securityNote}>
+                        <Ionicons name="shield-checkmark" size={16} color="#10B981" />
+                        <Text style={styles.securityText}>
+                            Your payment information is secure and encrypted by Stripe.
+                        </Text>
+                    </View>
 
-                {/* Payment Button */}
-                <TouchableOpacity
-                    style={[
-                        styles.paymentButton,
-                        isProcessing && styles.paymentButtonDisabled,
-                    ]}
-                    onPress={handlePayment}
-                    disabled={isProcessing}
-                >
-                    {isProcessing ? (
-                        <>
-                            <ActivityIndicator size="small" color="#FFF" />
-                            <Text style={styles.paymentButtonText}>Processing...</Text>
-                        </>
-                    ) : (
-                        <>
-                            <Text style={styles.paymentButtonText}>
-                                Complete Payment & Sign Up
-                            </Text>
-                            <Ionicons name="arrow-forward" size={20} color="#FFF" />
-                        </>
-                    )}
-                </TouchableOpacity>
+                    {/* Payment Button */}
+                    <TouchableOpacity
+                        style={[
+                            styles.paymentButton,
+                            isProcessing && styles.paymentButtonDisabled,
+                        ]}
+                        onPress={handlePayment}
+                        disabled={isProcessing}
+                    >
+                        {isProcessing ? (
+                            <>
+                                <ActivityIndicator size="small" color="#FFF" />
+                                <Text style={styles.paymentButtonText}>Processing...</Text>
+                            </>
+                        ) : (
+                            <>
+                                <Text style={styles.paymentButtonText}>
+                                    Complete Payment & Sign Up
+                                </Text>
+                                <Ionicons name="arrow-forward" size={20} color="#FFF" />
+                            </>
+                        )}
+                    </TouchableOpacity>
 
-                <View style={styles.bottomSpacing} />
-            </ScrollView>
+                    <View style={styles.bottomSpacing} />
+                </ScrollView>
+            </KeyboardAvoidingView>
         </View>
     );
 };
@@ -556,7 +565,7 @@ const styles = StyleSheet.create({
 
     // ============ STRIPE CARD FORM ============
     cardFormStyle: {
-        height: 150,
+        height: 50, // Reduced from 150 to look like a standard input
         borderRadius: 12,
     },
     errorBanner: {
