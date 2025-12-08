@@ -1,9 +1,8 @@
 import {
   flattenCategories,
   getPaginationInfo,
-  getSortedCategories,
   searchCategories,
-  useCategories,
+  useCategories
 } from "@/api/addReminder/useGetCategories";
 import { Ionicons } from "@expo/vector-icons";
 import { useEffect, useRef, useState } from "react";
@@ -24,6 +23,13 @@ import {
 interface CategoryItem {
   id: string;
   name: string;
+  group: string | null;
+}
+
+interface ListItem {
+  type: 'header' | 'item';
+  data: CategoryItem | string; // CategoryItem for item, group name (string) for header
+  id: string; // Unique ID for FlatList key
 }
 
 export const CategoryBottomSheet = ({
@@ -35,15 +41,16 @@ export const CategoryBottomSheet = ({
   title,
 }: {
   visible: boolean;
-  selectedValue: string;  
-  setSelectedCategory: (categoryName: string)=> void
-  onSelect: (categoryId: string) => void; 
+  selectedValue: string;
+  setSelectedCategory: (categoryName: string) => void
+  onSelect: (categoryId: string) => void;
   onClose: () => void;
   title: string;
 }) => {
   const slideAnim = useState(new Animated.Value(500))[0];
   const [searchQuery, setSearchQuery] = useState("");
-  const [filteredCategories, setFilteredCategories] = useState<CategoryItem[]>([]);
+  const [displayList, setDisplayList] = useState<ListItem[]>([]);
+  const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({});
   const flatListRef = useRef<FlatList>(null);
 
   // Use infinite query hook
@@ -63,38 +70,100 @@ export const CategoryBottomSheet = ({
   // Handle search and filtering
   useEffect(() => {
     if (allLoadedCategories?.length > 0) {
+      let categoriesToProcess: CategoryItem[] = [];
+
       if (searchQuery.trim()) {
-        // Search in categories
         const searched = searchCategories(allLoadedCategories, searchQuery);
-        const names = getSortedCategories(searched);
-        
-        // ✅ Map to include both ID and name
-        const withIds = names.map(name => {
-          const cat = searched.find((c: any) => c.name === name);
-          return {
-            id: String(cat?.id ?? ""),
-            name: cat?.name || name,
-          };
-        });
-        
-        setFilteredCategories(withIds);
+        // We still want to include group info
+        categoriesToProcess = searched.map((cat: any) => ({
+          id: String(cat.id),
+          name: cat.name,
+          group: cat.group,
+        }));
       } else {
-        // Show all sorted categories
-        const names = getSortedCategories(allLoadedCategories);
-        
-        // ✅ Map to include both ID and name
-        const withIds = names.map(name => {
-          const cat = allLoadedCategories.find((c: any) => c.name === name);
-          return {
-            id: String(cat?.id ?? ""),
-            name: cat?.name || name,
-          };
-        });
-        
-        setFilteredCategories(withIds);
+        categoriesToProcess = allLoadedCategories.map((cat: any) => ({
+          id: String(cat.id),
+          name: cat.name,
+          group: cat.group,
+        }));
       }
+
+      // Grouping Logic
+      const ungrouped: CategoryItem[] = [];
+      const grouped: Record<string, CategoryItem[]> = {};
+      const groupNames: string[] = [];
+
+      // Sort categoriesToProcess first? Or sort after grouping? 
+      // User said: "Ungrouped first... then if some categories have some group name"
+      // Let's sort all by name first just in case
+      categoriesToProcess.sort((a, b) => a.name.localeCompare(b.name));
+
+      categoriesToProcess.forEach((cat) => {
+        if (!cat.group) {
+          ungrouped.push(cat);
+        } else {
+          if (!grouped[cat.group]) {
+            grouped[cat.group] = [];
+            groupNames.push(cat.group);
+          }
+          grouped[cat.group].push(cat);
+        }
+      });
+
+      // Sort group names
+      groupNames.sort((a, b) => a.localeCompare(b));
+
+      // Build FlatList data
+      const listData: ListItem[] = [];
+
+      // 1. Ungrouped items first
+      ungrouped.forEach((cat) => {
+        listData.push({
+          type: 'item',
+          data: cat,
+          id: `cat-${cat.id}`,
+        });
+      });
+
+      // 2. Grouped items
+      groupNames.forEach((groupName) => {
+        // Add Header
+        listData.push({
+          type: 'header',
+          data: groupName,
+          id: `group-${groupName}`,
+        });
+
+        // Add Items if expanded OR if searching (usually search results are flat or auto-expanded)
+        // Let's auto-expand if searching, otherwise respect collapsed state
+        const isExpanded = expandedGroups[groupName] || searchQuery.trim().length > 0;
+
+        if (isExpanded) {
+          grouped[groupName].forEach((cat) => {
+            listData.push({
+              type: 'item',
+              data: cat,
+              id: `cat-${cat.id}`,
+            });
+          });
+        }
+      });
+
+      setDisplayList(listData);
+    } else {
+      setDisplayList([]);
     }
-  }, [allLoadedCategories, searchQuery]);
+  }, [allLoadedCategories, searchQuery, expandedGroups]);
+
+  const toggleGroup = (groupName: string) => {
+    // Don't toggle if searching (optional, but good UX if search auto-expands)
+    if (searchQuery.trim().length > 0) return;
+
+    setExpandedGroups(prev => ({
+      ...prev,
+      [groupName]: !prev[groupName]
+    }));
+  };
 
   // Slide animation
   useEffect(() => {
@@ -133,12 +202,12 @@ export const CategoryBottomSheet = ({
   };
 
   // ✅ Pass the ID to parent
-const handleSelect = (category: CategoryItem) => {
-  onSelect(category?.id);      
-  setSelectedCategory(category?.name);   
-  setSearchQuery("");
-  onClose();
-};
+  const handleSelect = (category: CategoryItem) => {
+    onSelect(category?.id);
+    setSelectedCategory(category?.name);
+    setSearchQuery("");
+    onClose();
+  };
 
 
   const handleClearSearch = () => {
@@ -225,7 +294,7 @@ const handleSelect = (category: CategoryItem) => {
           {/* Empty State */}
           {!isLoading &&
             !error &&
-            filteredCategories?.length === 0 &&
+            displayList?.length === 0 &&
             allLoadedCategories?.length === 0 && (
               <View style={styles.emptyContainer}>
                 <Ionicons name="search" size={32} color="#D1D5DB" />
@@ -236,7 +305,7 @@ const handleSelect = (category: CategoryItem) => {
           {/* No Search Results */}
           {!isLoading &&
             !error &&
-            filteredCategories?.length === 0 &&
+            displayList?.length === 0 &&
             allLoadedCategories?.length > 0 && (
               <View style={styles.emptyContainer}>
                 <Ionicons name="search" size={32} color="#D1D5DB" />
@@ -245,41 +314,65 @@ const handleSelect = (category: CategoryItem) => {
             )}
 
           {/* Options List - Shows even while loading next page */}
-          {filteredCategories?.length > 0 && (
+          {displayList?.length > 0 && (
             <FlatList
               ref={flatListRef}
-              data={filteredCategories}
-              keyExtractor={(item) => item.id}  // ← Use ID as key
-              scrollEnabled={filteredCategories?.length > 6}
+              data={displayList}
+              keyExtractor={(item) => item.id}
+              scrollEnabled={displayList?.length > 6}
               style={styles.bottomSheetList}
               onScroll={handleScroll}
               scrollEventThrottle={16}
-              renderItem={({ item }) => (
-                <TouchableOpacity
-                  style={[
-                    styles.bottomSheetOption,
-                    selectedValue === item.name && styles.bottomSheetOptionSelected,  // ← Compare NAME
-                  ]}
-                  onPress={() => handleSelect(item)}  // ← Pass ID
-                >
-                  <Text
+              renderItem={({ item }) => {
+                if (item.type === 'header') {
+                  const groupName = item.data as string;
+                  const isExpanded = expandedGroups[groupName] || searchQuery.trim().length > 0;
+                  return (
+                    <TouchableOpacity
+                      style={styles.groupHeader}
+                      onPress={() => toggleGroup(groupName)}
+                    >
+                      <Text style={styles.groupHeaderText}>{groupName}</Text>
+                      {/* Hide chevron if searching since it is auto expanded */}
+                      {!searchQuery.trim() && (
+                        <Ionicons
+                          name={isExpanded ? "chevron-down" : "chevron-forward"}
+                          size={18}
+                          color="#6B7280"
+                        />
+                      )}
+                    </TouchableOpacity>
+                  );
+                }
+
+                const cat = item.data as CategoryItem;
+                return (
+                  <TouchableOpacity
                     style={[
-                      styles.bottomSheetOptionText,
-                      selectedValue === item.name &&
-                        styles.bottomSheetOptionTextSelected,  // ← Compare NAME
+                      styles.bottomSheetOption,
+                      selectedValue === cat.name && styles.bottomSheetOptionSelected,
                     ]}
+                    onPress={() => handleSelect(cat)}
                   >
-                    {item.name}  {/* Display name */}
-                  </Text>
-                  {selectedValue === item.name && (  // ← Compare NAME
-                    <Ionicons
-                      name="checkmark-circle"
-                      size={20}
-                      color="#9A1B2B"
-                    />
-                  )}
-                </TouchableOpacity>
-              )}
+                    <Text
+                      style={[
+                        styles.bottomSheetOptionText,
+                        selectedValue === cat.name &&
+                        styles.bottomSheetOptionTextSelected,
+                      ]}
+                    >
+                      {cat.name}
+                    </Text>
+                    {selectedValue === cat.name && (
+                      <Ionicons
+                        name="checkmark-circle"
+                        size={20}
+                        color="#9A1B2B"
+                      />
+                    )}
+                  </TouchableOpacity>
+                )
+              }}
               ListFooterComponent={
                 isFetchingNextPage && !searchQuery.trim() ? (
                   <View style={styles.loadMoreContainer}>
@@ -292,12 +385,14 @@ const handleSelect = (category: CategoryItem) => {
           )}
 
           {/* Result Count & Pagination Info */}
-          {!isLoading && !error && filteredCategories?.length > 0 && (
+          {!isLoading && !error && displayList?.length > 0 && (
             <View style={styles.resultCountContainer}>
               <View style={styles.resultInfoRow}>
                 <Text style={styles.resultCountText}>
-                  {filteredCategories?.length} result
-                  {filteredCategories?.length !== 1 ? "s" : ""}
+                  {/* This count might be misleading as it includes headers, but it's simpler than calculating just items for now */}
+                  {/* Better to calculate real items */}
+                  {displayList.filter(x => x.type === 'item').length} result
+                  {displayList.filter(x => x.type === 'item').length !== 1 ? "s" : ""}
                 </Text>
                 {!searchQuery && (
                   <Text style={styles.paginationText}>
@@ -502,5 +597,24 @@ const styles = StyleSheet.create({
   // ============ PADDING ============
   bottomSheetPadding: {
     height: 20,
+  },
+
+  // ============ GROUP HEADER STYLES ============
+  groupHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    backgroundColor: '#F3F4F6', // Lighter background for header
+    borderBottomWidth: 1,
+    borderBottomColor: '#E5E7EB',
+  },
+  groupHeaderText: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#374151',
+    textTransform: 'uppercase', // Optional: styling for header
+    letterSpacing: 0.5,
   },
 });

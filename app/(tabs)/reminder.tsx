@@ -297,6 +297,8 @@ const ReminderScreen: React.FC = () => {
     setPaymentInterval("");
     setDescriptionFilter("");
     setReminderNotesFilter("");
+    setSearchQuery("");
+    setSelectedFilter("all");
   };
 
   const formatDate = (date: Date | null) => {
@@ -510,6 +512,16 @@ const ReminderScreen: React.FC = () => {
             name="options"
             size={22}
             color={showAdvancedFilters ? "#FFFFFF" : "#6B7280"}
+          />
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.filterButton}
+          onPress={clearFilters}
+        >
+          <Ionicons
+            name="close-circle-outline"
+            size={24}
+            color="#EF4444"
           />
         </TouchableOpacity>
       </View>

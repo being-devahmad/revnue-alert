@@ -13,9 +13,11 @@ import { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
+  Keyboard,
   StyleSheet,
   Text,
   TouchableOpacity,
+  TouchableWithoutFeedback,
   View,
 } from "react-native";
 
@@ -68,7 +70,7 @@ const EditReminder = () => {
     reminderName: "",
     description: "",
     category: "",
-    payments: 0,
+    payments: "",
     paymentAmount: "0.00",
     paymentInterval: "",
     lastPaymentAmount: "0.00",
@@ -79,7 +81,7 @@ const EditReminder = () => {
     nonRenewDate: null as Date | null,
     renewal: false,
     renewalPeriod: "",
-    supplierRating: "",
+    supplierRating: 0,
     emailWebsite: "",
     phone: "",
     lastPaymentNotes: "",
@@ -113,7 +115,7 @@ const EditReminder = () => {
         reminderName: contractData.name || "",
         description: contractData.description || "",
         category: String(contractData.category_id), // ← Store ID as string
-        payments: contractData.payments || 0,
+        payments: contractData.payments ? String(contractData.payments) : "",
         paymentAmount: contractData.amount ? String(contractData.amount) : "0.00",
         paymentInterval: contractData.interval || "",
         lastPaymentAmount: contractData.last_payment_amount ? String(contractData.last_payment_amount) : "0.00",
@@ -124,7 +126,7 @@ const EditReminder = () => {
         nonRenewDate: contractData.non_renew_sent_at ? new Date(contractData.non_renew_sent_at) : null,
         renewal: Boolean(contractData.auto_renew),
         renewalPeriod: contractData.auto_renew_period ? formatISODuration(contractData.auto_renew_period) : "",
-        supplierRating: contractData.supplier_rating || "",
+        supplierRating: Number(contractData.supplier_rating) || 0,
         emailWebsite: contractData.website_email || "",
         phone: contractData.phone_number || "",
         lastPaymentNotes: contractData.last_payment_notes || "",
@@ -258,7 +260,7 @@ const EditReminder = () => {
     const contractPayload = {
       name: contractForm.reminderName,
       description: contractForm.description,
-      category_id: parseInt(contractForm.category) || null,
+      category_id: parseInt(contractForm.category) || 0,
       started_at: contractForm.inceptionDate
         ?.toISOString()
         .split("T")[0] || "",
@@ -268,7 +270,7 @@ const EditReminder = () => {
       account_number: contractForm.accountNumber,
       amount: parseFloat(contractForm.paymentAmount) || 0,
       interval: contractForm.paymentInterval,
-      payments: contractForm.payments || 0,
+      payments: parseFloat(contractForm.payments) || 0,
       auto_renew: contractForm.renewal ? 1 : 0,
       auto_renew_period: formatToISO(contractForm.renewalPeriod),
       supplier_rating: contractForm.supplierRating,
@@ -326,7 +328,7 @@ const EditReminder = () => {
     const reminderPayload = {
       contract_id: Number(contractId),
       name: contractForm.reminderName,
-      quantity: quantityMap[reminderForm.quantity] || 1,
+      quantity: quantityMap[reminderForm.quantity] ?? 1,
       period: formatToISO(reminderForm.period || ''),
       contacts: validContacts,
       active: true,
@@ -381,88 +383,90 @@ const EditReminder = () => {
   }
 
   return (
-    <View style={styles.container}>
-      {/* Header */}
-      <TabHeader
-        title="Edit Reminder"
-        subtitle={contractName as string || ""}
-        isChild={true}
-        isDelete={true}
-      />
-
-      {/* Tab Navigation */}
-      <View style={styles.tabContainer}>
-        <TouchableOpacity
-          style={[styles.tab, activeTab === "details" && styles.tabActive]}
-          onPress={() => setActiveTab("details")}
-          disabled={isUpdatingContract || isUpdatingReminder}
-        >
-          <Text
-            style={[
-              styles.tabText,
-              activeTab === "details" && styles.tabTextActive,
-            ]}
-          >
-            Step 1: Edit Contract
-          </Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.tab, activeTab === "reminder" && styles.tabActive]}
-          onPress={() => setActiveTab("reminder")}
-          disabled={isUpdatingContract || isUpdatingReminder}
-        >
-          <Text
-            style={[
-              styles.tabText,
-              activeTab === "reminder" && styles.tabTextActive,
-            ]}
-          >
-            Step 2: Edit Reminder
-          </Text>
-        </TouchableOpacity>
-      </View>
-
-      {/* STEP 1: EDIT CONTRACT DETAILS */}
-      {activeTab === "details" && (
-        <ContractDetails
-          contractForm={contractForm}
-          setContractForm={setContractForm}
-          onContractChange={handleContractChange}
-          onProceed={handleSaveContract}
-          onCancel={handleCancel}
-          isLoading={isUpdatingContract}
-          isEnterprise={isEnterprise}
-          accounts={accounts}
-          currentCategory={currentCategory}
-          contractData={contractData}
+    <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+      <View style={styles.container}>
+        {/* Header */}
+        <TabHeader
+          title="Edit Reminder"
+          subtitle={contractName as string || ""}
+          isChild={true}
+          isDelete={true}
         />
-      )}
 
-      {/* STEP 2: EDIT REMINDER DETAILS */}
-      {activeTab === "reminder" && (
-        <ReminderDetails
-          reminderForm={reminderForm}
-          contactInputs={contactInputs}
-          onReminderChange={handleReminderChange}
-          onContactChange={handleContactChange}
-          onAddContact={handleAddContact}
-          onRemoveContact={handleRemoveContact}
-          onSave={handleSaveReminder}
-          onCancel={handleCancel}
-          isLoading={isUpdatingReminder}
-        />
-      )}
-
-      {/* Loading Overlay */}
-      {(isUpdatingContract || isUpdatingReminder) && (
-        <View style={styles.loadingOverlay}>
-          <ActivityIndicator size="large" color="#9A1B2B" />
-          <Text style={styles.loadingText}>
-            {isUpdatingContract ? "Updating contract..." : "Updating reminder..."}
-          </Text>
+        {/* Tab Navigation */}
+        <View style={styles.tabContainer}>
+          <TouchableOpacity
+            style={[styles.tab, activeTab === "details" && styles.tabActive]}
+            onPress={() => setActiveTab("details")}
+            disabled={isUpdatingContract || isUpdatingReminder}
+          >
+            <Text
+              style={[
+                styles.tabText,
+                activeTab === "details" && styles.tabTextActive,
+              ]}
+            >
+              Step 1: Edit Contract
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.tab, activeTab === "reminder" && styles.tabActive]}
+            onPress={() => setActiveTab("reminder")}
+            disabled={isUpdatingContract || isUpdatingReminder}
+          >
+            <Text
+              style={[
+                styles.tabText,
+                activeTab === "reminder" && styles.tabTextActive,
+              ]}
+            >
+              Step 2: Edit Reminder
+            </Text>
+          </TouchableOpacity>
         </View>
-      )}
-    </View>
+
+        {/* STEP 1: EDIT CONTRACT DETAILS */}
+        {activeTab === "details" && (
+          <ContractDetails
+            contractForm={contractForm}
+            setContractForm={setContractForm}
+            onContractChange={handleContractChange}
+            onProceed={handleSaveContract}
+            onCancel={handleCancel}
+            isLoading={isUpdatingContract}
+            isEnterprise={isEnterprise}
+            accounts={accounts}
+            currentCategory={currentCategory ?? ""}
+            contractData={contractData}
+          />
+        )}
+
+        {/* STEP 2: EDIT REMINDER DETAILS */}
+        {activeTab === "reminder" && (
+          <ReminderDetails
+            reminderForm={reminderForm}
+            contactInputs={contactInputs}
+            onReminderChange={handleReminderChange}
+            onContactChange={handleContactChange}
+            onAddContact={handleAddContact}
+            onRemoveContact={handleRemoveContact}
+            onSave={handleSaveReminder}
+            onCancel={handleCancel}
+            isLoading={isUpdatingReminder}
+          />
+        )}
+
+        {/* Loading Overlay */}
+        {(isUpdatingContract || isUpdatingReminder) && (
+          <View style={styles.loadingOverlay}>
+            <ActivityIndicator size="large" color="#9A1B2B" />
+            <Text style={styles.loadingText}>
+              {isUpdatingContract ? "Updating contract..." : "Updating reminder..."}
+            </Text>
+          </View>
+        )}
+      </View>
+    </TouchableWithoutFeedback>
   );
 };
 

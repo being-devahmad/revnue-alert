@@ -1,93 +1,71 @@
-// ============ FIXED RICH TEXT EDITOR COMPONENT ============
-// RichTextEditor.tsx - WITH REF FORWARDING
+import React from "react";
+import { StyleSheet, View } from "react-native";
+import { RichEditor, RichToolbar, actions } from "react-native-pell-rich-editor";
 
-import React from "react"
-import { StyleSheet, View } from "react-native"
-import { RichEditor, RichToolbar, actions } from 'react-native-pell-rich-editor'
-
-interface RichTextEditorProps {
-  value: string
-  onChangeText: (text: string) => void
-  placeholder?: string
-  style?: any
+export interface RichTextEditorRef {
+  focus: () => void;
+  blur: () => void;
+  setContentHTML: (html: string) => void;
 }
 
-/**
- * Rich Text Editor Component using react-native-pell-rich-editor
- * 
- * Installation:
- * npm install react-native-pell-rich-editor react-native-webview
- * 
- * This component supports HTML formatting including bold, italic, underline, lists, etc.
- * 
- * ✅ NOW PROPERLY FORWARDS REFS!
- */
-export const RichTextEditor = React.forwardRef<any, RichTextEditorProps>(
-  ({ value, onChangeText, placeholder = "Enter text...", style }, ref) => {
-    const richText = React.useRef<any>(null)
+interface RichTextEditorProps {
+  value: string;
+  onChangeText: (text: string) => void;
+  placeholder?: string;
+  style?: any;
+}
 
-    // ✅ Expose the internal richText ref to parent
-    React.useImperativeHandle(ref, () => ({
-      setContentHTML: (html: string) => {
-        console.log("📝 setContentHTML called with:", html);
-        if (richText.current) {
-          richText.current.setContentHTML(html);
-        }
-      },
-      getContentHTML: async () => {
-        if (richText.current) {
-          return await richText.current.getContentHtml();
-        }
-      },
-      insertHTML: (html: string) => {
-        console.log("📝 insertHTML called with:", html);
-        if (richText.current) {
-          richText.current.insertHTML(html);
-        }
-      },
-      focus: () => {
-        if (richText.current) {
-          richText.current.focusContentEditor();
-        }
-      },
-      // Expose the raw editor ref for direct access if needed
-      _editor: richText.current,
-    }), [])
+export const RichTextEditor = React.forwardRef<
+  RichTextEditorRef,
+  RichTextEditorProps
+>(({ value, onChangeText, placeholder = "Enter text...", style }, ref) => {
+  const richText = React.useRef<any>(null);
 
-    return (
-      <View style={[styles.container, style]}>
-        {/* Toolbar with formatting options */}
-        <RichToolbar
-          editor={richText}
-          actions={[
-            actions.setBold,
-            actions.setItalic,
-            actions.setUnderline,
-            actions.insertBulletsList,
-            actions.insertOrderedList,
-            actions.insertLink,
-          ]}
-          iconTint="#6B7280"
-          selectedIconTint="#9A1B2B"
-          style={styles.toolbar}
-        />
-        
-        {/* Rich Text Editor */}
-        <RichEditor
-          ref={richText}
-          initialContentHTML={value}
-          onChange={onChangeText}
-          placeholder={placeholder}
-          androidHardwareAccelerationDisabled={true}
-          style={styles.editor}
-          initialHeight={120}
-        />
-      </View>
-    )
-  }
-)
+  React.useImperativeHandle(ref, () => ({
+    focus: () => {
+      richText.current?.focusContentEditor();
+    },
 
-RichTextEditor.displayName = "RichTextEditor"
+    blur: () => {
+      richText.current?.blurContentEditor();
+    },
+
+    setContentHTML: (html: string) => {
+      richText.current?.setContentHTML(html);
+    },
+  }));
+
+  return (
+    <View style={[styles.container, style]}>
+      <RichToolbar
+        editor={richText}
+        actions={[
+          actions.setBold,
+          actions.setItalic,
+          actions.setUnderline,
+          actions.insertBulletsList,
+          actions.insertOrderedList,
+          actions.insertLink,
+        ]}
+        iconTint="#6B7280"
+        selectedIconTint="#9A1B2B"
+        style={styles.toolbar}
+      />
+
+      <RichEditor
+        ref={richText}
+        initialContentHTML={value}
+        onChange={onChangeText}
+        placeholder={placeholder}
+        androidHardwareAccelerationDisabled
+        style={styles.editor}
+        initialHeight={120}
+      />
+    </View>
+  );
+});
+
+RichTextEditor.displayName = "RichTextEditor";
 
 const styles = StyleSheet.create({
   container: {
@@ -107,4 +85,4 @@ const styles = StyleSheet.create({
     minHeight: 120,
     backgroundColor: "#F9FAFB",
   },
-})
+});

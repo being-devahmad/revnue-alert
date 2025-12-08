@@ -2,19 +2,20 @@
 
 import { Ionicons } from "@expo/vector-icons";
 import type React from "react";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import {
+    Keyboard,
     ScrollView,
     StyleSheet,
     Switch,
     Text,
     TextInput,
     TouchableOpacity,
+    TouchableWithoutFeedback,
     View,
 } from "react-native";
-
 import { ReminderPeriodInput } from "../ReminderPeriodInput";
-import { RichTextEditor } from "../RichTextEditor";
+import { RichTextEditor, RichTextEditorRef } from "../RichTextEditor";
 import { DropdownField } from "../ui/DropdownField";
 
 interface ReminderDetailsProps {
@@ -52,6 +53,7 @@ export const ReminderDetails: React.FC<ReminderDetailsProps> = ({
         quantity: false,
         templates: false,
     });
+    const richEditorRef = useRef<RichTextEditorRef>(null);
 
     const [selectedTemplate, setSelectedTemplate] = useState<string>("");
 
@@ -91,95 +93,103 @@ export const ReminderDetails: React.FC<ReminderDetailsProps> = ({
 
     return (
         <>
-            <ScrollView showsVerticalScrollIndicator={false}>
-                {/* Reminder Details */}
-                <View
-                    style={[
-                        styles.card,
-                        (showDropdowns.quantity || showDropdowns.templates) &&
-                        styles.cardActive,
-                    ]}
+            <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+                <TouchableWithoutFeedback
+                    accessible={false}
+                    onPress={() => {
+                        Keyboard.dismiss();
+                        richEditorRef.current?.blur();
+                    }}
                 >
-                    <View style={styles.cardHeader}>
-                        <Ionicons name="information-circle" size={20} color="#9A1B2B" />
-                        <Text style={styles.cardTitle}>Reminder Details</Text>
-                    </View>
+                    <View>
+                        {/* Reminder Details */}
+                        <View
+                            style={[
+                                styles.card,
+                                (showDropdowns.quantity || showDropdowns.templates) &&
+                                styles.cardActive,
+                            ]}
+                        >
+                            <View style={styles.cardHeader}>
+                                <Ionicons name="information-circle" size={20} color="#9A1B2B" />
+                                <Text style={styles.cardTitle}>Reminder Details</Text>
+                            </View>
 
-                    <View style={styles.section}>
-                        {/* New Dynamic Reminder Period Input */}
-                        <ReminderPeriodInput
-                            value={reminderForm.period}
-                            onChange={(value) => onReminderChange("period", value)}
-                            label="Reminder Period"
-                            required={true}
-                            placeholder="Enter number (e.g., 30, 5, 90...)"
-                        />
-                        <DropdownField
-                            label="Reminders to Send"
-                            value={reminderForm.quantity}
-                            options={remindersToSendOptions}
-                            showDropdown={showDropdowns.quantity}
-                            onToggle={() => {
-                                if (!showDropdowns.quantity) {
-                                    closeAllDropdowns();
-                                }
-                                toggleDropdown("quantity");
-                            }}
-                            onSelect={(value) => {
-                                onReminderChange("quantity", value);
-                                toggleDropdown("quantity");
-                            }}
-                            required={true}
-                        />
+                            <View style={styles.section}>
+                                {/* New Dynamic Reminder Period Input */}
+                                <ReminderPeriodInput
+                                    value={reminderForm.period}
+                                    onChange={(value) => onReminderChange("period", value)}
+                                    label="Reminder Period"
+                                    required={true}
+                                    placeholder="Enter number (e.g., 30, 5, 90...)"
+                                />
+                                <DropdownField
+                                    label="Reminders to Send"
+                                    value={reminderForm.quantity}
+                                    options={remindersToSendOptions}
+                                    showDropdown={showDropdowns.quantity}
+                                    onToggle={() => {
+                                        if (!showDropdowns.quantity) {
+                                            closeAllDropdowns();
+                                        }
+                                        toggleDropdown("quantity");
+                                    }}
+                                    onSelect={(value) => {
+                                        onReminderChange("quantity", value);
+                                        toggleDropdown("quantity");
+                                    }}
+                                    required={true}
+                                />
 
-                        {/* Contacts Section */}
-                        <View style={styles.contactsSection}>
-                            <Text style={styles.label}>
-                                Contacts <Text style={styles.required}>*</Text>
-                            </Text>
-                            {contactInputs.map((contact, index) => (
-                                <View key={index} style={styles.contactRow}>
-                                    <TextInput
-                                        style={[styles.input, styles.contactInput]}
-                                        value={contact}
-                                        onChangeText={(text) => onContactChange(index, text)}
-                                        placeholder="Enter email address"
-                                        placeholderTextColor="#9CA3AF"
-                                        keyboardType="email-address"
-                                    />
-                                    {contactInputs.length > 1 && (
-                                        <TouchableOpacity
-                                            style={styles.removeContactBtn}
-                                            onPress={() => onRemoveContact(index)}
-                                        >
-                                            <Ionicons name="close-circle" size={22} color="#EF4444" />
-                                        </TouchableOpacity>
-                                    )}
-                                </View>
-                            ))}
-                            <TouchableOpacity
-                                style={styles.addContactBtn}
-                                onPress={onAddContact}
-                            >
-                                <Ionicons name="person-add" size={16} color="white" />
-                                <Text style={styles.addContactText}>Add Contact</Text>
-                            </TouchableOpacity>
-                        </View>
-
-                        {/* Notes with Rich Text Editor */}
-                        <View style={styles.inputGroup}>
-                            {/* Header */}
-                            <View style={styles.notesHeaderWrapper}>
-                                <View style={{ flexDirection: 'column' }}>
+                                {/* Contacts Section */}
+                                <View style={styles.contactsSection}>
                                     <Text style={styles.label}>
-                                        Notes
+                                        Contacts <Text style={styles.required}>*</Text>
                                     </Text>
-
-                                    <Text style={{ fontSize: 10 }}>(sent with reminder)</Text>
+                                    {contactInputs.map((contact, index) => (
+                                        <View key={index} style={styles.contactRow}>
+                                            <TextInput
+                                                style={[styles.input, styles.contactInput]}
+                                                value={contact}
+                                                onChangeText={(text) => onContactChange(index, text)}
+                                                placeholder="Enter email address"
+                                                placeholderTextColor="#9CA3AF"
+                                                keyboardType="email-address"
+                                            />
+                                            {contactInputs.length > 1 && (
+                                                <TouchableOpacity
+                                                    style={styles.removeContactBtn}
+                                                    onPress={() => onRemoveContact(index)}
+                                                >
+                                                    <Ionicons name="close-circle" size={22} color="#EF4444" />
+                                                </TouchableOpacity>
+                                            )}
+                                        </View>
+                                    ))}
+                                    <TouchableOpacity
+                                        style={styles.addContactBtn}
+                                        onPress={onAddContact}
+                                    >
+                                        <Ionicons name="person-add" size={16} color="white" />
+                                        <Text style={styles.addContactText}>Add Contact</Text>
+                                    </TouchableOpacity>
                                 </View>
 
-                                {/* Template Dropdown */}
-                                <View style={styles.templateDropdownWrapper}>
+                                {/* Notes with Rich Text Editor */}
+                                <View style={styles.inputGroup}>
+                                    {/* Header */}
+                                    <View style={styles.notesHeaderWrapper}>
+                                        <View style={{ flexDirection: 'column' }}>
+                                            <Text style={styles.label}>
+                                                Notes
+                                            </Text>
+
+                                            <Text style={{ fontSize: 10 }}>(sent with reminder)</Text>
+                                        </View>
+
+                                        {/* Template Dropdown */}
+                                        {/* <View style={styles.templateDropdownWrapper}>
                                     <TouchableOpacity
                                         style={styles.templateButton}
                                         onPress={() => {
@@ -225,72 +235,75 @@ export const ReminderDetails: React.FC<ReminderDetailsProps> = ({
                                             </ScrollView>
                                         </View>
                                     )}
+                                </View> */}
+                                    </View>
+
+                                    {/* Rich Text Editor */}
+                                    <RichTextEditor
+                                        ref={richEditorRef}
+                                        value={reminderForm.notes}
+                                        onChangeText={(text) => onReminderChange("notes", text)}
+                                        placeholder="Enter formatted notes..."
+                                    />
+                                </View>
+
+                                {/* Resend iCal Switch */}
+                                <View style={styles.switchRow}>
+                                    <Text style={styles.switchLabel}>
+                                        Send iCal (sent with reminder)
+                                    </Text>
+                                    <Switch
+                                        value={reminderForm.resendICal}
+                                        onValueChange={(value) => onReminderChange("resendICal", value)}
+                                        trackColor={{ false: "#E5E7EB", true: "#9A1B2B" }}
+                                        thumbColor={reminderForm.resendICal ? "#ffffff" : "#f4f3f4"}
+                                        ios_backgroundColor="#E5E7EB"
+                                    />
                                 </View>
                             </View>
-
-                            {/* Rich Text Editor */}
-                            <RichTextEditor
-                                value={reminderForm.notes}
-                                onChangeText={(text) => onReminderChange("notes", text)}
-                                placeholder="Enter formatted notes..."
-                            />
                         </View>
 
-                        {/* Resend iCal Switch */}
-                        <View style={styles.switchRow}>
-                            <Text style={styles.switchLabel}>
-                                Send iCal (sent with reminder)
-                            </Text>
-                            <Switch
-                                value={reminderForm.resendICal}
-                                onValueChange={(value) => onReminderChange("resendICal", value)}
-                                trackColor={{ false: "#E5E7EB", true: "#9A1B2B" }}
-                                thumbColor={reminderForm.resendICal ? "#ffffff" : "#f4f3f4"}
-                                ios_backgroundColor="#E5E7EB"
-                            />
+                        {/* Attachments */}
+                        <View style={styles.card}>
+                            <View style={styles.cardHeader}>
+                                <Ionicons name="attach" size={20} color="#9A1B2B" />
+                                <Text style={styles.cardTitle}>
+                                    Add Attachments to Notifications{" "}
+                                    <Text style={{ fontSize: 10, color: "#6B7280" }}>
+                                        (Max upload size: 16MB)
+                                    </Text>
+                                </Text>
+                            </View>
+                            <View style={styles.section}>
+                                <TouchableOpacity style={styles.attachmentButton} disabled>
+                                    <Ionicons name="cloud-upload-outline" size={24} color="#6B7280" />
+                                    <Text style={styles.attachmentButtonText}>Choose Files</Text>
+                                    <Text style={styles.attachmentNote}>
+                                        Available from portal only
+                                    </Text>
+                                </TouchableOpacity>
+                                <Text style={styles.attachmentWarning}>
+                                    Note: Large attachments may be subject to size restrictions by
+                                    your mail server or service provider. Please ensure your are not
+                                    exceeding any such restrictions or you may not receive the email
+                                    notifications.
+                                </Text>
+                            </View>
+                        </View>
+
+                        {/* Action Buttons */}
+                        <View style={styles.actionContainer}>
+                            <TouchableOpacity style={styles.cancelBtn} onPress={onCancel}>
+                                <Ionicons name="close" size={18} color="#6B7280" />
+                                <Text style={styles.cancelText}>Cancel</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity style={styles.saveBtn} onPress={onSave}>
+                                <Ionicons name="checkmark" size={18} color="white" />
+                                <Text style={styles.saveText}>Save</Text>
+                            </TouchableOpacity>
                         </View>
                     </View>
-                </View>
-
-                {/* Attachments */}
-                <View style={styles.card}>
-                    <View style={styles.cardHeader}>
-                        <Ionicons name="attach" size={20} color="#9A1B2B" />
-                        <Text style={styles.cardTitle}>
-                            Add Attachments to Notifications{" "}
-                            <Text style={{ fontSize: 10, color: "#6B7280" }}>
-                                (Max upload size: 16MB)
-                            </Text>
-                        </Text>
-                    </View>
-                    <View style={styles.section}>
-                        <TouchableOpacity style={styles.attachmentButton} disabled>
-                            <Ionicons name="cloud-upload-outline" size={24} color="#6B7280" />
-                            <Text style={styles.attachmentButtonText}>Choose Files</Text>
-                            <Text style={styles.attachmentNote}>
-                                Available from portal only
-                            </Text>
-                        </TouchableOpacity>
-                        <Text style={styles.attachmentWarning}>
-                            Note: Large attachments may be subject to size restrictions by
-                            your mail server or service provider. Please ensure your are not
-                            exceeding any such restrictions or you may not receive the email
-                            notifications.
-                        </Text>
-                    </View>
-                </View>
-
-                {/* Action Buttons */}
-                <View style={styles.actionContainer}>
-                    <TouchableOpacity style={styles.cancelBtn} onPress={onCancel}>
-                        <Ionicons name="close" size={18} color="#6B7280" />
-                        <Text style={styles.cancelText}>Cancel</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity style={styles.saveBtn} onPress={onSave}>
-                        <Ionicons name="checkmark" size={18} color="white" />
-                        <Text style={styles.saveText}>Save</Text>
-                    </TouchableOpacity>
-                </View>
+                </TouchableWithoutFeedback>
             </ScrollView>
         </>
     );

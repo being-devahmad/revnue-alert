@@ -38,7 +38,7 @@ const fetchCategories = async (pageParam: number = 1, search: string = ''): Prom
   try {
     console.log('📤 Fetching categories...', { page: pageParam, search });
 
-    let url = `/categories?page=${pageParam}`;
+    let url = `/user-industry-categories?page=${pageParam}`;
     if (search.trim()) {
       url += `&search=${encodeURIComponent(search)}`;
     }

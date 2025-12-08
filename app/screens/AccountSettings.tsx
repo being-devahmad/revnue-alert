@@ -1711,7 +1711,7 @@ const styles = StyleSheet.create({
     borderColor: "#E5E7EB",
     borderRadius: 12,
     marginTop: 4,
-    maxHeight: 200, // scrollable if many options
+    maxHeight: 200, 
     overflow: "hidden",
   },
   dropdownItem: {

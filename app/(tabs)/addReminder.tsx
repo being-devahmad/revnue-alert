@@ -11,9 +11,11 @@ import { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
+  Keyboard,
   StyleSheet,
   Text,
   TouchableOpacity,
+  TouchableWithoutFeedback,
   View,
 } from "react-native";
 
@@ -57,10 +59,10 @@ const AddReminderScreen = () => {
     reminderName: "",
     description: "",
     category: "",
-    payments: 0,
-    paymentAmount: "0.00",
+    payments: "",
+    paymentAmount: "",
     paymentInterval: "",
-    lastPaymentAmount: "0.00",
+    lastPaymentAmount: "",
     lastPaymentDate: null as Date | null,
     accountNumber: "",
     inceptionDate: null as Date | null,
@@ -84,7 +86,7 @@ const AddReminderScreen = () => {
     resendICal: true,
   });
 
-  const [contactInputs, setContactInputs] = useState([""]);
+  const [contactInputs, setContactInputs] = useState([user?.email || ""]);
 
   // const handleContractChange = (
   //   field: string,
@@ -97,34 +99,34 @@ const AddReminderScreen = () => {
     field: K,
     value: (typeof contractForm)[K]
   ) => {
-    const moneyFields: (keyof typeof contractForm)[] = [
-      "payments",
-      "paymentAmount",
-      "lastPaymentAmount",
-    ];
+    // const moneyFields: (keyof typeof contractForm)[] = [
+    //   "payments",
+    //   "paymentAmount",
+    //   "lastPaymentAmount",
+    // ];
 
-    // MONEY FIELDS SPECIAL LOGIC
-    if (moneyFields.includes(field) && typeof value === "string") {
-      let clean = value.replace(/[^0-9]/g, "");
+    // // MONEY FIELDS SPECIAL LOGIC
+    // if (moneyFields.includes(field) && typeof value === "string") {
+    //   let clean = value.replace(/[^0-9]/g, "");
 
-      // If empty -> reset to 0.00
-      if (clean.length === 0) {
-        return setContractForm((prev) => ({ ...prev, [field]: "0.00" }));
-      }
+    //   // If empty -> reset to 0.00
+    //   if (clean.length === 0) {
+    //     return setContractForm((prev) => ({ ...prev, [field]: "0.00" }));
+    //   }
 
-      // Always ensure at least 2 digits for decimals
-      if (clean.length === 1) clean = "0" + clean;
+    //   // Always ensure at least 2 digits for decimals
+    //   if (clean.length === 1) clean = "0" + clean;
 
-      const formatted =
-        clean.substring(0, clean.length - 2) +
-        "." +
-        clean.substring(clean.length - 2);
+    //   const formatted =
+    //     clean.substring(0, clean.length - 2) +
+    //     "." +
+    //     clean.substring(clean.length - 2);
 
-      return setContractForm((prev) => ({
-        ...prev,
-        [field]: formatted,
-      }));
-    }
+    //   return setContractForm((prev) => ({
+    //     ...prev,
+    //     [field]: formatted,
+    //   }));
+    // }
 
     // DEFAULT HANDLER FOR NON-MONEY FIELDS
     setContractForm((prev) => ({
@@ -211,7 +213,7 @@ const AddReminderScreen = () => {
       reminderName: "",
       description: "",
       category: "",
-      payments: 0,
+      payments: "",
       paymentAmount: "0.00",
       paymentInterval: "",
       lastPaymentAmount: "0.00",
@@ -237,7 +239,7 @@ const AddReminderScreen = () => {
       resendICal: true,
     });
 
-    setContactInputs([""]);
+    setContactInputs([user?.email || ""]);
     setCreatedContractId(null);
     setActiveTab("details"); // Optional: go back to Step 1
   };
@@ -265,7 +267,7 @@ const AddReminderScreen = () => {
       account_number: contractForm.accountNumber,
       amount: parseFloat(contractForm.paymentAmount) || 0,
       interval: contractForm.paymentInterval,
-      payments: contractForm?.payments,
+      payments: parseFloat(contractForm?.payments) || 0,
       auto_renew: contractForm.renewal ? 1 : 0,
       auto_renew_period: contractForm.renewal ? "P2Y" : null,
       supplier_rating: contractForm.supplierRating || "",
@@ -335,7 +337,7 @@ const AddReminderScreen = () => {
     const reminderPayload = {
       contract_id: createdContractId!,
       name: contractForm.reminderName,
-      quantity: quantityMap[reminderForm.quantity] || 1,
+      quantity: quantityMap[reminderForm.quantity] ?? 1,
       period: reminderForm.period || '',
       contacts: validContacts,
       active: true,
@@ -383,91 +385,93 @@ const AddReminderScreen = () => {
   };
 
   return (
-    <View style={styles.container}>
-      {/* Header */}
-      <TabHeader title="Add Reminder" subtitle="Create a reminder" />
+    <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+      <View style={styles.container}>
+        {/* Header */}
+        <TabHeader title="Add Reminder" subtitle="Create a reminder" />
 
-      {/* Tab Navigation */}
-      <View style={styles.tabContainer}>
-        <TouchableOpacity
-          style={[styles.tab, activeTab === "details" && styles.tabActive]}
-          onPress={() => setActiveTab("details")}
-          disabled={isAddingContract || isAddingReminder}
-        >
-          <Text
-            style={[
-              styles.tabText,
-              activeTab === "details" && styles.tabTextActive,
-            ]}
+        {/* Tab Navigation */}
+        <View style={styles.tabContainer}>
+          <TouchableOpacity
+            style={[styles.tab, activeTab === "details" && styles.tabActive]}
+            onPress={() => setActiveTab("details")}
+            disabled={isAddingContract || isAddingReminder}
           >
-            Step 1: Contract Details
-          </Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.tab, activeTab === "reminder" && styles.tabActive]}
-          onPress={() => {
-            if (!createdContractId) {
-              Alert.alert(
-                "Required",
-                "Please create contract first before adding reminder"
-              );
-              return;
-            }
-            setActiveTab("reminder");
-          }}
-          disabled={isAddingContract || isAddingReminder}
-        >
-          <Text
-            style={[
-              styles.tabText,
-              activeTab === "reminder" && styles.tabTextActive,
-            ]}
+            <Text
+              style={[
+                styles.tabText,
+                activeTab === "details" && styles.tabTextActive,
+              ]}
+            >
+              Step 1: Contract Details
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.tab, activeTab === "reminder" && styles.tabActive]}
+            onPress={() => {
+              if (!createdContractId) {
+                Alert.alert(
+                  "Required",
+                  "Please create contract first before adding reminder"
+                );
+                return;
+              }
+              setActiveTab("reminder");
+            }}
+            disabled={isAddingContract || isAddingReminder}
           >
-            Step 2: Reminder Details
-          </Text>
-        </TouchableOpacity>
-      </View>
-
-      {/* STEP 1: CONTRACT DETAILS */}
-      {activeTab === "details" && (
-        <ContractDetails
-          contractForm={contractForm}
-          setContractForm={setContractForm}
-          onContractChange={handleContractChange}
-          onProceed={handleSaveContract}
-          onCancel={handleCancel}
-          isLoading={isAddingContract}
-          isEnterprise={isEnterprise}
-          user={user}
-          accounts={accounts}
-        />
-      )}
-
-      {/* STEP 2: REMINDER DETAILS */}
-      {activeTab === "reminder" && (
-        <ReminderDetails
-          reminderForm={reminderForm}
-          contactInputs={contactInputs}
-          onReminderChange={handleReminderChange}
-          onContactChange={handleContactChange}
-          onAddContact={handleAddContact}
-          onRemoveContact={handleRemoveContact}
-          onSave={handleSaveReminder}
-          onCancel={handleCancel}
-          isLoading={isAddingReminder}
-        />
-      )}
-
-      {/* Loading Overlay */}
-      {(isAddingContract || isAddingReminder) && (
-        <View style={styles.loadingOverlay}>
-          <ActivityIndicator size="large" color="#9A1B2B" />
-          <Text style={styles.loadingText}>
-            {isAddingContract ? "Creating contract..." : "Creating reminder..."}
-          </Text>
+            <Text
+              style={[
+                styles.tabText,
+                activeTab === "reminder" && styles.tabTextActive,
+              ]}
+            >
+              Step 2: Reminder Details
+            </Text>
+          </TouchableOpacity>
         </View>
-      )}
-    </View>
+
+        {/* STEP 1: CONTRACT DETAILS */}
+        {activeTab === "details" && (
+          <ContractDetails
+            contractForm={contractForm}
+            setContractForm={setContractForm}
+            onContractChange={handleContractChange}
+            onProceed={handleSaveContract}
+            onCancel={handleCancel}
+            isLoading={isAddingContract}
+            isEnterprise={isEnterprise}
+            user={user}
+            accounts={accounts}
+          />
+        )}
+
+        {/* STEP 2: REMINDER DETAILS */}
+        {activeTab === "reminder" && (
+          <ReminderDetails
+            reminderForm={reminderForm}
+            contactInputs={contactInputs}
+            onReminderChange={handleReminderChange}
+            onContactChange={handleContactChange}
+            onAddContact={handleAddContact}
+            onRemoveContact={handleRemoveContact}
+            onSave={handleSaveReminder}
+            onCancel={handleCancel}
+            isLoading={isAddingReminder}
+          />
+        )}
+
+        {/* Loading Overlay */}
+        {(isAddingContract || isAddingReminder) && (
+          <View style={styles.loadingOverlay}>
+            <ActivityIndicator size="large" color="#9A1B2B" />
+            <Text style={styles.loadingText}>
+              {isAddingContract ? "Creating contract..." : "Creating reminder..."}
+            </Text>
+          </View>
+        )}
+      </View>
+    </TouchableWithoutFeedback>
   );
 };
 
