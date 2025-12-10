@@ -127,9 +127,11 @@ export const validateProfileData = (
   }
 
   // Phone validation (basic - at least 7 digits)
-  const phoneDigits = data.phone.replace(/\D/g, '');
-  if (phoneDigits.length < 7) {
-    return { valid: false, error: 'Phone number must have at least 7 digits' };
+  if (data.phone && data.phone.trim().length > 0) {
+    const phoneDigits = data.phone.replace(/\D/g, '');
+    if (phoneDigits.length < 7) {
+      return { valid: false, error: 'Phone number must have at least 7 digits' };
+    }
   }
 
   // Zip code validation (basic - at least 3 characters)
