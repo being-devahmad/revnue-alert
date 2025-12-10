@@ -257,35 +257,74 @@ const EditReminder = () => {
       return;
     }
 
+    // const contractPayload = {
+    //   name: contractForm.reminderName,
+    //   description: contractForm.description,
+    //   category_id: parseInt(contractForm.category) || 0,
+    //   started_at: contractForm.inceptionDate
+    //     ?.toISOString()
+    //     .split("T")[0] || "",
+    //   expired_at: contractForm.expirationDate
+    //     ?.toISOString()
+    //     .split("T")[0] || "",
+    //   account_number: contractForm.accountNumber,
+    //   amount: parseFloat(contractForm.paymentAmount) || 0,
+    //   interval: contractForm.paymentInterval,
+    //   payments: parseFloat(contractForm.payments) || 0,
+    //   auto_renew: contractForm.renewal ? 1 : 0,
+    //   auto_renew_period: formatToISO(contractForm.renewalPeriod),
+    //   supplier_rating: contractForm.supplierRating,
+    //   last_payment_amount: parseFloat(contractForm.lastPaymentAmount) || 0,
+    //   last_payment_at: contractForm.lastPaymentDate
+    //     ?.toISOString()
+    //     .split("T")[0] || "",
+    //   last_payment_notes: contractForm?.lastPaymentNotes || "",
+    //   website_email: contractForm.emailWebsite,
+    //   phone_number: contractForm.phone,
+    //   non_renew_sent_at: contractForm.nonRenewDate
+    //     ?.toISOString()
+    //     .split("T")[0] || null,
+    //   notes: contractForm.notes,
+    // };
+
+
+
     const contractPayload = {
       name: contractForm.reminderName,
       description: contractForm.description,
       category_id: parseInt(contractForm.category) || 0,
-      started_at: contractForm.inceptionDate
-        ?.toISOString()
-        .split("T")[0] || "",
-      expired_at: contractForm.expirationDate
-        ?.toISOString()
-        .split("T")[0] || "",
+      started_at: contractForm.inceptionDate?.toISOString().split("T")[0] || "",
+      expired_at: contractForm.expirationDate?.toISOString().split("T")[0] || "",
       account_number: contractForm.accountNumber,
       amount: parseFloat(contractForm.paymentAmount) || 0,
       interval: contractForm.paymentInterval,
       payments: parseFloat(contractForm.payments) || 0,
       auto_renew: contractForm.renewal ? 1 : 0,
       auto_renew_period: formatToISO(contractForm.renewalPeriod),
-      supplier_rating: contractForm.supplierRating,
-      last_payment_amount: parseFloat(contractForm.lastPaymentAmount) || 0,
-      last_payment_at: contractForm.lastPaymentDate
-        ?.toISOString()
-        .split("T")[0] || "",
-      last_payment_notes: contractForm?.lastPaymentNotes || "",
+
+      supplier_rating: contractForm.supplierRating > 0 ? contractForm.supplierRating : null,
+
+      last_payment_amount:
+        parseFloat(contractForm.lastPaymentAmount) || null,
+
+      last_payment_at:
+        contractForm.lastPaymentDate
+          ?.toISOString()
+          .split("T")[0] || "",
+
+      last_payment_notes: contractForm.lastPaymentNotes || "",
       website_email: contractForm.emailWebsite,
       phone_number: contractForm.phone,
-      non_renew_sent_at: contractForm.nonRenewDate
-        ?.toISOString()
-        .split("T")[0] || null,
+
+      non_renew_sent_at:
+        contractForm.nonRenewDate
+          ?.toISOString()
+          .split("T")[0] || null,
+
       notes: contractForm.notes,
     };
+
+
 
     console.log("📦 Contract payload:", contractPayload);
 

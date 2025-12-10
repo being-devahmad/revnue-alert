@@ -120,7 +120,7 @@ const ContractDetailsTab: React.FC<ContractDetailsTabProps> = ({
     },
     {
       label: "Payment",
-      value: `$${contract.amount.toFixed(2)}`,
+      value: `$${contract?.amount?.toFixed(2)}`,
       icon: "cash-outline" as const,
     },
     {
@@ -141,7 +141,7 @@ const ContractDetailsTab: React.FC<ContractDetailsTabProps> = ({
     {
       label: "Last Payment Amount",
       value: contract.last_payment_amount
-        ? `$${contract.last_payment_amount.toFixed(2)}`
+        ? `$${contract?.last_payment_amount?.toFixed(2)}`
         : "N/A",
       icon: "cash-outline" as const,
     },
@@ -154,7 +154,7 @@ const ContractDetailsTab: React.FC<ContractDetailsTabProps> = ({
     },
     {
       label: "Deposits / Advance Pmnts",
-      value: `$${contract.payments.toFixed(2)}`,
+      value: `$${contract?.payments?.toFixed(2)}`,
       icon: "checkmark-circle-outline" as const,
     },
     // {

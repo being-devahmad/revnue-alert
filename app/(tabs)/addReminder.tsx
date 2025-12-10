@@ -260,7 +260,7 @@ const AddReminderScreen = () => {
     const contractPayload = {
       name: contractForm.reminderName,
       description: contractForm.description,
-      category_id: contractForm?.category,
+      category_id: parseInt(contractForm?.category) || 0,
       started_at: formatLocalDate(contractForm.inceptionDate) || "",
       expired_at:
         formatLocalDate(contractForm.expirationDate) || "",
@@ -270,7 +270,7 @@ const AddReminderScreen = () => {
       payments: parseFloat(contractForm?.payments) || 0,
       auto_renew: contractForm.renewal ? 1 : 0,
       auto_renew_period: contractForm.renewal ? "P2Y" : null,
-      supplier_rating: contractForm.supplierRating || "",
+      supplier_rating: contractForm.supplierRating > 0 ? contractForm.supplierRating : null,
       last_payment_amount: parseFloat(contractForm.lastPaymentAmount) || 0,
       last_payment_at:
         formatLocalDate(contractForm.lastPaymentDate) || null,
