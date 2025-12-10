@@ -4,15 +4,13 @@ import { Ionicons } from "@expo/vector-icons";
 import type React from "react";
 import { useRef, useState } from "react";
 import {
-    Keyboard,
     ScrollView,
     StyleSheet,
     Switch,
     Text,
     TextInput,
     TouchableOpacity,
-    TouchableWithoutFeedback,
-    View,
+    View
 } from "react-native";
 import { ReminderPeriodInput } from "../ReminderPeriodInput";
 import { RichTextEditor, RichTextEditorRef } from "../RichTextEditor";
@@ -93,14 +91,8 @@ export const ReminderDetails: React.FC<ReminderDetailsProps> = ({
 
     return (
         <>
-            <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
-                <TouchableWithoutFeedback
-                    accessible={false}
-                    onPress={() => {
-                        Keyboard.dismiss();
-                        richEditorRef.current?.blur();
-                    }}
-                >
+            <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag">
+                <View>
                     <View>
                         {/* Reminder Details */}
                         <View
@@ -303,7 +295,7 @@ export const ReminderDetails: React.FC<ReminderDetailsProps> = ({
                             </TouchableOpacity>
                         </View>
                     </View>
-                </TouchableWithoutFeedback>
+                </View>
             </ScrollView>
         </>
     );

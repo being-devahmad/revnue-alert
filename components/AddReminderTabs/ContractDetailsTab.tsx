@@ -8,15 +8,13 @@ import { useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
-  Keyboard,
   ScrollView,
   StyleSheet,
   Switch,
   Text,
   TextInput,
   TouchableOpacity,
-  TouchableWithoutFeedback,
-  View,
+  View
 } from "react-native";
 import { RichTextEditor, RichTextEditorRef } from "../RichTextEditor";
 import { CategoryBottomSheet } from "../ui/CategoryBottomsheet";
@@ -320,14 +318,9 @@ export const ContractDetails: React.FC<ContractDetailsProps> = ({
       <ScrollView
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="on-drag"
       >
-        <TouchableWithoutFeedback
-          accessible={false}
-          onPress={() => {
-            Keyboard.dismiss();
-            richTextRef.current?.blur();
-          }}
-        >
+        <View>
 
           <View>
             {/* Basic Information */}
@@ -884,7 +877,7 @@ export const ContractDetails: React.FC<ContractDetailsProps> = ({
               </TouchableOpacity>
             </View>
           </View>
-        </TouchableWithoutFeedback>
+        </View>
       </ScrollView>
     </>
   );

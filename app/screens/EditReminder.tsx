@@ -226,6 +226,15 @@ const EditReminder = () => {
       Alert.alert("Validation Error", "Expiration date is required");
       return false;
     }
+    if (contractForm.inceptionDate && contractForm.expirationDate) {
+      if (contractForm.inceptionDate > contractForm.expirationDate) {
+        Alert.alert(
+          "Validation Error",
+          "Inception date cannot be later than expiration date"
+        );
+        return false;
+      }
+    }
     return true;
   };
 
@@ -344,8 +353,12 @@ const EditReminder = () => {
           ]);
         },
         onError: (error: any) => {
-          console.error("❌ Error updating contract:", error.message);
-          Alert.alert("Error", error.message || "Failed to update contract");
+          console.error("❌ Error updating contract:", error);
+          const message =
+            error.response?.data?.message ||
+            error.message ||
+            "Failed to update contract";
+          Alert.alert("Error", message);
         },
       }
     );

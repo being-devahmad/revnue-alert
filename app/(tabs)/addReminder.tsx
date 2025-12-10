@@ -183,6 +183,15 @@ const AddReminderScreen = () => {
       Alert.alert("Validation Error", "Expiration date is required");
       return false;
     }
+    if (contractForm.inceptionDate && contractForm.expirationDate) {
+      if (contractForm.inceptionDate > contractForm.expirationDate) {
+        Alert.alert(
+          "Validation Error",
+          "Inception date cannot be later than expiration date"
+        );
+        return false;
+      }
+    }
     return true;
   };
 
@@ -306,8 +315,12 @@ const AddReminderScreen = () => {
         ]);
       },
       onError: (error: any) => {
-        console.error("❌ Error adding contract:", error.message);
-        Alert.alert("Error", error.message || "Failed to add contract");
+        console.error("❌ Error adding contract:", error);
+        const message =
+          error.response?.data?.message ||
+          error.message ||
+          "Failed to add contract";
+        Alert.alert("Error", message);
       },
     });
   };
