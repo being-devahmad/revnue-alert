@@ -20,7 +20,6 @@ export const RichTextEditor = React.forwardRef<
   RichTextEditorProps
 >(({ value, onChangeText, placeholder = "Enter text...", style }, ref) => {
   const richText = React.useRef<any>(null);
-  const initialValue = React.useRef(value).current;
 
   React.useImperativeHandle(ref, () => ({
     focus: () => {
@@ -35,18 +34,6 @@ export const RichTextEditor = React.forwardRef<
       richText.current?.setContentHTML(html);
     },
   }));
-
-  // Stabilize the onChangeText callback to prevent RichEditor from re-rendering/reloading
-  const onChangeRef = React.useRef(onChangeText);
-
-  // Update ref whenever parent callback changes
-  React.useEffect(() => {
-    onChangeRef.current = onChangeText;
-  }, [onChangeText]);
-
-  const handleOnChange = React.useCallback((text: string) => {
-    onChangeRef.current?.(text);
-  }, []);
 
   return (
     <View style={[styles.container, style]}>
@@ -67,8 +54,8 @@ export const RichTextEditor = React.forwardRef<
 
       <RichEditor
         ref={richText}
-        initialContentHTML={initialValue}
-        onChange={handleOnChange}
+        initialContentHTML={value}
+        onChange={onChangeText}
         placeholder={placeholder}
         androidHardwareAccelerationDisabled
         style={styles.editor}
