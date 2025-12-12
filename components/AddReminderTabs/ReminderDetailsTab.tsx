@@ -2,6 +2,7 @@ import { Ionicons } from "@expo/vector-icons";
 import type React from "react";
 import { useRef, useState } from "react";
 import {
+    Platform,
     ScrollView,
     StyleSheet,
     Switch,
@@ -233,13 +234,28 @@ export const ReminderDetails: React.FC<ReminderDetailsProps> = ({
                                     </View>
 
                                     <View style={{ minHeight: 180 }}>
-                                        <RichTextEditor
-                                            ref={richEditorRef}
-                                            value={reminderForm.notes}
-                                            onChangeText={(text) => onReminderChange("notes", text)}
-                                            placeholder="Enter formatted notes..."
-                                            style={{ flex: 1 }}
-                                        />
+                                        {
+                                            Platform.OS === 'ios' ? (
+                                                <>
+                                                    <RichTextEditor
+                                                        ref={richEditorRef}
+                                                        value={reminderForm.notes}
+                                                        onChangeText={(text) => onReminderChange("notes", text)}
+                                                        placeholder="Enter formatted notes..."
+                                                        style={{ flex: 1 }}
+                                                    />
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <TextInput
+                                                        value={reminderForm.notes}
+                                                        onChangeText={(text) => onReminderChange("notes", text)}
+                                                        placeholder="Enter notes..."
+                                                        style={[styles.input, { height: 200, textAlignVertical: "top" }]}
+                                                    />
+                                                </>
+                                            )
+                                        }
                                     </View>
 
                                 </View>

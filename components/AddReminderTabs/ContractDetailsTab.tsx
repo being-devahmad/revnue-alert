@@ -217,9 +217,16 @@ export const ContractDetails: React.FC<ContractDetailsProps> = ({
         && contractForm.nonRenewDate.toISOString().split("T")[0]) || ""
       }<br>`;
 
-    console.log("📝 Generated Template:", generatedNote);
+    // Regex explanation:
+    // 1. (?:<[^>]+>)* : Matches any number of opening/closing HTML tags (non-capturing)
+    // 2. \s*Reminder Name:\s* : Matches "Reminder Name:" with optional whitespace
+    // 3. [\s\S]*? : Matches any content (lazy) including newlines
+    // 4. Non-Renew Sent Date: : Matches the end anchor label
+    // 5. [\s\S]*? : Matches the date value (lazy)
+    // 6. (?:<br\s*\/?>|<\/p>|<div>|$) : Matches the end of the block (br, closing p, div, or end of string)
+    const templatePattern = /(?:<[^>]+>)*\s*Reminder Name:\s*(?:<\/[^>]+>)*[\s\S]*?Non-Renew Sent Date:[\s\S]*?(?:<br\s*\/?>|<\/p>|<div>|$)/i;
 
-    const templatePattern = /<b>Reminder Name:<\/b>[\s\S]*?<b>Non-Renew Sent Date:<\/b>[\s\S]*?<br>/;
+    console.log("📝 Current Notes HTML:", contractForm.notes); // Debug log
     const hasExistingTemplate = templatePattern.test(contractForm.notes);
     console.log("🔍 Has existing template:", hasExistingTemplate);
 
