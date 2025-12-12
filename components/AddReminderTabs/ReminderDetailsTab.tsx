@@ -1,5 +1,3 @@
-"use client";
-
 import { Ionicons } from "@expo/vector-icons";
 import type React from "react";
 import { useRef, useState } from "react";
@@ -10,6 +8,7 @@ import {
     Text,
     TextInput,
     TouchableOpacity,
+    TouchableWithoutFeedback,
     View
 } from "react-native";
 import { ReminderPeriodInput } from "../ReminderPeriodInput";
@@ -91,8 +90,11 @@ export const ReminderDetails: React.FC<ReminderDetailsProps> = ({
 
     return (
         <>
-            <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag">
-                <View>
+            <ScrollView
+                showsVerticalScrollIndicator={false}
+                keyboardShouldPersistTaps="handled"
+                keyboardDismissMode="on-drag" >
+                <TouchableWithoutFeedback onPress={() => { }}>
                     <View>
                         {/* Reminder Details */}
                         <View
@@ -230,13 +232,16 @@ export const ReminderDetails: React.FC<ReminderDetailsProps> = ({
                                 </View> */}
                                     </View>
 
-                                    {/* Rich Text Editor */}
-                                    <RichTextEditor
-                                        ref={richEditorRef}
-                                        value={reminderForm.notes}
-                                        onChangeText={(text) => onReminderChange("notes", text)}
-                                        placeholder="Enter formatted notes..."
-                                    />
+                                    <View style={{ minHeight: 180 }}>
+                                        <RichTextEditor
+                                            ref={richEditorRef}
+                                            value={reminderForm.notes}
+                                            onChangeText={(text) => onReminderChange("notes", text)}
+                                            placeholder="Enter formatted notes..."
+                                            style={{ flex: 1 }}
+                                        />
+                                    </View>
+
                                 </View>
 
                                 {/* Resend iCal Switch */}
@@ -295,7 +300,7 @@ export const ReminderDetails: React.FC<ReminderDetailsProps> = ({
                             </TouchableOpacity>
                         </View>
                     </View>
-                </View>
+                </TouchableWithoutFeedback>
             </ScrollView>
         </>
     );

@@ -8,12 +8,14 @@ import { useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
+  Keyboard,
   ScrollView,
   StyleSheet,
   Switch,
   Text,
   TextInput,
   TouchableOpacity,
+  TouchableWithoutFeedback,
   View
 } from "react-native";
 import { RichTextEditor, RichTextEditorRef } from "../RichTextEditor";
@@ -302,6 +304,8 @@ export const ContractDetails: React.FC<ContractDetailsProps> = ({
     }
   }, [contractForm.category, categories, currentCategory]);
 
+  const richEditorRef = useRef<RichTextEditorRef>(null);
+
 
   return (
     <>
@@ -318,9 +322,13 @@ export const ContractDetails: React.FC<ContractDetailsProps> = ({
       <ScrollView
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
-        keyboardDismissMode="on-drag"
-      >
-        <View>
+        keyboardDismissMode="on-drag" >
+        <TouchableWithoutFeedback
+          accessible={false}
+          onPress={() => {
+            Keyboard.dismiss();
+            richEditorRef.current?.blur();
+          }}>
 
           <View>
             {/* Basic Information */}
@@ -812,13 +820,15 @@ export const ContractDetails: React.FC<ContractDetailsProps> = ({
                   </TouchableOpacity>
                 </View>
 
-                <RichTextEditor
-                  ref={richTextRef}
-                  value={contractForm.notes}
-                  onChangeText={(text) => onContractChange("notes", text)}
-                  placeholder="Enter notes"
-                  style={styles.richEditor}
-                />
+                <View style={{ minHeight: 180 }}>
+                  <RichTextEditor
+                    ref={richTextRef}
+                    value={contractForm.notes}
+                    onChangeText={(text) => onContractChange("notes", text)}
+                    placeholder="Enter notes"
+                    style={{ flex: 1 }}
+                  />
+                </View>
 
               </View>
             </View>
@@ -877,7 +887,7 @@ export const ContractDetails: React.FC<ContractDetailsProps> = ({
               </TouchableOpacity>
             </View>
           </View>
-        </View>
+        </TouchableWithoutFeedback>
       </ScrollView>
     </>
   );
