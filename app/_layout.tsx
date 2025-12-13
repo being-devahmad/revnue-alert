@@ -12,6 +12,8 @@ export default function RootLayout() {
   const loadToken = useAuthStore((s) => s.loadToken);
   const [appIsReady, setAppIsReady] = useState(false);
 
+  const EXPO_LIVE_PUBLIC_STRIPE_PUBLISHABLE_KEY = process.env.EXPO_LIVE_PUBLIC_STRIPE_PUBLISHABLE_KEY;
+
   useEffect(() => {
     async function prepare() {
       try {
@@ -47,7 +49,7 @@ export default function RootLayout() {
 
   return (
     <StripeProvider
-      publishableKey={"pk_test_51SHknHI8Xjdh0k1MqhPNksWxi985u7AyKA3cYvmOaFgtB12TaNNKAskfVkjgiEC8UprCHWAeOZEfYxli7IvsZ5ut00GOHlrljC"}
+      publishableKey={EXPO_LIVE_PUBLIC_STRIPE_PUBLISHABLE_KEY!}
       threeDSecureParams={{
         backgroundColor: "#FFF",
       }}
