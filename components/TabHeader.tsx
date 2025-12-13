@@ -59,7 +59,10 @@ export const TabHeader = ({
                     {/* DELETE BUTTON */}
                     {isDelete && (
                         <TouchableOpacity
-                            onPress={()=> Alert.alert("This feature isn’t available in the mobile app yet. To delete your reminder, please log in to the web portal. ")}
+                            onPress={() => Alert.alert(
+                                "Not available on mobile",
+                                "This feature isn’t available in the mobile app yet.\nTo delete your reminder, please log in to the web portal."
+                            )}
                             activeOpacity={0.7}
                             style={styles.deleteButton}
                         >

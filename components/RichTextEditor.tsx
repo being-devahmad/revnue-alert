@@ -1,5 +1,5 @@
 import React from "react";
-import { StyleSheet, View } from "react-native";
+import { Platform, StyleSheet, View } from "react-native";
 import { RichEditor, RichToolbar, actions } from "react-native-pell-rich-editor";
 
 export interface RichTextEditorRef {
@@ -52,15 +52,38 @@ export const RichTextEditor = React.forwardRef<
         style={styles.toolbar}
       />
 
-      <RichEditor
-        ref={richText}
-        initialContentHTML={value}
-        onChange={onChangeText}
-        placeholder={placeholder}
-        androidHardwareAccelerationDisabled
-        style={styles.editor}
-        initialHeight={120}
-      />
+      {
+        Platform.OS === 'android' ? (
+          <>
+            <RichEditor
+              ref={richText}
+              initialContentHTML={value}
+              onChange={onChangeText}
+              placeholder={placeholder}
+              useContainer={false}
+              style={[styles.editor, { height: 220 }]}
+              editorStyle={{
+                backgroundColor: "#F9FAFB",
+                color: "#000",
+                placeholderColor: "#9CA3AF",
+              }}
+            />
+          </>
+        ) : (
+          <>
+            <RichEditor
+              ref={richText}
+              initialContentHTML={value}
+              onChange={onChangeText}
+              placeholder={placeholder}
+              style={styles.editor}
+              initialHeight={120}
+            />
+          </>
+        )
+      }
+
+
     </View>
   );
 });
