@@ -5,13 +5,12 @@ import { Ionicons } from "@expo/vector-icons";
 import dayjs from "dayjs";
 import React, { useMemo } from "react";
 import {
-  Alert,
   ScrollView,
   StyleSheet,
   Switch,
   Text,
   TouchableOpacity,
-  View,
+  View
 } from "react-native";
 import HtmlRichTextNoteDisplay from "../RichTextNotes";
 
@@ -23,7 +22,9 @@ interface ContractDetailsTabProps {
   isCompletingTask: boolean;
   timelineEnabled: boolean;
   setTimelineEnabled: React.Dispatch<React.SetStateAction<boolean>>;
-  isTaskCompleted: boolean
+  isTaskCompleted: boolean;
+  onToggleContractStatus: (active: boolean) => void;
+  isTogglingContract: boolean;
 }
 
 const ContractDetailsTab: React.FC<ContractDetailsTabProps> = ({
@@ -34,7 +35,9 @@ const ContractDetailsTab: React.FC<ContractDetailsTabProps> = ({
   isCompletingTask,
   timelineEnabled,
   setTimelineEnabled,
-  isTaskCompleted
+  isTaskCompleted,
+  onToggleContractStatus,
+  isTogglingContract,
 }) => {
   console.log("📄 ContractDetailsTab contract:", contract);
 
@@ -49,10 +52,10 @@ const ContractDetailsTab: React.FC<ContractDetailsTabProps> = ({
   //   return contract.reminders[0]?.active ?? true;
   // }, [contract?.reminders]);
 
-  const toggleTimeline = () => {
-    setTimelineEnabled((prev) => !prev);
-    Alert.alert("Contract has been saved");
+  const toggleTimeline = (value: boolean) => {
+    onToggleContractStatus(value);
   };
+
 
   // Calculate days left
   const daysLeft = useMemo(() => {
@@ -269,10 +272,12 @@ const ContractDetailsTab: React.FC<ContractDetailsTabProps> = ({
             <Switch
               value={timelineEnabled}
               onValueChange={toggleTimeline}
+              disabled={isTogglingContract}
               trackColor={{ false: "#E5E7EB", true: "#D1FAE5" }}
               thumbColor={timelineEnabled ? "#10B981" : "#9CA3AF"}
               ios_backgroundColor="#E5E7EB"
             />
+
           </View>
 
           <View style={styles.statusActionsDivider} />

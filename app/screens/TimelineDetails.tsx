@@ -1,4 +1,5 @@
 import { useCompleteTask } from "@/api/reminders/timeline-details/useCompleteTask";
+import { useToggleContractStatus } from "@/api/reminders/timeline-details/useContractStatus";
 import { useResendICal } from "@/api/reminders/timeline-details/useResendiCal";
 import { useGetTimelineDetails } from "@/api/reminders/useGetTimelineDetails";
 import { TabHeader } from "@/components/TabHeader";
@@ -37,7 +38,9 @@ const TimelineDetailsScreen: React.FC = () => {
   const [activeTab, setActiveTab] = useState<ActiveTab>("timeline");
   const router = useRouter();
   const params = useLocalSearchParams();
-  const [timelineEnabled, setTimelineEnabled] = useState(true);
+  const [timelineEnabled, setTimelineEnabled] = useState<boolean>(true);
+
+
 
   console.log("🔍 TimelineDetailsScreen params:", params);
 
@@ -70,6 +73,13 @@ const TimelineDetailsScreen: React.FC = () => {
   useEffect(() => {
     setIsTaskCompleted(!!(contract?.completed_at || contract?.completed_by));
   }, [contract?.completed_at, contract?.completed_by]);
+
+useEffect(() => {
+  const active = contract?.reminders?.[0]?.active;
+  if (typeof active === "boolean") {
+    setTimelineEnabled(active);
+  }
+}, [contract?.reminders?.[0]?.active]);
 
   const handleEditReminder = () => {
     if (!contract) {
@@ -108,12 +118,49 @@ const TimelineDetailsScreen: React.FC = () => {
         Alert.alert(
           "Error",
           error.response?.data?.message ||
-            error.message ||
-            "Something went wrong"
+          error.message ||
+          "Something went wrong"
         );
       },
     });
   };
+
+  // contract status toggle hook
+  const {
+    mutate: toggleContractStatus,
+    isPending: isTogglingContract,
+  } = useToggleContractStatus();
+
+  const handleToggleContractStatus = (active: boolean) => {
+    if (!contract?.id) return;
+
+    toggleContractStatus(
+      {
+        contractId: contract.id,
+        active,
+      },
+      {
+        onSuccess: (response) => {
+          setTimelineEnabled(active);
+
+          Alert.alert(
+            "Success",
+            response.message || "Contract status updated successfully"
+          );
+        },
+        onError: (error: any) => {
+          Alert.alert(
+            "Error",
+            error?.response?.data?.message ||
+            error.message ||
+            "Failed to update contract status"
+          );
+        },
+      }
+    );
+  };
+
+
 
   // Complete task handler
 
@@ -138,8 +185,8 @@ const TimelineDetailsScreen: React.FC = () => {
         Alert.alert(
           "Error",
           error?.response?.data?.message ||
-            error.message ||
-            "Failed to complete task"
+          error.message ||
+          "Failed to complete task"
         );
       },
     });
@@ -177,6 +224,8 @@ const TimelineDetailsScreen: React.FC = () => {
             timelineEnabled={timelineEnabled}
             setTimelineEnabled={setTimelineEnabled}
             isTaskCompleted={isTaskCompleted}
+            onToggleContractStatus={handleToggleContractStatus}
+            isTogglingContract={isTogglingContract}
           />
         );
       case "reminder":
