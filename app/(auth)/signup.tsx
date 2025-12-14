@@ -7,13 +7,15 @@ import {
   Alert,
   Image,
   Keyboard,
+  KeyboardAvoidingView,
+  Platform,
   ScrollView,
   StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
   TouchableWithoutFeedback,
-  View,
+  View
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -246,346 +248,352 @@ const SignupScreen = () => {
   // ============ RENDER ============
 
   return (
-    <SafeAreaView style={styles.container} edges={["top"]}>
-      {/* ===== Fixed Header ===== */}
-      <View style={styles.headerContainer}>
-        <View style={styles.logoContainer}>
-          <Image
-            source={require("../../assets/icons/logo_transparent.png")}
-            style={styles.logo}
-            resizeMode="contain"
-          />
-        </View>
-      </View>
+    <KeyboardAvoidingView
+      style={{ flex: 1 }}
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+      keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 0}
+    >
+      <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+        <SafeAreaView style={styles.container} edges={["top"]}>
+          {/* ===== Fixed Header ===== */}
+          <View style={styles.headerContainer}>
+            <View style={styles.logoContainer}>
+              <Image
+                source={require("../../assets/icons/logo_transparent.png")}
+                style={styles.logo}
+                resizeMode="contain"
+              />
+            </View>
+          </View>
 
-      {/* ===== Scrollable Form Section ===== */}
-      <SafeAreaView style={styles.formWrapper} edges={["bottom"]}>
-        <ScrollView
-          style={styles.scrollView}
-          contentContainerStyle={styles.scrollContainer}
-          showsVerticalScrollIndicator={false}
-          keyboardShouldPersistTaps="handled"
-          bounces={true}
-        >
-          <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-            <View style={styles.formContainer}>
-              {/* Plan Summary Badge */}
-              <View style={styles.planBadge}>
-                <Ionicons name="checkmark-circle" size={16} color="#10B981" />
-                <Text style={styles.planBadgeText}>
-                  {planName} - ${price}/{billingCycle === "month" ? "mo" : "yr"}
-                </Text>
-              </View>
-
-              {/* Form Title */}
-              <Text style={styles.formTitle}>Complete Your Profile</Text>
-              <Text style={styles.formSubtitle}>
-                Create your RenewAlert account
-              </Text>
-
-              {/* ===== PERSONAL INFORMATION ===== */}
-              <Text style={styles.sectionTitle}>Personal Information</Text>
-
-              {/* First Name */}
-              <View style={styles.inputGroup}>
-                <Text style={styles.label}>
-                  First Name <Text style={styles.required}>*</Text>
-                </Text>
-                <View
-                  style={[
-                    styles.inputContainer,
-                    focusedInput === "firstName" && styles.inputFocused,
-                  ]}
-                >
-                  <Ionicons
-                    name="person-outline"
-                    size={20}
-                    color={focusedInput === "firstName" ? "#800000" : "#9CA3AF"}
-                  />
-                  <TextInput
-                    style={styles.input}
-                    placeholder="Enter first name"
-                    placeholderTextColor="#9CA3AF"
-                    value={firstName}
-                    onChangeText={setFirstName}
-                    onFocus={() => setFocusedInput("firstName")}
-                    onBlur={() => setFocusedInput(null)}
-                    editable={!isProcessing}
-                  />
-                </View>
-              </View>
-
-              {/* Middle Name */}
-              <View style={styles.inputGroup}>
-                <Text style={styles.label}>Middle Name</Text>
-                <View
-                  style={[
-                    styles.inputContainer,
-                    focusedInput === "middleName" && styles.inputFocused,
-                  ]}
-                >
-                  <Ionicons
-                    name="person-outline"
-                    size={20}
-                    color={focusedInput === "middleName" ? "#800000" : "#9CA3AF"}
-                  />
-                  <TextInput
-                    style={styles.input}
-                    placeholder="Enter middle name (optional)"
-                    placeholderTextColor="#9CA3AF"
-                    value={middleName}
-                    onChangeText={setMiddleName}
-                    onFocus={() => setFocusedInput("middleName")}
-                    onBlur={() => setFocusedInput(null)}
-                    editable={!isProcessing}
-                  />
-                </View>
-              </View>
-
-              {/* Last Name */}
-              <View style={styles.inputGroup}>
-                <Text style={styles.label}>
-                  Last Name <Text style={styles.required}>*</Text>
-                </Text>
-                <View
-                  style={[
-                    styles.inputContainer,
-                    focusedInput === "lastName" && styles.inputFocused,
-                  ]}
-                >
-                  <Ionicons
-                    name="person-outline"
-                    size={20}
-                    color={focusedInput === "lastName" ? "#800000" : "#9CA3AF"}
-                  />
-                  <TextInput
-                    style={styles.input}
-                    placeholder="Enter last name"
-                    placeholderTextColor="#9CA3AF"
-                    value={lastName}
-                    onChangeText={setLastName}
-                    onFocus={() => setFocusedInput("lastName")}
-                    onBlur={() => setFocusedInput(null)}
-                    editable={!isProcessing}
-                  />
-                </View>
-              </View>
-
-              {/* ===== COMPANY INFORMATION ===== */}
-              <View style={styles.sectionDivider} />
-              <Text style={styles.sectionTitle}>Company Information</Text>
-
-              {/* Industry Dropdown */}
-              <View style={styles.inputGroup}>
-                <Text style={styles.label}>
-                  Industry <Text style={styles.required}>*</Text>
-                </Text>
-
-                {isLoadingIndustries ? (
-                  <View style={styles.loadingDropdown}>
-                    <ActivityIndicator size="small" color="#800000" />
-                    <Text style={styles.loadingDropdownText}>Loading industries...</Text>
-                  </View>
-                ) : industries.length > 0 ? (
-                  <>
-                    <SearchableIndustryDropdown
-                      industries={industries}
-                      selectedIndustry={industry}
-                      onSelect={(selectedInd) => {
-                        if (!isIndustryLocked) {
-                          console.log("🎯 Industry selected:", selectedInd.name);
-                          setIndustry(selectedInd);
-                        }
-                      }}
-                      disabled={isProcessing}
-                      isLocked={isIndustryLocked}
-                    />
-                  </>
-                ) : (
-                  <View style={styles.errorDropdown}>
-                    <Ionicons name="alert-circle" size={18} color="#EF4444" />
-                    <Text style={styles.errorDropdownText}>
-                      No industries available. Please go back and select a plan.
+          {/* ===== Scrollable Form Section ===== */}
+          <SafeAreaView style={styles.formWrapper} edges={["bottom"]}>
+            <ScrollView
+              style={styles.scrollView}
+              contentContainerStyle={styles.scrollContainer}
+              showsVerticalScrollIndicator={false}
+              keyboardShouldPersistTaps="handled"
+              bounces={true}
+            >
+              <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+                <View style={styles.formContainer}>
+                  {/* Plan Summary Badge */}
+                  <View style={styles.planBadge}>
+                    <Ionicons name="checkmark-circle" size={16} color="#10B981" />
+                    <Text style={styles.planBadgeText}>
+                      {planName} - ${price}/{billingCycle === "month" ? "mo" : "yr"}
                     </Text>
                   </View>
-                )}
-              </View>
 
-              {/* Company Name */}
-              <View style={styles.inputGroup}>
-                <Text style={styles.label}>Company Name</Text>
-                <View
-                  style={[
-                    styles.inputContainer,
-                    focusedInput === "companyName" && styles.inputFocused,
-                  ]}
-                >
-                  <Ionicons
-                    name="business-outline"
-                    size={20}
-                    color={focusedInput === "companyName" ? "#800000" : "#9CA3AF"}
-                  />
-                  <TextInput
-                    style={styles.input}
-                    placeholder="Enter company name (optional)"
-                    placeholderTextColor="#9CA3AF"
-                    value={companyName}
-                    onChangeText={setCompanyName}
-                    onFocus={() => setFocusedInput("companyName")}
-                    onBlur={() => setFocusedInput(null)}
-                    editable={!isProcessing}
-                  />
-                </View>
-              </View>
+                  {/* Form Title */}
+                  <Text style={styles.formTitle}>Complete Your Profile</Text>
+                  <Text style={styles.formSubtitle}>
+                    Create your RenewAlert account
+                  </Text>
 
-              {/* ===== ACCOUNT DETAILS ===== */}
-              <View style={styles.sectionDivider} />
-              <Text style={styles.sectionTitle}>Account Details</Text>
+                  {/* ===== PERSONAL INFORMATION ===== */}
+                  <Text style={styles.sectionTitle}>Personal Information</Text>
 
-              {/* Email */}
-              <View style={styles.inputGroup}>
-                <Text style={styles.label}>
-                  Email Address <Text style={styles.required}>*</Text>
-                </Text>
-                <View
-                  style={[
-                    styles.inputContainer,
-                    focusedInput === "email" && styles.inputFocused,
-                  ]}
-                >
-                  <Ionicons
-                    name="mail-outline"
-                    size={20}
-                    color={focusedInput === "email" ? "#800000" : "#9CA3AF"}
-                  />
-                  <TextInput
-                    style={styles.input}
-                    placeholder="Enter your email"
-                    placeholderTextColor="#9CA3AF"
-                    value={email}
-                    onChangeText={setEmail}
-                    onFocus={() => setFocusedInput("email")}
-                    onBlur={() => setFocusedInput(null)}
-                    keyboardType="email-address"
-                    autoCapitalize="none"
-                    editable={!isProcessing}
-                  />
-                </View>
-              </View>
+                  {/* First Name */}
+                  <View style={styles.inputGroup}>
+                    <Text style={styles.label}>
+                      First Name <Text style={styles.required}>*</Text>
+                    </Text>
+                    <View
+                      style={[
+                        styles.inputContainer,
+                        focusedInput === "firstName" && styles.inputFocused,
+                      ]}
+                    >
+                      <Ionicons
+                        name="person-outline"
+                        size={20}
+                        color={focusedInput === "firstName" ? "#800000" : "#9CA3AF"}
+                      />
+                      <TextInput
+                        style={styles.input}
+                        placeholder="Enter first name"
+                        placeholderTextColor="#9CA3AF"
+                        value={firstName}
+                        onChangeText={setFirstName}
+                        onFocus={() => setFocusedInput("firstName")}
+                        onBlur={() => setFocusedInput(null)}
+                        editable={!isProcessing}
+                      />
+                    </View>
+                  </View>
 
-              {/* Password */}
-              <View style={styles.inputGroup}>
-                <Text style={styles.label}>
-                  Password <Text style={styles.required}>*</Text>
-                </Text>
-                <View
-                  style={[
-                    styles.inputContainer,
-                    focusedInput === "password" && styles.inputFocused,
-                  ]}
-                >
-                  <Ionicons
-                    name="lock-closed-outline"
-                    size={20}
-                    color={focusedInput === "password" ? "#800000" : "#9CA3AF"}
-                  />
-                  <TextInput
-                    style={styles.input}
-                    placeholder="Create a password (8+ characters)"
-                    placeholderTextColor="#9CA3AF"
-                    value={password}
-                    onChangeText={setPassword}
-                    secureTextEntry={!showPassword}
-                    onFocus={() => setFocusedInput("password")}
-                    onBlur={() => setFocusedInput(null)}
-                    editable={!isProcessing}
-                  />
-                  <TouchableOpacity
-                    onPress={() => setShowPassword(!showPassword)}
-                    disabled={isProcessing}
-                  >
-                    <Ionicons
-                      name={showPassword ? "eye-outline" : "eye-off-outline"}
-                      size={20}
-                      color="#9CA3AF"
-                    />
-                  </TouchableOpacity>
-                </View>
-              </View>
+                  {/* Middle Name */}
+                  <View style={styles.inputGroup}>
+                    <Text style={styles.label}>Middle Name</Text>
+                    <View
+                      style={[
+                        styles.inputContainer,
+                        focusedInput === "middleName" && styles.inputFocused,
+                      ]}
+                    >
+                      <Ionicons
+                        name="person-outline"
+                        size={20}
+                        color={focusedInput === "middleName" ? "#800000" : "#9CA3AF"}
+                      />
+                      <TextInput
+                        style={styles.input}
+                        placeholder="Enter middle name (optional)"
+                        placeholderTextColor="#9CA3AF"
+                        value={middleName}
+                        onChangeText={setMiddleName}
+                        onFocus={() => setFocusedInput("middleName")}
+                        onBlur={() => setFocusedInput(null)}
+                        editable={!isProcessing}
+                      />
+                    </View>
+                  </View>
 
-              {/* Confirm Password */}
-              <View style={styles.inputGroup}>
-                <Text style={styles.label}>
-                  Confirm Password <Text style={styles.required}>*</Text>
-                </Text>
-                <View
-                  style={[
-                    styles.inputContainer,
-                    focusedInput === "confirmPassword" && styles.inputFocused,
-                  ]}
-                >
-                  <Ionicons
-                    name="lock-closed-outline"
-                    size={20}
-                    color={focusedInput === "confirmPassword" ? "#800000" : "#9CA3AF"}
-                  />
-                  <TextInput
-                    style={styles.input}
-                    placeholder="Confirm your password"
-                    placeholderTextColor="#9CA3AF"
-                    value={confirmPassword}
-                    onChangeText={setConfirmPassword}
-                    secureTextEntry={!showConfirmPassword}
-                    onFocus={() => setFocusedInput("confirmPassword")}
-                    onBlur={() => setFocusedInput(null)}
-                    editable={!isProcessing}
-                  />
-                  <TouchableOpacity
-                    onPress={() => setShowConfirmPassword(!showConfirmPassword)}
-                    disabled={isProcessing}
-                  >
-                    <Ionicons
-                      name={showConfirmPassword ? "eye-outline" : "eye-off-outline"}
-                      size={20}
-                      color="#9CA3AF"
-                    />
-                  </TouchableOpacity>
-                </View>
-              </View>
+                  {/* Last Name */}
+                  <View style={styles.inputGroup}>
+                    <Text style={styles.label}>
+                      Last Name <Text style={styles.required}>*</Text>
+                    </Text>
+                    <View
+                      style={[
+                        styles.inputContainer,
+                        focusedInput === "lastName" && styles.inputFocused,
+                      ]}
+                    >
+                      <Ionicons
+                        name="person-outline"
+                        size={20}
+                        color={focusedInput === "lastName" ? "#800000" : "#9CA3AF"}
+                      />
+                      <TextInput
+                        style={styles.input}
+                        placeholder="Enter last name"
+                        placeholderTextColor="#9CA3AF"
+                        value={lastName}
+                        onChangeText={setLastName}
+                        onFocus={() => setFocusedInput("lastName")}
+                        onBlur={() => setFocusedInput(null)}
+                        editable={!isProcessing}
+                      />
+                    </View>
+                  </View>
 
-              {/* ===== PROMO CODE ===== */}
-              {/* <View style={styles.sectionDivider} /> */}
+                  {/* ===== COMPANY INFORMATION ===== */}
+                  <View style={styles.sectionDivider} />
+                  <Text style={styles.sectionTitle}>Company Information</Text>
 
-              {/* Coupon Code */}
-              <View style={styles.inputGroup}>
-                <Text style={styles.label}>Promo or Coupon Code</Text>
-                <View
-                  style={[
-                    styles.inputContainer,
-                    focusedInput === "couponCode" && styles.inputFocused,
-                  ]}
-                >
-                  <Ionicons
-                    name="pricetag-outline"
-                    size={20}
-                    color={focusedInput === "couponCode" ? "#800000" : "#9CA3AF"}
-                  />
-                  <TextInput
-                    style={styles.input}
-                    placeholder="Enter coupon code (optional)"
-                    placeholderTextColor="#9CA3AF"
-                    value={couponCode}
-                    onChangeText={setCouponCode}
-                    onFocus={() => setFocusedInput("couponCode")}
-                    onBlur={() => setFocusedInput(null)}
-                    autoCapitalize="characters"
-                    editable={!isProcessing}
-                  />
-                </View>
-              </View>
+                  {/* Industry Dropdown */}
+                  <View style={styles.inputGroup}>
+                    <Text style={styles.label}>
+                      Industry <Text style={styles.required}>*</Text>
+                    </Text>
 
-              {/* Terms & Conditions */}
-              {/* <View style={styles.termsContainer}>
+                    {isLoadingIndustries ? (
+                      <View style={styles.loadingDropdown}>
+                        <ActivityIndicator size="small" color="#800000" />
+                        <Text style={styles.loadingDropdownText}>Loading industries...</Text>
+                      </View>
+                    ) : industries.length > 0 ? (
+                      <>
+                        <SearchableIndustryDropdown
+                          industries={industries}
+                          selectedIndustry={industry}
+                          onSelect={(selectedInd) => {
+                            if (!isIndustryLocked) {
+                              console.log("🎯 Industry selected:", selectedInd.name);
+                              setIndustry(selectedInd);
+                            }
+                          }}
+                          disabled={isProcessing}
+                          isLocked={isIndustryLocked}
+                        />
+                      </>
+                    ) : (
+                      <View style={styles.errorDropdown}>
+                        <Ionicons name="alert-circle" size={18} color="#EF4444" />
+                        <Text style={styles.errorDropdownText}>
+                          No industries available. Please go back and select a plan.
+                        </Text>
+                      </View>
+                    )}
+                  </View>
+
+                  {/* Company Name */}
+                  <View style={styles.inputGroup}>
+                    <Text style={styles.label}>Company Name</Text>
+                    <View
+                      style={[
+                        styles.inputContainer,
+                        focusedInput === "companyName" && styles.inputFocused,
+                      ]}
+                    >
+                      <Ionicons
+                        name="business-outline"
+                        size={20}
+                        color={focusedInput === "companyName" ? "#800000" : "#9CA3AF"}
+                      />
+                      <TextInput
+                        style={styles.input}
+                        placeholder="Enter company name (optional)"
+                        placeholderTextColor="#9CA3AF"
+                        value={companyName}
+                        onChangeText={setCompanyName}
+                        onFocus={() => setFocusedInput("companyName")}
+                        onBlur={() => setFocusedInput(null)}
+                        editable={!isProcessing}
+                      />
+                    </View>
+                  </View>
+
+                  {/* ===== ACCOUNT DETAILS ===== */}
+                  <View style={styles.sectionDivider} />
+                  <Text style={styles.sectionTitle}>Account Details</Text>
+
+                  {/* Email */}
+                  <View style={styles.inputGroup}>
+                    <Text style={styles.label}>
+                      Email Address <Text style={styles.required}>*</Text>
+                    </Text>
+                    <View
+                      style={[
+                        styles.inputContainer,
+                        focusedInput === "email" && styles.inputFocused,
+                      ]}
+                    >
+                      <Ionicons
+                        name="mail-outline"
+                        size={20}
+                        color={focusedInput === "email" ? "#800000" : "#9CA3AF"}
+                      />
+                      <TextInput
+                        style={styles.input}
+                        placeholder="Enter your email"
+                        placeholderTextColor="#9CA3AF"
+                        value={email}
+                        onChangeText={setEmail}
+                        onFocus={() => setFocusedInput("email")}
+                        onBlur={() => setFocusedInput(null)}
+                        keyboardType="email-address"
+                        autoCapitalize="none"
+                        editable={!isProcessing}
+                      />
+                    </View>
+                  </View>
+
+                  {/* Password */}
+                  <View style={styles.inputGroup}>
+                    <Text style={styles.label}>
+                      Password <Text style={styles.required}>*</Text>
+                    </Text>
+                    <View
+                      style={[
+                        styles.inputContainer,
+                        focusedInput === "password" && styles.inputFocused,
+                      ]}
+                    >
+                      <Ionicons
+                        name="lock-closed-outline"
+                        size={20}
+                        color={focusedInput === "password" ? "#800000" : "#9CA3AF"}
+                      />
+                      <TextInput
+                        style={styles.input}
+                        placeholder="Create a password (8+ characters)"
+                        placeholderTextColor="#9CA3AF"
+                        value={password}
+                        onChangeText={setPassword}
+                        secureTextEntry={!showPassword}
+                        onFocus={() => setFocusedInput("password")}
+                        onBlur={() => setFocusedInput(null)}
+                        editable={!isProcessing}
+                      />
+                      <TouchableOpacity
+                        onPress={() => setShowPassword(!showPassword)}
+                        disabled={isProcessing}
+                      >
+                        <Ionicons
+                          name={showPassword ? "eye-outline" : "eye-off-outline"}
+                          size={20}
+                          color="#9CA3AF"
+                        />
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+
+                  {/* Confirm Password */}
+                  <View style={styles.inputGroup}>
+                    <Text style={styles.label}>
+                      Confirm Password <Text style={styles.required}>*</Text>
+                    </Text>
+                    <View
+                      style={[
+                        styles.inputContainer,
+                        focusedInput === "confirmPassword" && styles.inputFocused,
+                      ]}
+                    >
+                      <Ionicons
+                        name="lock-closed-outline"
+                        size={20}
+                        color={focusedInput === "confirmPassword" ? "#800000" : "#9CA3AF"}
+                      />
+                      <TextInput
+                        style={styles.input}
+                        placeholder="Confirm your password"
+                        placeholderTextColor="#9CA3AF"
+                        value={confirmPassword}
+                        onChangeText={setConfirmPassword}
+                        secureTextEntry={!showConfirmPassword}
+                        onFocus={() => setFocusedInput("confirmPassword")}
+                        onBlur={() => setFocusedInput(null)}
+                        editable={!isProcessing}
+                      />
+                      <TouchableOpacity
+                        onPress={() => setShowConfirmPassword(!showConfirmPassword)}
+                        disabled={isProcessing}
+                      >
+                        <Ionicons
+                          name={showConfirmPassword ? "eye-outline" : "eye-off-outline"}
+                          size={20}
+                          color="#9CA3AF"
+                        />
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+
+                  {/* ===== PROMO CODE ===== */}
+                  {/* <View style={styles.sectionDivider} /> */}
+
+                  {/* Coupon Code */}
+                  <View style={styles.inputGroup}>
+                    <Text style={styles.label}>Promo or Coupon Code</Text>
+                    <View
+                      style={[
+                        styles.inputContainer,
+                        focusedInput === "couponCode" && styles.inputFocused,
+                      ]}
+                    >
+                      <Ionicons
+                        name="pricetag-outline"
+                        size={20}
+                        color={focusedInput === "couponCode" ? "#800000" : "#9CA3AF"}
+                      />
+                      <TextInput
+                        style={styles.input}
+                        placeholder="Enter coupon code (optional)"
+                        placeholderTextColor="#9CA3AF"
+                        value={couponCode}
+                        onChangeText={setCouponCode}
+                        onFocus={() => setFocusedInput("couponCode")}
+                        onBlur={() => setFocusedInput(null)}
+                        autoCapitalize="characters"
+                        editable={!isProcessing}
+                      />
+                    </View>
+                  </View>
+
+                  {/* Terms & Conditions */}
+                  {/* <View style={styles.termsContainer}>
                 <Text style={styles.termsText}>
                   By continuing, you agree to our{" "}
                   <Text style={styles.termsLink}>Terms of Service</Text> and{" "}
@@ -593,49 +601,53 @@ const SignupScreen = () => {
                 </Text>
               </View> */}
 
-              {/* Continue to Payment Button */}
-              <TouchableOpacity
-                style={[
-                  styles.createAccountButton,
-                  isProcessing && styles.createAccountButtonDisabled,
-                ]}
-                onPress={handleContinueToPayment}
-                disabled={isProcessing}
-              >
-                {isProcessing ? (
-                  <>
-                    <ActivityIndicator size="small" color="#FFF" />
-                    <Text style={styles.createAccountButtonText}>
-                      Continuing...
-                    </Text>
-                  </>
-                ) : (
-                  <>
-                    <Text style={styles.createAccountButtonText}>
-                      Continue to Payment
-                    </Text>
-                    <Ionicons name="arrow-forward" size={20} color="#FFF" />
-                  </>
-                )}
-              </TouchableOpacity>
+                  {/* Continue to Payment Button */}
+                  <TouchableOpacity
+                    style={[
+                      styles.createAccountButton,
+                      isProcessing && styles.createAccountButtonDisabled,
+                    ]}
+                    onPress={handleContinueToPayment}
+                    disabled={isProcessing}
+                  >
+                    {isProcessing ? (
+                      <>
+                        <ActivityIndicator size="small" color="#FFF" />
+                        <Text style={styles.createAccountButtonText}>
+                          Continuing...
+                        </Text>
+                      </>
+                    ) : (
+                      <>
+                        <Text style={styles.createAccountButtonText}>
+                          Continue to Payment
+                        </Text>
+                        <Ionicons name="arrow-forward" size={20} color="#FFF" />
+                      </>
+                    )}
+                  </TouchableOpacity>
 
-              {/* Login Link */}
-              <View style={styles.loginContainer}>
-                <Text style={styles.loginText}>Already have an account?</Text>
-                <TouchableOpacity
-                  onPress={() => router.replace("/(auth)/login")}
-                  disabled={isProcessing}
-                >
-                  <Text style={styles.loginLink}> Log in</Text>
-                </TouchableOpacity>
-              </View>
+                  {/* Login Link */}
+                  <View style={styles.loginContainer}>
+                    <Text style={styles.loginText}>Already have an account?</Text>
+                    <TouchableOpacity
+                      onPress={() => router.replace("/(auth)/login")}
+                      disabled={isProcessing}
+                    >
+                      <Text style={styles.loginLink}> Log in</Text>
+                    </TouchableOpacity>
+                  </View>
 
-              <View style={styles.bottomSpacing} />
-            </View>
-          </TouchableWithoutFeedback>
-        </ScrollView>
-      </SafeAreaView>
-    </SafeAreaView>
+                  <View style={styles.bottomSpacing} />
+                </View>
+              </TouchableWithoutFeedback>
+            </ScrollView>
+          </SafeAreaView>
+
+
+        </SafeAreaView>
+      </TouchableWithoutFeedback>
+    </KeyboardAvoidingView>
   );
 };
 

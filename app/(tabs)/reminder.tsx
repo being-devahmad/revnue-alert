@@ -410,7 +410,13 @@ const ReminderScreen: React.FC = () => {
             onPress={(e) => {
               // e.stopPropagation();
               // handleRenewPress(reminder);
-              Alert.alert('This feature isn’t supported in the mobile app yet. To renew your contract, please edit the reminder or use the web portal to complete the renewal.')
+              Alert.alert(
+                "Feature Unavailable",
+                "This feature isn’t supported in the mobile app yet.\nTo renew your contract, please edit the reminder or use the web portal to complete the renewal.",
+                [{ text: "OK" }],
+                { cancelable: true }
+              );
+
             }}
           >
             <Ionicons name="refresh-circle" size={18} color="#FFFFFF" />

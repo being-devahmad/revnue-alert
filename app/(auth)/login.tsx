@@ -87,13 +87,12 @@ const LoginScreen = () => {
           </View>
 
           {/* Form wrapper */}
-          <View style={styles.formWrapper}>
+          <SafeAreaView style={styles.formWrapper} edges={["bottom"]}>
             <ScrollView
               contentContainerStyle={styles.scrollContainer}
               keyboardShouldPersistTaps="handled"
               showsVerticalScrollIndicator={false}
             >
-              {/* Form Container */}
               <View style={styles.formContainer}>
                 <Text style={styles.signInText}>Welcome Back,</Text>
 
@@ -200,7 +199,8 @@ const LoginScreen = () => {
                 <View style={{ height: 80 }} />
               </View>
             </ScrollView>
-          </View>
+
+          </SafeAreaView>
         </SafeAreaView>
       </TouchableWithoutFeedback>
     </KeyboardAvoidingView>
