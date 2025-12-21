@@ -1,9 +1,11 @@
+import { formatDeleteErrorMessage, useDeleteAccount } from '@/api/settings/useDeleteAccount';
 import LogoutConfirmation from '@/components/LogoutConfirmation';
+import { TabHeader } from '@/components/TabHeader';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
-import { Modal, ScrollView, StyleSheet, Switch, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Alert, Modal, ScrollView, StyleSheet, Switch, Text, TouchableOpacity, View } from 'react-native';
 
 const SettingsScreen = () => {
   const router = useRouter();
@@ -15,6 +17,10 @@ const SettingsScreen = () => {
   const [isPopupVisible, setIsPopupVisible] = useState(false);
   const [popupMessage, setPopupMessage] = useState('');
   const [showLogoutConfirmation, setShowLogoutConfirmation] = useState(false);
+  const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
+
+  // ============ API HOOKS ============
+  const deleteAccountMutation = useDeleteAccount();
 
   // ============ SETTINGS DATA ============
   const settingsSections = [
@@ -29,7 +35,7 @@ const SettingsScreen = () => {
           color: '#9A1B2B',
           hasNavigation: true,
           screen: 'AccountSettings',
-          navigationPath: '/screens/AccountSettings', 
+          navigationPath: '/screens/AccountSettings',
         },
       ],
     },
@@ -69,6 +75,15 @@ const SettingsScreen = () => {
       title: 'Account Actions',
       items: [
         {
+          id: 'delete-account',
+          label: 'Delete Account',
+          sublabel: 'Permanently delete your account',
+          icon: 'trash-outline',
+          color: '#DC2626',
+          hasNavigation: false,
+          isDestructive: true,
+        },
+        {
           id: 'logout',
           label: 'Logout',
           sublabel: 'Sign out of your account',
@@ -87,8 +102,12 @@ const SettingsScreen = () => {
       // ⭐ Use navigationPath if available
       console.log(`📍 Navigating to ${item.label}`);
       console.log(`🔗 Navigation path: ${item.navigationPath}`);
-      
+
       router.push(item.navigationPath as any);
+    } else if (item.id === 'delete-account') {
+      // Show delete account confirmation
+      console.log('🗑️ Delete account requested');
+      setShowDeleteConfirmation(true);
     } else if (item.id === 'logout') {
       // Show logout confirmation
       console.log('🚪 Logout requested');
@@ -113,30 +132,52 @@ const SettingsScreen = () => {
   const handleLogoutSuccess = () => {
     console.log('✅ User logged out successfully');
     setShowLogoutConfirmation(false);
-    
+
     // Redirect to login screen
     router.replace('/(auth)/login' as any);
+  };
+
+  const handleDeleteAccount = async () => {
+    try {
+      console.log('🗑️ Deleting account...');
+
+      await deleteAccountMutation.mutateAsync();
+
+      console.log('✅ Account deleted successfully');
+      setShowDeleteConfirmation(false);
+
+      // Show success message
+      Alert.alert(
+        'Account Deleted',
+        'Your account has been deleted successfully.',
+        [
+          {
+            text: 'OK',
+            onPress: () => {
+              // Redirect to login screen
+              router.replace('/(auth)/login' as any);
+            },
+          },
+        ]
+      );
+    } catch (error: any) {
+      console.error('❌ Failed to delete account:', error);
+      setShowDeleteConfirmation(false);
+
+      // Show error message
+      Alert.alert(
+        'Error',
+        formatDeleteErrorMessage(error),
+        [{ text: 'OK' }]
+      );
+    }
   };
 
   // ============ RENDER ============
   return (
     <View style={styles.container}>
       {/* Header */}
-      <View style={styles.headerContainer}>
-        <LinearGradient
-          colors={['#9A1B2B', '#6B1420']}
-          style={styles.headerGradient}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-        >
-          <View style={styles.headerContent}>
-            <View>
-              <Text style={styles.headerTitle}>Settings</Text>
-              <Text style={styles.headerSubtitle}>Manage your preferences</Text>
-            </View>
-          </View>
-        </LinearGradient>
-      </View>
+      <TabHeader title='Settings' subtitle='Manage your preferences' />
 
       {/* Scroll Content */}
       <ScrollView
@@ -258,6 +299,60 @@ const SettingsScreen = () => {
         onClose={() => setShowLogoutConfirmation(false)}
         onLogoutSuccess={handleLogoutSuccess}
       />
+
+      {/* Delete Account Confirmation Modal */}
+      <Modal
+        visible={showDeleteConfirmation}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setShowDeleteConfirmation(false)}
+      >
+        <View style={styles.popupOverlay}>
+          <View style={styles.popupContainer}>
+            <LinearGradient
+              colors={['#DC2626', '#991B1B']}
+              style={styles.popupHeader}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+            >
+              <Text style={styles.popupTitle}>Delete Account</Text>
+            </LinearGradient>
+            <View style={styles.popupContent}>
+              <Text style={styles.deleteWarningText}>
+                ⚠️ This action cannot be undone!
+              </Text>
+              <Text style={styles.popupMessage}>
+                Are you sure you want to permanently delete your account? All your data will be lost.
+              </Text>
+
+              <View style={styles.deleteButtonContainer}>
+                <TouchableOpacity
+                  style={styles.cancelDeleteButton}
+                  onPress={() => setShowDeleteConfirmation(false)}
+                  disabled={deleteAccountMutation.isPending}
+                >
+                  <Text style={styles.cancelDeleteButtonText}>Cancel</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={[
+                    styles.confirmDeleteButton,
+                    deleteAccountMutation.isPending && styles.confirmDeleteButtonDisabled,
+                  ]}
+                  onPress={handleDeleteAccount}
+                  disabled={deleteAccountMutation.isPending}
+                >
+                  {deleteAccountMutation.isPending ? (
+                    <ActivityIndicator color="#FFFFFF" size="small" />
+                  ) : (
+                    <Text style={styles.confirmDeleteButtonText}>Delete Account</Text>
+                  )}
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 };
@@ -411,6 +506,49 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     color: '#FFFFFF',
+  },
+  deleteWarningText: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#DC2626',
+    textAlign: 'center',
+    marginBottom: 12,
+  },
+  deleteButtonContainer: {
+    flexDirection: 'row',
+    gap: 12,
+    marginTop: 8,
+  },
+  cancelDeleteButton: {
+    flex: 1,
+    backgroundColor: '#F3F4F6',
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    borderRadius: 8,
+    borderWidth: 1.5,
+    borderColor: '#E5E7EB',
+  },
+  cancelDeleteButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#6B7280',
+    textAlign: 'center',
+  },
+  confirmDeleteButton: {
+    flex: 1,
+    backgroundColor: '#DC2626',
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    borderRadius: 8,
+  },
+  confirmDeleteButtonDisabled: {
+    opacity: 0.6,
+  },
+  confirmDeleteButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#FFFFFF',
+    textAlign: 'center',
   },
 });
 

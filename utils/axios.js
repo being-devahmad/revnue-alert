@@ -2,7 +2,8 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import axios from "axios";
 
 // Get API URL from environment
-const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || "https://renewalert.com/api";
+const API_BASE_URL = process.env.EXPO_PUBLIC_DEVELOPMENT_API_URL
+  || "https://development.renewalert.com/api";
 
 
 const axiosInstance = axios.create({
@@ -19,7 +20,7 @@ axiosInstance.interceptors.request.use(
     try {
       // Get FULL token from AsyncStorage (including the 26| prefix)
       const token = await AsyncStorage.getItem("authToken");
-      
+
 
 
       // If token exists, add it to headers
@@ -32,7 +33,7 @@ axiosInstance.interceptors.request.use(
     } catch (error) {
       console.error("❌ Error getting token in interceptor:", error);
     }
-    
+
     return config;
   },
   (error) => {
@@ -44,18 +45,18 @@ axiosInstance.interceptors.request.use(
 // ✅ RESPONSE INTERCEPTOR - Handle errors globally
 axiosInstance.interceptors.response.use(
   (response) => {
-;
+    ;
     return response;
   },
   (error) => {
     // Handle 401 (Unauthorized) errors
     if (error.response?.status === 401) {
       console.error('🔐 401 Unauthorized');
-      
+
       // Clear auth data
       AsyncStorage.removeItem("authToken");
       AsyncStorage.removeItem("userData");
-      
+
       // Optionally navigate to login
       // You might want to dispatch an action here
     }
