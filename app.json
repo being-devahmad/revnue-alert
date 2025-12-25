@@ -2,6 +2,7 @@
   "expo": {
     "name": "Renew Alert",
     "slug": "renew-alert",
+    "owner": "beingahmadowais",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icons/logo.png",
@@ -10,7 +11,7 @@
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.devahmad41.revnuealert",
+      "bundleIdentifier": "com.beingahmadowais.renewalert",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false,
         "NSCameraUsageDescription": "We need camera access to let you upload images if required.",
@@ -28,7 +29,7 @@
         "backgroundColor": "#5C1428"
       },
       "icon": "./assets/icons/andriod.png",
-      "package": "com.devahmad41.revnuealert",
+      "package": "com.devahmad41.renewalert",
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
       "usesCleartextTraffic": true
@@ -47,7 +48,7 @@
     "extra": {
       "router": {},
       "eas": {
-        "projectId": "5a5e7a4d-4d96-4b67-a13e-b46f8c782aa4"
+        "projectId": "d28545f3-090a-4de2-9ed9-c29ba3b107b3"
       }
     }
   }
