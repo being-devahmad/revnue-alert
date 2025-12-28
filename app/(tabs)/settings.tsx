@@ -37,6 +37,16 @@ const SettingsScreen = () => {
           screen: 'AccountSettings',
           navigationPath: '/screens/AccountSettings',
         },
+        {
+          id: 'billing',
+          label: 'Billing',
+          sublabel: 'Manage subscription plans',
+          icon: 'wallet-outline',
+          color: '#9A1B2B',
+          hasNavigation: true,
+          screen: 'Billing',
+          navigationPath: '/screens/Billing',
+        },
       ],
     },
     {

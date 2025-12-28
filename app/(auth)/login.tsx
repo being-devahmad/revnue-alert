@@ -189,7 +189,7 @@ const LoginScreen = () => {
                 <View style={styles.signupContainer}>
                   <Text style={styles.signupText}>Don’t have an account?</Text>
                   <TouchableOpacity
-                    onPress={() => router.push("/(auth)/planSelection")}
+                    onPress={() => router.push('/(auth)/planSelectionV2')}
                     disabled={isPending}
                   >
                     <Text style={styles.signupLink}> Sign up</Text>
@@ -203,7 +203,7 @@ const LoginScreen = () => {
           </SafeAreaView>
         </SafeAreaView>
       </TouchableWithoutFeedback>
-    </KeyboardAvoidingView>
+    </KeyboardAvoidingView >
   );
 
 };
