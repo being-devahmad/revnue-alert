@@ -13,6 +13,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useEffect, useMemo, useState } from 'react';
 
 
+import { useRouter } from 'expo-router';
 import {
     ActivityIndicator,
     Alert,
@@ -25,7 +26,33 @@ import {
 
 const BillingScreen = () => {
     const { subscription, user } = useAuthStore();
+    const router = useRouter();
     const isPromo = subscription?.source === 'promo';
+
+    // 🚨 Web-purchased user restriction
+    useEffect(() => {
+        if (user && user.is_mobile_user === false && !isPromo) {
+            Alert.alert(
+                "",
+                "You can't make changes to your subscription inside this app, because you purchased this subscription on another platform.",
+                [{ text: "OK", onPress: () => router.back() }]
+            );
+            return;
+
+        }
+    }, [user, isPromo]);
+
+    if (user && user.is_mobile_user === false && !isPromo) {
+        return (
+            <View style={styles.container}>
+                <TabHeader title="Billing" isChild={true} />
+                <View style={styles.centerContainer}>
+                    <ActivityIndicator size="large" color="#9A1B2B" />
+                </View>
+            </View>
+        );
+    }
+
 
     // Determine current plan code from subscription or default
     // Mapping app_plan_id to code (1: home_family, 2: standard, 3: enterprise)

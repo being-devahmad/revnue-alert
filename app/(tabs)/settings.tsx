@@ -1,6 +1,7 @@
 import { formatDeleteErrorMessage, useDeleteAccount } from '@/api/settings/useDeleteAccount';
 import LogoutConfirmation from '@/components/LogoutConfirmation';
 import { TabHeader } from '@/components/TabHeader';
+import { useAuthStore } from '@/store/authStore';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
@@ -9,6 +10,9 @@ import { ActivityIndicator, Alert, Modal, ScrollView, StyleSheet, Switch, Text, 
 
 const SettingsScreen = () => {
   const router = useRouter();
+  const { user, subscription } = useAuthStore();
+  const isPromo = subscription?.source === 'promo';
+
 
   // ============ STATE ============
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
@@ -108,7 +112,22 @@ const SettingsScreen = () => {
 
   // ============ HANDLERS ============
   const handleItemPress = (item: any) => {
+    if (item.id === 'billing') {
+      // 🚨 Restriction: Web-purchased users cannot manage billing on mobile
+      if (user && user.is_mobile_user === false && !isPromo) {
+        Alert.alert(
+          "",
+          "You can't make changes to your subscription inside this app, because you purchased this subscription on another platform.",
+          [{ text: "OK" }]
+        );
+        return;
+      }
+
+
+    }
+
     if (item.hasNavigation && item.navigationPath) {
+
       // ⭐ Use navigationPath if available
       console.log(`📍 Navigating to ${item.label}`);
       console.log(`🔗 Navigation path: ${item.navigationPath}`);
