@@ -219,7 +219,8 @@ const SettingsScreen = () => {
           <View key={sectionIndex} style={styles.section}>
             <Text style={styles.sectionTitle}>{section.title}</Text>
             <View style={styles.settingsCard}>
-              {section.items.map((item, itemIndex) => (
+              {section.items.map((item: any, itemIndex) => (
+
                 <View key={item.id}>
                   <TouchableOpacity
                     style={styles.settingItem}

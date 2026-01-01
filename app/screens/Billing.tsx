@@ -1,10 +1,10 @@
 import {
     formatPrice,
     getMonthlyProduct,
-    getYearlyProduct,
-    sortPlansByTier,
-    useGetPlansV2
+    getYearlyProduct
 } from '@/api/settings/useGetPlansv2';
+import { useGetUserPlan } from '@/api/settings/useGetUserPlan';
+
 import { TabHeader } from '@/components/TabHeader';
 import { useAuthStore } from '@/store/authStore';
 
@@ -17,12 +17,15 @@ import { useRouter } from 'expo-router';
 import {
     ActivityIndicator,
     Alert,
+    Platform,
     ScrollView,
     StyleSheet,
     Text,
     TouchableOpacity,
     View,
 } from 'react-native';
+
+
 
 const BillingScreen = () => {
     const { subscription, user } = useAuthStore();
@@ -66,6 +69,8 @@ const BillingScreen = () => {
     const initialPlanCode = subscription ? getPlanCodeFromId(subscription.app_plan_id) : 'home_family';
     const [currentPlanCode, setCurrentPlanCode] = useState(initialPlanCode);
     const [selectedPeriod, setSelectedPeriod] = useState<'monthly' | 'yearly'>('monthly');
+    const [currentPeriod, setCurrentPeriod] = useState<string | null>(null);
+
 
     // Sync currentPlanCode with subscription data
     useEffect(() => {
@@ -76,17 +81,42 @@ const BillingScreen = () => {
 
 
 
-    // Fetch plans from API
-    const { data: plansData, isLoading, error } = useGetPlansV2();
+    // Fetch user-specific plan from API
+    const { data: userPlanResponse, isLoading, error } = useGetUserPlan(user?.id);
 
-    // Get sorted and filtered plans
+    // Get the current plan from the response
     const plans = useMemo(() => {
-        let allPlans = plansData?.data ? sortPlansByTier(plansData.data) : [];
-        if (isPromo && subscription?.app_plan_id) {
-            return allPlans.filter((p: any) => p.id === subscription.app_plan_id);
+        if (!userPlanResponse?.message?.plan) return [];
+        // The API returns the specific plan for the user
+        const activePlan = userPlanResponse.message.plan;
+
+        // Ensure products are filtered for the current platform
+        const platform = Platform.OS === 'ios' ? 'ios' : 'android';
+        const platformSpecificProducts = activePlan.products.filter(p => p.platform === platform);
+
+        return [{
+            ...activePlan,
+            products: platformSpecificProducts
+        }];
+    }, [userPlanResponse]);
+
+    // Update currentPlanCode and selectedPeriod when plan data loads
+    useEffect(() => {
+        if (userPlanResponse?.message) {
+            const sub = userPlanResponse.message;
+            if (sub.plan) {
+                setCurrentPlanCode(sub.plan.code);
+            }
+            if (sub.period === 'monthly' || sub.period === 'yearly') {
+                setSelectedPeriod(sub.period as 'monthly' | 'yearly');
+                setCurrentPeriod(sub.period);
+            } else {
+                setCurrentPeriod(sub.period); // e.g., "forever"
+            }
         }
-        return allPlans;
-    }, [plansData, isPromo, subscription, currentPlanCode]);
+    }, [userPlanResponse]);
+
+
 
 
 
@@ -159,10 +189,13 @@ const BillingScreen = () => {
     };
 
     const handleSelectPlan = (planCode: string) => {
-        if (planCode === currentPlanCode) {
-            Alert.alert('Current Plan', 'You are already on this plan.');
+        const isCurrentActive = planCode === currentPlanCode && selectedPeriod === currentPeriod;
+
+        if (isCurrentActive) {
+            Alert.alert('Current Plan', 'You are already on this plan and period.');
             return;
         }
+
 
         const plan = plans.find(p => p.code === planCode);
         Alert.alert(
@@ -306,7 +339,7 @@ const BillingScreen = () => {
 
                 {/* Plans Grid */}
                 <View style={styles.plansContainer}>
-                    {plans.map((plan) => {
+                    {plans.map((plan: any) => {
                         const product = selectedPeriod === 'monthly'
                             ? getMonthlyProduct(plan)
                             : getYearlyProduct(plan);
@@ -316,6 +349,7 @@ const BillingScreen = () => {
                         const isPopular = plan.tier_rank === 2; // Standard plan
                         const features = getPlanFeatures(plan.code);
                         const description = getPlanDescription(plan.code);
+                        const isCurrentActive = currentPlanCode === plan.code && selectedPeriod === currentPeriod;
 
                         return (
                             <View key={plan.id} style={styles.planCardWrapper}>
@@ -339,7 +373,7 @@ const BillingScreen = () => {
                                     style={[
                                         styles.planCard,
                                         isPopular && styles.planCardPopular,
-                                        currentPlanCode === plan.code && styles.planCardCurrent,
+                                        isCurrentActive && styles.planCardCurrent,
                                     ]}
                                 >
                                     {/* Header with Gradient */}
@@ -388,7 +422,7 @@ const BillingScreen = () => {
                                     <TouchableOpacity
                                         style={[
                                             styles.selectButton,
-                                            (currentPlanCode === plan.code || isPromo) && styles.selectButtonCurrent,
+                                            (isCurrentActive || isPromo) && styles.selectButtonCurrent,
                                         ]}
                                         onPress={() => !isPromo && handleSelectPlan(plan.code)}
                                         activeOpacity={isPromo ? 1 : 0.8}
@@ -396,7 +430,7 @@ const BillingScreen = () => {
                                     >
                                         <LinearGradient
                                             colors={
-                                                (currentPlanCode === plan.code || isPromo)
+                                                (isCurrentActive || isPromo)
                                                     ? ['#10B981', '#059669']
                                                     : getPlanGradient(plan.tier_rank)
                                             }
@@ -406,20 +440,12 @@ const BillingScreen = () => {
                                         >
                                             {isPromo ? (
                                                 <>
-                                                    <Ionicons
-                                                        name="ribbon"
-                                                        size={20}
-                                                        color="#FFFFFF"
-                                                    />
+                                                    <Ionicons name="ribbon" size={20} color="#FFFFFF" />
                                                     <Text style={styles.selectButtonText}>Active Promo Plan</Text>
                                                 </>
-                                            ) : currentPlanCode === plan.code ? (
+                                            ) : isCurrentActive ? (
                                                 <>
-                                                    <Ionicons
-                                                        name="checkmark-circle"
-                                                        size={20}
-                                                        color="#FFFFFF"
-                                                    />
+                                                    <Ionicons name="checkmark-circle" size={20} color="#FFFFFF" />
                                                     <Text style={styles.selectButtonText}>Current Plan</Text>
                                                 </>
                                             ) : (
@@ -430,12 +456,12 @@ const BillingScreen = () => {
                                             )}
                                         </LinearGradient>
                                     </TouchableOpacity>
-
                                 </View>
                             </View>
                         );
                     })}
                 </View>
+
 
                 {/* Footer Info */}
                 <View style={styles.footerInfo}>
@@ -458,8 +484,8 @@ const BillingScreen = () => {
                     <Ionicons name="chatbubble-ellipses-outline" size={20} color="#9A1B2B" />
                     <Text style={styles.supportButtonText}>Need help? Contact Support</Text>
                 </TouchableOpacity>
-            </ScrollView>
-        </View>
+            </ScrollView >
+        </View >
     );
 };
 

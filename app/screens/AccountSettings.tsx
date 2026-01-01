@@ -1,13 +1,13 @@
 import { useIndustries } from "@/api/settings/useGetIndustries";
 import {
   getIndustryName,
-  getSubscriptionPlanName,
-  useGetUserDetails,
+  useGetUserDetails
 } from "@/api/settings/useGetUserDetails";
-import {
-  useChangePlan,
-  usePlans
-} from "@/api/settings/usePlans";
+// import {
+//   useChangePlan,
+//   usePlans
+// } from "@/api/settings/usePlans";
+
 import {
   getPasswordStrength,
   useUpdatePassword,
@@ -20,23 +20,20 @@ import {
   validateProfileData,
 } from "@/api/settings/useUpdateUserProfile";
 import { InvoicesSection } from "@/components/InvoiceSection";
-import { SubscriptionPicker } from "@/components/SubscriptionPicker";
 import { TabHeader } from "@/components/TabHeader";
 import { IndustryBottomSheet } from "@/components/ui/IndustryModal";
-import { getDiscountLabel } from "@/utils";
 import { Ionicons } from "@expo/vector-icons";
-import { CardField, createToken } from "@stripe/stripe-react-native";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react"; // Component state and effects
+
 import {
   ActivityIndicator,
   Alert,
-  Modal,
   ScrollView,
   StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
-  View,
+  View
 } from "react-native";
 
 // ============ SUBSCRIPTION SIMPLE PICKER ============
@@ -56,7 +53,8 @@ const AccountSettingsScreen = () => {
   const [state, setState] = useState("");
   const [zipCode, setZipCode] = useState("");
 
-  // ============ BILLING STATE ============
+  // ============ BILLING STATE (Commented out) ============
+  /*
   const [subscriptionPlan, setSubscriptionPlan] = useState("");
   const [subscriptionStatus, setSubscriptionStatus] = useState("");
   const [cardNumber, setCardNumber] = useState("");
@@ -64,7 +62,6 @@ const AccountSettingsScreen = () => {
   const [cardToken, setCardToken] = useState(""); // For Stripe token
   const [couponCode, setCouponCode] = useState("");
   const [isEditingCard, setIsEditingCard] = useState(false);
-  // Add these with your other useState at the top
   const [isTokenizingCard, setIsTokenizingCard] = useState(false);
   const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null);
   const [showPlanConfirm, setShowPlanConfirm] = useState(false);
@@ -72,12 +69,13 @@ const AccountSettingsScreen = () => {
   const [cardDetails, setCardDetails] = useState<any>(null);
   const [isPlansDropdownOpen, setIsPlansDropdownOpen] = useState(false);
 
-
   const [savedCard, setSavedCard] = useState({
     lastFour: "",
     expiration: "",
     brand: "",
   });
+  */
+
   // ============ PASSWORD STATE ============
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
@@ -93,7 +91,8 @@ const AccountSettingsScreen = () => {
 
   // ============ MODAL STATES ============
   const [showIndustryModal, setShowIndustryModal] = useState(false);
-  const [showSubscriptionModal, setShowSubscriptionModal] = useState(false);
+  // const [showSubscriptionModal, setShowSubscriptionModal] = useState(false);
+
 
   // ============ USER PROFILE API ============
   const {
@@ -111,7 +110,8 @@ const AccountSettingsScreen = () => {
     isError: isProfileUpdateError,
   } = useUpdateUserProfile();
 
-  const { data: plansData, isLoading: isLoadingPlans } = usePlans();
+  /*
+  const { data: plansData, isLoading } = usePlans();
 
   // Filter out duplicate plans (same name + amount + interval)
   const uniquePlans = useMemo(() => {
@@ -147,6 +147,8 @@ const AccountSettingsScreen = () => {
 
   const { mutate: changeplanMutate, isPending: isChangingPlan } =
     useChangePlan();
+  */
+
 
   // ============ API INTEGRATION ============
   const { mutate: updatePasswordMutate, isPending: isUpdatingPassword } =
@@ -192,42 +194,43 @@ const AccountSettingsScreen = () => {
         `✅ Industry loaded: ${industryName} (ID: ${industryIdFromProfile})`
       );
 
-      // Billing Info
-      const planName = getSubscriptionPlanName(profileData.user.stripe_plan);
-      setSubscriptionPlan(planName);
+      // Billing Info (Commented out)
+      // const planName = getSubscriptionPlanName(profileData.user.stripe_plan);
+      // setSubscriptionPlan(planName);
 
       // Custom Subscription Status Logic
-      let statusDisplay = "Inactive";
-      if (profileData.user.stripe_active === 1) {
-        statusDisplay = "Active";
-      }
+      // let statusDisplay = "Inactive";
+      // if (profileData.user.stripe_active === 1) {
+      //   statusDisplay = "Active";
+      // }
 
-      const trialEnd = profileData.user.trial_ends_at ? new Date(profileData.user.trial_ends_at) : null;
-      if (trialEnd && trialEnd > new Date()) {
-        const dateStr = trialEnd.toLocaleDateString("en-US", {
-          month: "short",
-          day: "numeric",
-          year: "numeric",
-        });
-        statusDisplay = `Trial Period (Expires: ${dateStr})`;
-      }
+      // const trialEnd = profileData.user.trial_ends_at ? new Date(profileData.user.trial_ends_at) : null;
+      // if (trialEnd && trialEnd > new Date()) {
+      //   const dateStr = trialEnd.toLocaleDateString("en-US", {
+      //     month: "short",
+      //     day: "numeric",
+      //     year: "numeric",
+      //   });
+      //   statusDisplay = `Trial Period (Expires: ${dateStr})`;
+      // }
 
-      setSubscriptionStatus(statusDisplay);
+      // setSubscriptionStatus(statusDisplay);
 
       // Card Info
-      const cardFromPlans = plansData?.data?.card;
-      const lastFour = cardFromPlans?.last4 || profileData.user.last_four || "";
-      const brand = cardFromPlans?.brand || "";
+      // const cardFromPlans = plansData?.data?.card;
+      // const lastFour = cardFromPlans?.last4 || profileData.user.last_four || "";
+      // const brand = cardFromPlans?.brand || "";
 
-      setSavedCard({
-        lastFour: lastFour,
-        expiration: "**/**",
-        brand: brand
-      });
+      // setSavedCard({
+      //   lastFour: lastFour,
+      //   expiration: "**/**",
+      //   brand: brand
+      // });
 
       console.log("✅ Profile data loaded successfully");
     }
-  }, [profileData, plansData]);
+  }, [profileData]);
+
 
 
   // Show error message when profile update fails
@@ -398,7 +401,8 @@ const AccountSettingsScreen = () => {
     <View style={styles.container}>
       {/* Industry Bottom Sheet Modal */}
       {
-        !plansData?.data?.is_home_and_family && <IndustryBottomSheet
+        true && <IndustryBottomSheet
+
           visible={showIndustryModal}
           selectedValue={industry}
           onSelect={(selectedIndustry) => {
@@ -415,14 +419,17 @@ const AccountSettingsScreen = () => {
         />
 
       }
-      {/* Subscription Simple Picker Modal */}
+      {/* Subscription Simple Picker Modal - Commented out */}
+      {/* 
       <SubscriptionPicker
         visible={showSubscriptionModal}
         options={subscriptionOptions}
         selectedValue={subscriptionPlan}
         onSelect={setSubscriptionPlan}
         onClose={() => setShowSubscriptionModal(false)}
-      />
+      /> 
+      */}
+
 
       {/* Header with Gradient */}
       <TabHeader
@@ -618,7 +625,7 @@ const AccountSettingsScreen = () => {
         </View>
 
         {/* Billing Section */}
-        <View style={styles.section}>
+        {/* <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <View style={styles.iconCircle}>
               <Ionicons name="card-outline" size={20} color="#FFFFFF" />
@@ -627,14 +634,12 @@ const AccountSettingsScreen = () => {
           </View>
 
           <View style={styles.card}>
-            {/* Plans List from API */}
             {isLoadingPlans ? (
               <View style={{ padding: 20, alignItems: "center" }}>
                 <ActivityIndicator color="#9A1B2B" />
               </View>
             ) : (
               <>
-                {/* Plans Dropdown */}
                 <TouchableOpacity
                   style={styles.dropdownButton}
                   onPress={() => setIsPlansDropdownOpen(prev => !prev)}
@@ -648,8 +653,6 @@ const AccountSettingsScreen = () => {
                     color="#6B7280"
                   />
                 </TouchableOpacity>
-
-                {/* Dropdown List */}
                 {isPlansDropdownOpen && (
                   <View style={styles.dropdownList}>
                     {uniquePlans.map((plan: any) => {
@@ -664,8 +667,6 @@ const AccountSettingsScreen = () => {
                         const date = new Date(plan.discount_ends_at).toLocaleDateString();
                         displayName += ` — ${plan.discount_description || "Discount"} (Expires: ${date})`;
                       }
-
-                      console.log('display-name=======================>', displayName)
 
                       return (
                         <TouchableOpacity
@@ -695,7 +696,6 @@ const AccountSettingsScreen = () => {
 
             <View style={styles.divider} />
 
-            {/* Subscription Status */}
             <View style={styles.inputGroup}>
               <Text style={styles.label}>Subscription Status</Text>
               <View style={styles.statusContainer}>
@@ -719,8 +719,6 @@ const AccountSettingsScreen = () => {
             </View>
 
             <View style={styles.divider} />
-
-            {/* Payment Method */}
             <View style={styles.inputGroup}>
               <Text style={styles.label}>Payment Method</Text>
               <View style={styles.cardDisplayContainer}>
@@ -731,9 +729,6 @@ const AccountSettingsScreen = () => {
                 </Text>
                 <TouchableOpacity
                   style={styles.editCardButton}
-                  // onPress={() => setIsEditingCard(true)}
-                  // onPress={() => Alert.alert("This feature is currently not available in the mobile app. To change your subscription, please log in through the web portal.")}
-
                   onPress={() => {
                     Alert.alert(
                       "Payment Method",
@@ -747,7 +742,6 @@ const AccountSettingsScreen = () => {
               </View>
             </View>
 
-            {/* Stripe Card Input Modal */}
             <Modal visible={isEditingCard} transparent animationType="slide">
               <View style={styles.modalOverlay}>
                 <View style={styles.modalContent}>
@@ -831,7 +825,6 @@ const AccountSettingsScreen = () => {
 
             <View style={styles.divider} />
 
-            {/* Coupon Code */}
             <View style={styles.inputGroup}>
               <View style={styles.labelWithIcon}>
                 <Text style={[styles.label, { marginBottom: 0 }]}>
@@ -889,7 +882,6 @@ const AccountSettingsScreen = () => {
               <Text style={[styles.applyCouponText, { textAlign: 'center' }]}>Submit</Text>
             </TouchableOpacity>
 
-            {/* Confirm Plan Change Modal */}
             <Modal visible={showPlanConfirm} transparent>
               <View style={styles.modalOverlay}>
                 <View style={styles.modalContent}>
@@ -938,7 +930,7 @@ const AccountSettingsScreen = () => {
               </View>
             </Modal>
           </View>
-        </View>
+        </View> */}
 
         {/* Security Section */}
         <View style={styles.section}>
@@ -1711,7 +1703,7 @@ const styles = StyleSheet.create({
     borderColor: "#E5E7EB",
     borderRadius: 12,
     marginTop: 4,
-    maxHeight: 200, 
+    maxHeight: 200,
     overflow: "hidden",
   },
   dropdownItem: {
