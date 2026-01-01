@@ -6,9 +6,13 @@ import {
     useGetPlansV2
 } from '@/api/settings/useGetPlansv2';
 import { TabHeader } from '@/components/TabHeader';
+import { useAuthStore } from '@/store/authStore';
+
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+
+
 import {
     ActivityIndicator,
     Alert,
@@ -20,17 +24,48 @@ import {
 } from 'react-native';
 
 const BillingScreen = () => {
-    const [currentPlanCode, setCurrentPlanCode] = useState('home_family');
+    const { subscription, user } = useAuthStore();
+    const isPromo = subscription?.source === 'promo';
+
+    // Determine current plan code from subscription or default
+    // Mapping app_plan_id to code (1: home_family, 2: standard, 3: enterprise)
+    const getPlanCodeFromId = (id: number | undefined) => {
+        if (id === 1) return 'home_family';
+        if (id === 2) return 'standard';
+        if (id === 3) return 'enterprise';
+        return 'home_family';
+    };
+
+    const initialPlanCode = subscription ? getPlanCodeFromId(subscription.app_plan_id) : 'home_family';
+    const [currentPlanCode, setCurrentPlanCode] = useState(initialPlanCode);
     const [selectedPeriod, setSelectedPeriod] = useState<'monthly' | 'yearly'>('monthly');
+
+    // Sync currentPlanCode with subscription data
+    useEffect(() => {
+        if (subscription) {
+            setCurrentPlanCode(getPlanCodeFromId(subscription.app_plan_id));
+        }
+    }, [subscription]);
+
+
 
     // Fetch plans from API
     const { data: plansData, isLoading, error } = useGetPlansV2();
 
-    // Get sorted plans
-    const plans = plansData?.data ? sortPlansByTier(plansData.data) : [];
+    // Get sorted and filtered plans
+    const plans = useMemo(() => {
+        let allPlans = plansData?.data ? sortPlansByTier(plansData.data) : [];
+        if (isPromo && subscription?.app_plan_id) {
+            return allPlans.filter((p: any) => p.id === subscription.app_plan_id);
+        }
+        return allPlans;
+    }, [plansData, isPromo, subscription, currentPlanCode]);
+
+
+
 
     // Plan gradient colors based on tier
-    const getPlanGradient = (tierRank: number): string[] => {
+    const getPlanGradient = (tierRank: number): readonly [string, string, ...string[]] => {
         switch (tierRank) {
             case 1: // Home & Family
                 return ['#3B82F6', '#2563EB'];
@@ -42,6 +77,7 @@ const BillingScreen = () => {
                 return ['#6B7280', '#4B5563'];
         }
     };
+
 
     // Get plan features based on tier
     const getPlanFeatures = (code: string): string[] => {
@@ -168,52 +204,78 @@ const BillingScreen = () => {
                 showsVerticalScrollIndicator={false}
                 contentContainerStyle={styles.scrollContent}
             >
-                {/* Period Toggle */}
-                <View style={styles.periodToggleContainer}>
-                    <TouchableOpacity
-                        style={[
-                            styles.periodToggle,
-                            selectedPeriod === 'monthly' && styles.periodToggleActive,
-                        ]}
-                        onPress={() => setSelectedPeriod('monthly')}
-                    >
-                        <Text
+                {/* Period Toggle - Hidden for Promo */}
+                {!isPromo && (
+                    <View style={styles.periodToggleContainer}>
+                        <TouchableOpacity
                             style={[
-                                styles.periodToggleText,
-                                selectedPeriod === 'monthly' && styles.periodToggleTextActive,
+                                styles.periodToggle,
+                                selectedPeriod === 'monthly' && styles.periodToggleActive,
                             ]}
+                            onPress={() => setSelectedPeriod('monthly')}
                         >
-                            Monthly
-                        </Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                        style={[
-                            styles.periodToggle,
-                            selectedPeriod === 'yearly' && styles.periodToggleActive,
-                        ]}
-                        onPress={() => setSelectedPeriod('yearly')}
-                    >
-                        <Text
+                            <Text
+                                style={[
+                                    styles.periodToggleText,
+                                    selectedPeriod === 'monthly' && styles.periodToggleTextActive,
+                                ]}
+                            >
+                                Monthly
+                            </Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity
                             style={[
-                                styles.periodToggleText,
-                                selectedPeriod === 'yearly' && styles.periodToggleTextActive,
+                                styles.periodToggle,
+                                selectedPeriod === 'yearly' && styles.periodToggleActive,
                             ]}
+                            onPress={() => setSelectedPeriod('yearly')}
                         >
-                            Yearly
-                        </Text>
-                        <View style={styles.saveBadge}>
-                            <Text style={styles.saveBadgeText}>Save 17%</Text>
-                        </View>
-                    </TouchableOpacity>
-                </View>
+                            <Text
+                                style={[
+                                    styles.periodToggleText,
+                                    selectedPeriod === 'yearly' && styles.periodToggleTextActive,
+                                ]}
+                            >
+                                Yearly
+                            </Text>
+                            <View style={styles.saveBadge}>
+                                <Text style={styles.saveBadgeText}>Save 17%</Text>
+                            </View>
+                        </TouchableOpacity>
+                    </View>
+                )}
 
-                {/* Info Banner */}
-                <View style={styles.infoBanner}>
-                    <Ionicons name="information-circle" size={24} color="#3B82F6" />
-                    <Text style={styles.infoBannerText}>
-                        All plans include a 30-day free trial. Cancel anytime.
-                    </Text>
-                </View>
+                {/* Promo Success Banner */}
+                {isPromo && (
+                    <LinearGradient
+                        colors={['#10B981', '#059669']}
+                        style={styles.promoBanner}
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 1, y: 0 }}
+                    >
+                        <View style={styles.promoBannerContent}>
+                            <Ionicons name="gift" size={32} color="#FFFFFF" />
+                            <View style={styles.promoTextContainer}>
+                                <Text style={styles.promoTitle}>Premium Access Granted!</Text>
+                                <Text style={styles.promoSubtitle}>
+                                    You're enjoying full access for free via a promotional code.
+                                    All premium features are unlocked for your account.
+                                </Text>
+                            </View>
+                        </View>
+                    </LinearGradient>
+                )}
+
+                {/* Info Banner - Only show if not promo */}
+                {!isPromo && (
+                    <View style={styles.infoBanner}>
+                        <Ionicons name="information-circle" size={24} color="#3B82F6" />
+                        <Text style={styles.infoBannerText}>
+                            All plans include a 30-day free trial. Cancel anytime.
+                        </Text>
+                    </View>
+                )}
+
 
                 {/* Plans Grid */}
                 <View style={styles.plansContainer}>
@@ -299,14 +361,15 @@ const BillingScreen = () => {
                                     <TouchableOpacity
                                         style={[
                                             styles.selectButton,
-                                            currentPlanCode === plan.code && styles.selectButtonCurrent,
+                                            (currentPlanCode === plan.code || isPromo) && styles.selectButtonCurrent,
                                         ]}
-                                        onPress={() => handleSelectPlan(plan.code)}
-                                        activeOpacity={0.8}
+                                        onPress={() => !isPromo && handleSelectPlan(plan.code)}
+                                        activeOpacity={isPromo ? 1 : 0.8}
+                                        disabled={isPromo}
                                     >
                                         <LinearGradient
                                             colors={
-                                                currentPlanCode === plan.code
+                                                (currentPlanCode === plan.code || isPromo)
                                                     ? ['#10B981', '#059669']
                                                     : getPlanGradient(plan.tier_rank)
                                             }
@@ -314,7 +377,16 @@ const BillingScreen = () => {
                                             start={{ x: 0, y: 0 }}
                                             end={{ x: 1, y: 0 }}
                                         >
-                                            {currentPlanCode === plan.code ? (
+                                            {isPromo ? (
+                                                <>
+                                                    <Ionicons
+                                                        name="ribbon"
+                                                        size={20}
+                                                        color="#FFFFFF"
+                                                    />
+                                                    <Text style={styles.selectButtonText}>Active Promo Plan</Text>
+                                                </>
+                                            ) : currentPlanCode === plan.code ? (
                                                 <>
                                                     <Ionicons
                                                         name="checkmark-circle"
@@ -331,6 +403,7 @@ const BillingScreen = () => {
                                             )}
                                         </LinearGradient>
                                     </TouchableOpacity>
+
                                 </View>
                             </View>
                         );
@@ -459,6 +532,34 @@ const styles = StyleSheet.create({
         color: '#1E40AF',
         fontWeight: '500',
     },
+    promoBanner: {
+        borderRadius: 16,
+        marginBottom: 24,
+        padding: 2, // For the gradient border feel if nested, but here it's the background
+    },
+    promoBannerContent: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        padding: 20,
+        backgroundColor: 'transparent',
+    },
+    promoTextContainer: {
+        flex: 1,
+        marginLeft: 16,
+    },
+    promoTitle: {
+        color: '#FFFFFF',
+        fontSize: 18,
+        fontWeight: '800',
+        marginBottom: 4,
+    },
+    promoSubtitle: {
+        color: 'rgba(255, 255, 255, 0.9)',
+        fontSize: 13,
+        lineHeight: 18,
+        fontWeight: '500',
+    },
+
     plansContainer: {
         gap: 20,
     },

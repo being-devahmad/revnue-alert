@@ -1,4 +1,6 @@
+import { SubscriptionData } from "@/api/auth/useLogin";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import Purchases from "react-native-purchases";
 import { create } from "zustand";
 
 interface AuthState {
@@ -6,9 +8,10 @@ interface AuthState {
   user: any | null;
   accountType: string | null;
   isLoadingAuth: boolean;
+  subscription: SubscriptionData | null;
 
   // Actions
-  login: (token: string, user?: any, accountType?: string | null) => Promise<void>;
+  login: (token: string, user?: any, accountType?: string | null, subscription?: SubscriptionData | null) => Promise<void>;
   setToken: (token: string) => Promise<void>;
   loadToken: () => Promise<void>;
   logout: () => Promise<void>;
@@ -19,9 +22,10 @@ export const useAuthStore = create<AuthState>((set) => ({
   user: null,
   accountType: null,
   isLoadingAuth: true, // Start as true while loading
+  subscription: null,
 
   // Login shortcut (used after API login)
-  login: async (token: string, user: any = null, accountType: string | null = null) => {
+  login: async (token: string, user: any = null, accountType: string | null = null, subscription: SubscriptionData | null = null) => {
     try {
       await AsyncStorage.setItem("authToken", token);
       if (user) {
@@ -30,7 +34,10 @@ export const useAuthStore = create<AuthState>((set) => ({
       if (accountType) {
         await AsyncStorage.setItem("accountType", accountType);
       }
-      set({ token, user, accountType, isLoadingAuth: false });
+      if (subscription) {
+        await AsyncStorage.setItem("userSubscription", JSON.stringify(subscription));
+      }
+      set({ token, user, accountType, subscription, isLoadingAuth: false });
     } catch (err) {
       console.error("AuthStore login error:", err);
       set({ isLoadingAuth: false });
@@ -54,11 +61,13 @@ export const useAuthStore = create<AuthState>((set) => ({
       const token = await AsyncStorage.getItem("authToken");
       const userStr = await AsyncStorage.getItem("authUser");
       const accountType = await AsyncStorage.getItem("accountType");
+      const subscriptionStr = await AsyncStorage.getItem("userSubscription");
 
       set({
         token: token || null,
         user: userStr ? JSON.parse(userStr) : null,
         accountType: accountType || null,
+        subscription: subscriptionStr ? JSON.parse(subscriptionStr) : null,
         isLoadingAuth: false, // Finished loading
       });
     } catch (err) {
@@ -73,7 +82,17 @@ export const useAuthStore = create<AuthState>((set) => ({
       await AsyncStorage.removeItem("authToken");
       await AsyncStorage.removeItem("authUser");
       await AsyncStorage.removeItem("accountType");
-      set({ token: null, user: null, accountType: null, isLoadingAuth: false });
+      await AsyncStorage.removeItem("userSubscription");
+
+      // ✅ Log out of RevenueCat
+      try {
+        await Purchases.logOut();
+        console.log("✅ RevenueCat logout successful");
+      } catch (rcError) {
+        console.warn("⚠️ RevenueCat logout error:", rcError);
+      }
+
+      set({ token: null, user: null, accountType: null, subscription: null, isLoadingAuth: false });
     } catch (err) {
       console.error("AuthStore logout error:", err);
     }
