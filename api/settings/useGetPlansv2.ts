@@ -22,10 +22,21 @@ export interface PlanV2 {
     products: PlanProduct[];
 }
 
+export interface Industry {
+    id: number;
+    name: string;
+    created_at: string;
+    updated_at: string;
+    deleted_at: string | null;
+}
+
 export interface PlansV2Response {
     status: boolean;
     data: PlanV2[];
+    homeAndFamilyIndustry?: Industry;
+    industries?: Industry[];
 }
+
 
 export interface PlansV2Error {
     message: string;
@@ -45,7 +56,10 @@ const fetchPlansV2 = async (): Promise<PlansV2Response> => {
         console.log('✅ Plans V2 fetched successfully:', {
             totalPlans: response.data.data.length,
             plans: response.data.data.map(p => p.name),
+            totalIndustries: response.data.industries?.length || 0,
+            hasHomeAndFamilyIndustry: !!response.data.homeAndFamilyIndustry,
         });
+
 
         if (!response.data.status) {
             throw new Error('Failed to fetch plans');

@@ -4,6 +4,9 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Stack } from "expo-router";
 import * as SplashScreenExpo from "expo-splash-screen";
 import React, { useEffect, useState } from "react";
+import { Platform } from "react-native";
+import Purchases from "react-native-purchases";
+
 import { useAuthStore } from "../store/authStore";
 
 const queryClient = new QueryClient();
@@ -14,6 +17,13 @@ export default function RootLayout() {
 
   const EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY = process.env.EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY || "pk_test_51SHknHI8Xjdh0k1MqhPNksWxi985u7AyKA3cYvmOaFgtB12TaNNKAskfVkjgiEC8UprCHWAeOZEfYxli7IvsZ5ut00GOHlrljC";
 
+  // RevenueCat API Keys
+  const REVENUECAT_API_KEY = Platform.select({
+    ios: process.env.EXPO_PUBLIC_RC_IOS || "appl_zjAyHXHkAqpVjHokWhDTYlBvwEa", // Add your iOS key here
+    // android: process.env.EXPO_PUBLIC_REVENUECAT_GOOGLE_KEY || "goog_placeholder_key", // Add your Android key here
+  });
+
+
   useEffect(() => {
     async function prepare() {
       try {
@@ -22,6 +32,16 @@ export default function RootLayout() {
 
         // Load token or any initial data
         await loadToken();
+
+        // Configure RevenueCat
+        if (REVENUECAT_API_KEY) {
+          console.log("🛠️ Configuring RevenueCat...");
+          Purchases.configure({ apiKey: REVENUECAT_API_KEY });
+          console.log("✅ RevenueCat configured successfully");
+        } else {
+          console.warn("⚠️ RevenueCat API Key missing");
+        }
+
 
         // Optional: short delay to show animated splash
         setTimeout(() => {

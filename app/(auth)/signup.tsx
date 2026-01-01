@@ -1,7 +1,12 @@
+import { RegisterRequest, useRegister } from "@/api/auth/useRegister";
+import { PromoData, useVerifyPromo } from "@/api/auth/useVerifyPromo";
+import { useGetAllIndustries } from "@/api/settings/useGetIndustries";
 import { Industry, SearchableIndustryDropdown } from "@/components/ui/IndustryDropdown";
 import { Ionicons } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";
+import Purchases from "react-native-purchases";
+
 import {
   ActivityIndicator,
   Alert,
@@ -38,10 +43,13 @@ const SignupScreen = () => {
   // Plan data from route params
   const planId = params.planId as string;
   const planName = params.planName as string;
+  const planCode = params.planCode as string; // home_family, standard, enterprise
   const billingCycle = params.billingCycle as string;
   const price = params.price as string;
-  const priceId = params.priceId as string;
-  const productId = params.productId as string;
+  const currency = params.currency as string;
+  const storeProductId = params.storeProductId as string;
+  const trialDays = params.trialDays as string;
+
 
   // Form state
   const [firstName, setFirstName] = useState("");
@@ -57,6 +65,14 @@ const SignupScreen = () => {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [focusedInput, setFocusedInput] = useState<string | null>(null);
 
+  // Promo verification state
+  const { verifyPromo, isVerifying: isVerifyingPromo } = useVerifyPromo();
+  const [isPromoVerified, setIsPromoVerified] = useState(false);
+  const [promoData, setPromoData] = useState<PromoData | null>(null);
+
+  // Registration state
+  const { register, isLoading: isRegistering } = useRegister();
+
   // Industries list - from params, NOT hardcoded
   const [industries, setIndustries] = useState<Industry[]>([]);
   const [isLoadingIndustries, setIsLoadingIndustries] = useState(true);
@@ -67,69 +83,96 @@ const SignupScreen = () => {
   // Processing state
   const [isProcessing, setIsProcessing] = useState(false);
 
-  // ============ INITIALIZE INDUSTRIES FROM PARAMS ============
+  // ============ FETCH INDUSTRIES IF MISSING FROM PARAMS ============
+  // Only enable if industries are NOT in params
+  const {
+    data: allIndustries,
+    isLoading: isFetchingIndustries
+  } = useGetAllIndustries(!params.industries);
+
+  // ============ INITIALIZE INDUSTRIES FROM PARAMS OR FETCHED DATA ============
   useEffect(() => {
     console.log("\n🔄 ===== SIGNUP SCREEN MOUNTED =====");
     console.log("📦 Received params from PlanSelection:");
     console.log("  - planName:", planName);
     console.log("  - planId:", planId);
-    console.log("  - industries param:", params.industries ? "✅ EXISTS" : "❌ MISSING");
+    console.log("  - industries in params:", params.industries ? "✅ YES" : "❌ NO");
 
-    try {
-      setIsLoadingIndustries(true);
+    const industriesParam = params.industries as string;
 
-      // Parse industries from params (passed from PlanSelectionScreen)
-      const industriesParam = params.industries as string;
+    // Helper function to handle industry selection logic
+    const handleIndustrySelection = (industryList: Industry[]) => {
+      setIndustries(industryList);
 
-      if (industriesParam) {
-        console.log("✅ Industries param found, parsing...");
-        const parsedIndustries = JSON.parse(industriesParam);
+      // ============ AUTO-SELECT LOGIC FOR "Home & Family" ============
+      if (planName === "Home & Family") {
+        console.log("\n🏠 ===== HOME & FAMILY PLAN DETECTED =====");
 
-        console.log("✅ Industries successfully parsed!");
-        console.log(`📊 Total industries: ${parsedIndustries.length}`);
-        console.log("📋 Industry names:", parsedIndustries.map((ind: Industry) => ind.name).join(", "));
+        // Priority 1: Use specific homeAndFamilyIndustry param if passed
+        let targetIndustry: Industry | undefined;
 
-        setIndustries(parsedIndustries);
+        if (params.homeAndFamilyIndustry) {
+          try {
+            targetIndustry = JSON.parse(params.homeAndFamilyIndustry as string);
+            console.log("🎯 Using homeAndFamilyIndustry from navigation params");
+          } catch (e) {
+            console.error("❌ Error parsing homeAndFamilyIndustry param:", e);
+          }
+        }
 
-        // ============ AUTO-SELECT LOGIC FOR "Home & Family" ============
-        if (planName === "Home & Family") {
-          console.log("\n🏠 ===== HOME & FAMILY PLAN DETECTED =====");
-          console.log("🔍 Looking for 'Home & Family' industry (with &) to auto-select & lock...");
-
-          const homeAndFamilyIndustry = parsedIndustries.find(
+        // Priority 2: Find by name in the list
+        if (!targetIndustry) {
+          console.log("🔍 Looking for 'Home & Family' industry by name in list...");
+          targetIndustry = industryList.find(
             (ind: Industry) => {
               const normalizedName = ind.name.toLowerCase().trim();
               const targetName = "home & family".toLowerCase().trim();
-              console.log(`  Checking: "${ind.name}" === "Home & Family" ? ${normalizedName === targetName}`);
               return normalizedName === targetName;
             }
           );
+        }
 
-          if (homeAndFamilyIndustry) {
-            console.log("✅ Home & Family industry FOUND!");
-            console.log(`   ID: ${homeAndFamilyIndustry.id}, Name: ${homeAndFamilyIndustry.name}`);
-            console.log("✅ AUTO-SELECTING & LOCKING Home & Family...\n");
-            setIndustry(homeAndFamilyIndustry);
-            setIsIndustryLocked(true);
-          } else {
-            console.warn("⚠️  Home & Family industry NOT FOUND");
-            console.log("❌ Available industries:", parsedIndustries.map((ind: Industry) => ind.name));
-          }
+        if (targetIndustry) {
+          console.log("✅ Home & Family industry FOUND and auto-selected!");
+          setIndustry(targetIndustry);
+          setIsIndustryLocked(true);
         } else {
-          console.log(`ℹ️  Plan is: "${planName}" (not Home & Family), industries not locked\n`);
+          console.warn("⚠️ Home & Family industry NOT FOUND in list");
           setIsIndustryLocked(false);
         }
       } else {
-        console.error("❌ No industries param received from PlanSelectionScreen!");
-        setIndustries([]);
+        setIsIndustryLocked(false);
+      }
+    };
+
+
+    try {
+      if (industriesParam) {
+        console.log("✅ Industries found in params, parsing...");
+        const parsedIndustries = JSON.parse(industriesParam);
+        handleIndustrySelection(parsedIndustries);
+        setIsLoadingIndustries(false);
+      } else if (allIndustries && allIndustries.length > 0) {
+        console.log("✅ Industries fetched from API successfully!");
+        handleIndustrySelection(allIndustries);
+        setIsLoadingIndustries(false);
+      } else if (!isFetchingIndustries) {
+        // Done fetching (either successfully empty or failed)
+        console.log("ℹ️ Industry fetch finished, but No industries available.");
+        setIndustries(allIndustries || []);
+        setIsLoadingIndustries(false);
+      } else {
+        // We don't have industries yet and we are currently fetching them
+        console.log("⏳ Waiting for industries to be fetched...");
+        setIsLoadingIndustries(true);
       }
     } catch (error) {
-      console.error("❌ Error parsing industries:", error);
+      console.error("❌ Error handling industries:", error);
       setIndustries([]);
-    } finally {
       setIsLoadingIndustries(false);
     }
-  }, [params.industries, planName]);
+  }, [params.industries, allIndustries, planName, isFetchingIndustries]);
+
 
   // ============ FORM VALIDATION ============
   const validateForm = (): boolean => {
@@ -181,69 +224,161 @@ const SignupScreen = () => {
     return true;
   };
 
-  // ============ HANDLE CONTINUE TO PAYMENT ============
-  const handleContinueToPayment = async () => {
-    if (!validateForm()) return;
-
-    if (!industry) {
-      Alert.alert("Error", "Industry not selected");
+  // ============ HANDLE PROMO VERIFICATION ============
+  const handleVerifyPromo = () => {
+    if (!couponCode.trim()) {
+      Alert.alert("Error", "Please enter a promo code");
       return;
     }
+
+    Keyboard.dismiss();
+
+    verifyPromo(
+      { code: couponCode.trim() },
+      {
+        onSuccess: (response) => {
+          if (response.valid) {
+            setIsPromoVerified(true);
+            setPromoData(response.data);
+            Alert.alert("Success", "Promo code verified successfully!");
+          } else {
+            setIsPromoVerified(false);
+            setPromoData(null);
+            Alert.alert("Invalid Code", "The promo code entered is invalid or expired.");
+          }
+        },
+        onError: (error) => {
+          setIsPromoVerified(false);
+          setPromoData(null);
+          Alert.alert("Error", error.message || "Failed to verify promo code");
+        },
+      }
+    );
+  };
+
+  // Reset verification when code changes
+  useEffect(() => {
+    if (isPromoVerified) {
+      setIsPromoVerified(false);
+      setPromoData(null);
+    }
+  }, [couponCode]);
+
+  // ============ HANDLE REVENUECAT PURCHASE ============
+  const performPurchase = async (): Promise<boolean> => {
+    try {
+      console.log("💰 Starting RevenueCat purchase flow for:", storeProductId);
+
+      const offerings = await Purchases.getOfferings();
+      console.log("🎁 Offerings received:", offerings.current?.availablePackages.map(p => p.product.identifier));
+
+      if (!offerings.current) {
+        throw new Error("No offerings available");
+      }
+
+      // Find the package matching our storeProductId
+      const pkg = offerings.current.availablePackages.find(
+        (p) => p.product.identifier === storeProductId
+      );
+
+      if (!pkg) {
+        console.error("❌ Package not found for ID:", storeProductId);
+        throw new Error(`Package for ${planName} not found in store.`);
+      }
+
+      console.log("🛒 Purchasing package:", pkg.product.identifier);
+      const purchaseResult = await Purchases.purchasePackage(pkg);
+
+      // Handle both older (purchaserInfo) and newer (customerInfo) SDK versions
+      const customerInfo = (purchaseResult as any).customerInfo || (purchaseResult as any).purchaserInfo;
+
+      // Check if user has active entitlement
+      if (customerInfo && typeof customerInfo.entitlements.active[planCode] !== "undefined") {
+        console.log("✅ Purchase successful!");
+        return true;
+      }
+
+      // Some apps might use a single "premium" entitlement for all plans
+      if (customerInfo && Object.keys(customerInfo.entitlements.active).length > 0) {
+        console.log("✅ Purchase successful (any entitlement)!");
+        return true;
+      }
+
+
+      console.warn("⚠️ Purchase completed but no active entitlement found.");
+      return true; // We'll let the server verify the receipt if needed
+    } catch (e: any) {
+      if (!e.userCancelled) {
+        console.error("❌ Purchase error:", e);
+        Alert.alert("Purchase Failed", e.message || "Could not complete purchase");
+      }
+      return false;
+    }
+  };
+
+  // ============ HANDLE SIGNUP & PAYMENT ============
+  const handleSignup = async () => {
+    if (!validateForm()) return;
 
     setIsProcessing(true);
 
     try {
-      console.log("\n📋 ===== COLLECTING USER DATA =====");
-      console.log("NO API CALL YET - Just collecting form data for payment screen");
+      // 1. Check if we can bypass IAP with promo code
+      const canBypassIAP = isPromoVerified && promoData && !promoData.iap_required;
 
-      // Prepare user form data to pass to payment screen
-      const userFormData: UserFormData = {
-        firstName,
-        middleName,
-        lastName,
-        industry,
-        companyName,
-        email: email.trim(),
+      if (!canBypassIAP) {
+        // 2. Trigger RevenueCat Purchase
+        const purchaseSuccess = await performPurchase();
+        if (!purchaseSuccess) {
+          setIsProcessing(false);
+          return;
+        }
+      }
+
+      // 3. Register user in our backend
+      const registrationData: RegisterRequest = {
+        first_name: firstName.trim(),
+        middle_name: middleName.trim() || undefined,
+        last_name: lastName.trim(),
+        company: companyName.trim() || undefined,
+        industry_id: industry!.id,
+        email: email.trim().toLowerCase(),
         password,
-        confirmPassword,
-        couponCode,
+        password_confirmation: confirmPassword,
+        enterprise: planCode === "enterprise",
+        platform: Platform.OS as 'ios' | 'android',
+        promo_code: isPromoVerified ? couponCode.trim() : undefined,
+        app_plan_id: isPromoVerified ? 1 : undefined, // Currently hardcoded to 1 as per instruction
       };
 
-      console.log("✅ User data collected:", {
-        firstName,
-        lastName,
-        email,
-        industryId: industry.id,
-        industryName: industry.name,
+      console.log("📤 Sending registration to backend:", {
+        email: registrationData.email,
+        promo: registrationData.promo_code,
+        enterprise: registrationData.enterprise
       });
 
-      setTimeout(() => {
-        setIsProcessing(false);
+      register(registrationData, {
+        onSuccess: (data) => {
+          setIsProcessing(false);
+          Alert.alert(
+            "Welcome!",
+            "Account created successfully. Please verify from email and login to get started.",
+            [{ text: "Login", onPress: () => router.replace("/(auth)/login") }]
+          );
+        },
+        onError: (error) => {
+          setIsProcessing(false);
+          Alert.alert("Registration Error", error.message);
+        }
+      });
 
-        console.log("📤 Navigating to payment screen with user data...");
-
-        // Navigate to payment screen with BOTH plan data and user form data
-        router.push({
-          pathname: "/(auth)/paymentForm",
-          params: {
-            // Plan data
-            planId,
-            planName,
-            billingCycle,
-            price,
-            priceId,
-            productId,
-            // User form data - pass as JSON string
-            userFormData: JSON.stringify(userFormData),
-          }
-        });
-      }, 500);
     } catch (error: any) {
-      console.error("❌ Unexpected error:", error);
-      Alert.alert("Error", "An unexpected error occurred");
+      console.error("❌ Refined Signup Error:", error);
+      Alert.alert("Error", "An unexpected error occurred. Please try again.");
       setIsProcessing(false);
     }
   };
+
 
   // ============ RENDER ============
 
@@ -587,10 +722,29 @@ const SignupScreen = () => {
                         onFocus={() => setFocusedInput("couponCode")}
                         onBlur={() => setFocusedInput(null)}
                         autoCapitalize="characters"
-                        editable={!isProcessing}
+                        editable={!isProcessing && !isVerifyingPromo}
                       />
+                      {couponCode.length > 0 && !isPromoVerified && (
+                        <TouchableOpacity
+                          onPress={handleVerifyPromo}
+                          disabled={isVerifyingPromo}
+                          style={styles.verifyButton}
+                        >
+                          {isVerifyingPromo ? (
+                            <ActivityIndicator size="small" color="#800000" />
+                          ) : (
+                            <Text style={styles.verifyButtonText}>Verify</Text>
+                          )}
+                        </TouchableOpacity>
+                      )}
+                      {isPromoVerified && (
+                        <View style={styles.verifiedBadge}>
+                          <Ionicons name="checkmark-circle" size={20} color="#10B981" />
+                        </View>
+                      )}
                     </View>
                   </View>
+
 
                   {/* Terms & Conditions */}
                   {/* <View style={styles.termsContainer}>
@@ -601,31 +755,34 @@ const SignupScreen = () => {
                 </Text>
               </View> */}
 
-                  {/* Continue to Payment Button */}
+                  {/* Create Account Button */}
                   <TouchableOpacity
                     style={[
                       styles.createAccountButton,
-                      isProcessing && styles.createAccountButtonDisabled,
+                      (isProcessing || isRegistering) && styles.createAccountButtonDisabled,
                     ]}
-                    onPress={handleContinueToPayment}
-                    disabled={isProcessing}
+                    onPress={handleSignup}
+                    disabled={isProcessing || isRegistering}
                   >
-                    {isProcessing ? (
+                    {isProcessing || isRegistering ? (
                       <>
                         <ActivityIndicator size="small" color="#FFF" />
                         <Text style={styles.createAccountButtonText}>
-                          Continuing...
+                          {isRegistering ? "Creating Account..." : "Processing..."}
                         </Text>
                       </>
                     ) : (
                       <>
                         <Text style={styles.createAccountButtonText}>
-                          Continue to Payment
+                          {isPromoVerified && promoData && !promoData.iap_required
+                            ? "Complete Registration"
+                            : "Continue to Purchase"}
                         </Text>
                         <Ionicons name="arrow-forward" size={20} color="#FFF" />
                       </>
                     )}
                   </TouchableOpacity>
+
 
                   {/* Login Link */}
                   <View style={styles.loginContainer}>
@@ -768,8 +925,51 @@ const styles = StyleSheet.create({
     fontSize: 15,
     color: "#1F2937",
     fontWeight: "500",
+    height: "100%",
+  },
+
+  verifyButton: {
+    backgroundColor: "#FEE2E2",
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "#FECACA",
+  },
+  verifyButtonText: {
+    color: "#800000",
+    fontSize: 12,
+    fontWeight: "700",
+  },
+  verifiedBadge: {
+    marginLeft: 8,
+  },
+  createAccountButton: {
+    backgroundColor: "#800000",
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    height: 56,
+    borderRadius: 12,
+    gap: 10,
+    marginTop: 12,
+    shadowColor: "#800000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  createAccountButtonDisabled: {
+    backgroundColor: "#D1D5DB",
+    shadowOpacity: 0,
+  },
+  createAccountButtonText: {
+    color: "#FFF",
+    fontSize: 16,
+    fontWeight: "700",
   },
   loadingDropdown: {
+
     flexDirection: "row",
     alignItems: "center",
     backgroundColor: "#F9FAFB",
@@ -816,30 +1016,8 @@ const styles = StyleSheet.create({
     color: "#800000",
     fontWeight: "700",
   },
-  createAccountButton: {
-    backgroundColor: "#800000",
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    paddingVertical: 16,
-    borderRadius: 14,
-    gap: 8,
-    marginBottom: 20,
-    shadowColor: "#800000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    elevation: 4,
-  },
-  createAccountButtonDisabled: {
-    backgroundColor: "#D1D5DB",
-  },
-  createAccountButtonText: {
-    color: "#FFF",
-    fontSize: 16,
-    fontWeight: "700",
-  },
   loginContainer: {
+
     flexDirection: "row",
     justifyContent: "center",
     marginBottom: 20,

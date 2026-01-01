@@ -11,11 +11,12 @@ export interface RegisterRequest {
   email: string;
   password: string;
   password_confirmation: string;
-  product_id: string;
-  price_id: string;
-  card_token: string;
-  coupon_code?: string;
+  enterprise: boolean;
+  platform: 'ios' | 'android';
+  promo_code?: string;
+  app_plan_id?: number;
 }
+
 
 export interface RegisterUser {
   id: number;
@@ -44,8 +45,10 @@ const registerUser = async (data: RegisterRequest): Promise<RegisterResponse> =>
     console.log('🔄 Registering user...', {
       email: data.email,
       name: `${data.first_name} ${data.last_name}`,
-      product_id: data.product_id,
+      platform: data.platform,
+      enterprise: data.enterprise,
     });
+
 
     const response = await axiosInstance.post<RegisterResponse>('/register', data);
 
@@ -139,19 +142,19 @@ export const useRegister = () => {
 
       // ⭐ CRITICAL: Save token to AsyncStorage
       console.log("\n🔐 ===== TOKEN HANDLING =====");
-      
+
       // Extract token (could be 'token' or 'access_token')
       const token = data.data.token || data.data.access_token;
 
       if (token) {
         console.log("✅ Token found in response!");
         console.log(`📝 Token (first 20 chars): ${token.substring(0, 20)}...`);
-        
+
         try {
           // ⭐ SAVE TOKEN TO ASYNCSTORAGE (THIS IS THE FIX!)
           await AsyncStorage.setItem("authToken", token);
           console.log("✅ Token SAVED to AsyncStorage!");
-          
+
           // Verify token was saved
           const savedToken = await AsyncStorage.getItem("authToken");
           if (savedToken) {

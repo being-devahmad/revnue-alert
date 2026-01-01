@@ -127,8 +127,11 @@ const PlanSelectionV2Screen = () => {
                     currency: planData.currency,
                     storeProductId: planData.storeProductId,
                     trialDays: planData.trialDays.toString(),
+                    industries: plansData.industries ? JSON.stringify(plansData.industries) : undefined,
+                    homeAndFamilyIndustry: plansData.homeAndFamilyIndustry ? JSON.stringify(plansData.homeAndFamilyIndustry) : undefined,
                 },
             });
+
         }, 800);
     };
 

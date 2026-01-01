@@ -1,6 +1,6 @@
 import { initializeIndustriesMap } from '@/api/settings/useGetUserDetails';
 import axiosInstance from '@/utils/axios';
-import { useInfiniteQuery } from '@tanstack/react-query';
+import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
 
 // ============ TYPE DEFINITIONS ============
 export interface IndustryCategory {
@@ -58,11 +58,11 @@ const fetchIndustries = async (
     // Build query parameters
     const queryParams = new URLSearchParams();
     queryParams.append('page', String(pageParam));
-    
+
     if (filters.search) {
       queryParams.append('search', filters.search);
     }
-    
+
     const perPage = filters.per_page || 20; // Default to 20 per page
     queryParams.append('per_page', String(perPage));
 
@@ -100,7 +100,7 @@ export const useIndustries = (filters: IndustriesFilters = {}) => {
 
       return response;
     },
-    
+
     getNextPageParam: (lastPage) => {
       if (lastPage.data.pagination.next_page_url) {
         return lastPage.data.pagination.current_page + 1;
@@ -112,6 +112,29 @@ export const useIndustries = (filters: IndustriesFilters = {}) => {
     gcTime: 1000 * 60 * 60, // 1 hour garbage collection time
   });
 };
+
+/**
+ * Hook to fetch all industries at once (up to 200)
+ * Useful for dropdowns or when pagination is not needed
+ */
+export const useGetAllIndustries = (enabled: boolean = true) => {
+  return useQuery({
+    queryKey: ['all-industries'],
+    queryFn: async () => {
+      const response = await fetchIndustries(1, { per_page: 200 });
+
+      // Initialize the map for name-to-id lookups if needed elsewhere
+      if (response.data?.industries) {
+        initializeIndustriesMap(response.data.industries);
+      }
+
+      return response.data.industries || [];
+    },
+    staleTime: 1000 * 60 * 60, // 1 hour
+    enabled,
+  });
+};
+
 
 // ============ ALL YOUR EXISTING HELPERS (unchanged) ============
 export const flattenIndustries = (data: any): Industry[] => {
@@ -141,7 +164,7 @@ export const searchIndustries = (
   searchTerm: string
 ): Industry[] => {
   if (!searchTerm.trim()) return industries;
-  
+
   const lowercaseSearch = searchTerm.toLowerCase();
   return industries.filter((industry) =>
     industry.name.toLowerCase().includes(lowercaseSearch)
