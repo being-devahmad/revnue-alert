@@ -4,6 +4,9 @@ import {
     getYearlyProduct
 } from '@/api/settings/useGetPlansv2';
 import { useGetUserPlan } from '@/api/settings/useGetUserPlan';
+import Purchases from 'react-native-purchases';
+
+
 
 import { TabHeader } from '@/components/TabHeader';
 import { useAuthStore } from '@/store/authStore';
@@ -82,7 +85,10 @@ const BillingScreen = () => {
 
 
     // Fetch user-specific plan from API
-    const { data: userPlanResponse, isLoading, error } = useGetUserPlan(user?.id);
+    const { data: userPlanResponse, isLoading, error, refetch: refetchUserPlan } = useGetUserPlan(user?.id);
+
+    const [isProcessing, setIsProcessing] = useState(false);
+
 
     // Get the current plan from the response
     const plans = useMemo(() => {
@@ -115,6 +121,58 @@ const BillingScreen = () => {
             }
         }
     }, [userPlanResponse]);
+
+    // ============ HANDLE REVENUECAT PURCHASE ============
+    const performPurchase = async (storeProductId: string, planCode: string): Promise<boolean> => {
+        try {
+            console.log("💰 Starting RevenueCat purchase flow for:", storeProductId);
+            setIsProcessing(true);
+
+            const offerings = await Purchases.getOfferings();
+            console.log("🎁 Offerings received:", offerings.current?.availablePackages.map(p => p.product.identifier));
+
+            if (!offerings.current) {
+                throw new Error("No offerings available");
+            }
+
+            // Find the package matching our storeProductId
+            const pkg = offerings.current.availablePackages.find(
+                (p) => p.product.identifier === storeProductId
+            );
+
+            if (!pkg) {
+                console.error("❌ Package not found for ID:", storeProductId);
+                throw new Error(`Package not found in store.`);
+            }
+
+            console.log("🛒 Purchasing package:", pkg.product.identifier);
+            const purchaseResult = await Purchases.purchasePackage(pkg);
+
+            // Handle both older (purchaserInfo) and newer (customerInfo) SDK versions
+            const customerInfo = (purchaseResult as any).customerInfo || (purchaseResult as any).purchaserInfo;
+
+            // Check if user has active entitlement
+            if (customerInfo && (
+                typeof customerInfo.entitlements.active[planCode] !== "undefined" ||
+                Object.keys(customerInfo.entitlements.active).length > 0
+            )) {
+                console.log("✅ Purchase successful!");
+                return true;
+            }
+
+            console.warn("⚠️ Purchase completed but no active entitlement found.");
+            return true; // We'll let the server verify the receipt if needed
+        } catch (e: any) {
+            if (!e.userCancelled) {
+                console.error("❌ Purchase error:", e);
+                Alert.alert("Purchase Failed", e.message || "Could not complete purchase");
+            }
+            return false;
+        } finally {
+            setIsProcessing(false);
+        }
+    };
+
 
 
 
@@ -188,7 +246,7 @@ const BillingScreen = () => {
         }
     };
 
-    const handleSelectPlan = (planCode: string) => {
+    const handleSelectPlan = async (planCode: string) => {
         const isCurrentActive = planCode === currentPlanCode && selectedPeriod === currentPeriod;
 
         if (isCurrentActive) {
@@ -198,21 +256,39 @@ const BillingScreen = () => {
 
 
         const plan = plans.find(p => p.code === planCode);
+        if (!plan) return;
+
+        const product = selectedPeriod === 'monthly'
+            ? getMonthlyProduct(plan)
+            : getYearlyProduct(plan);
+
+        if (!product || !product.store_product_id) {
+            Alert.alert('Error', 'This product is not available for purchase on this platform.');
+            return;
+        }
+
         Alert.alert(
             'Change Plan',
-            `Would you like to switch to the ${plan?.name} plan?`,
+            `Would you like to switch to the ${plan.name} (${selectedPeriod}) plan?`,
             [
                 { text: 'Cancel', style: 'cancel' },
                 {
                     text: 'Confirm',
-                    onPress: () => {
-                        setCurrentPlanCode(planCode);
-                        Alert.alert('Success', 'Your plan has been updated!');
+                    onPress: async () => {
+                        const success = await performPurchase(product.store_product_id, plan.code);
+                        if (success) {
+                            Alert.alert(
+                                'Success',
+                                'Your plan has been updated successfully! It may take a few moments for the changes to reflect.',
+                                [{ text: 'OK', onPress: () => refetchUserPlan() }]
+                            );
+                        }
                     },
                 },
             ]
         );
     };
+
 
     // Render loading state
     if (isLoading) {
@@ -423,11 +499,13 @@ const BillingScreen = () => {
                                         style={[
                                             styles.selectButton,
                                             (isCurrentActive || isPromo) && styles.selectButtonCurrent,
+                                            isProcessing && styles.selectButtonDisabled,
                                         ]}
-                                        onPress={() => !isPromo && handleSelectPlan(plan.code)}
-                                        activeOpacity={isPromo ? 1 : 0.8}
-                                        disabled={isPromo}
+                                        onPress={() => !isPromo && !isProcessing && handleSelectPlan(plan.code)}
+                                        activeOpacity={isPromo || isProcessing ? 1 : 0.8}
+                                        disabled={isPromo || isProcessing}
                                     >
+
                                         <LinearGradient
                                             colors={
                                                 (isCurrentActive || isPromo)
@@ -438,7 +516,9 @@ const BillingScreen = () => {
                                             start={{ x: 0, y: 0 }}
                                             end={{ x: 1, y: 0 }}
                                         >
-                                            {isPromo ? (
+                                            {isProcessing ? (
+                                                <ActivityIndicator color="#FFFFFF" size="small" />
+                                            ) : isPromo ? (
                                                 <>
                                                     <Ionicons name="ribbon" size={20} color="#FFFFFF" />
                                                     <Text style={styles.selectButtonText}>Active Promo Plan</Text>
@@ -454,6 +534,7 @@ const BillingScreen = () => {
                                                     <Text style={styles.selectButtonText}>Select Plan</Text>
                                                 </>
                                             )}
+
                                         </LinearGradient>
                                     </TouchableOpacity>
                                 </View>
@@ -747,6 +828,10 @@ const styles = StyleSheet.create({
     selectButtonCurrent: {
         shadowOpacity: 0.15,
     },
+    selectButtonDisabled: {
+        opacity: 0.6,
+    },
+
     selectButtonGradient: {
         flexDirection: 'row',
         alignItems: 'center',

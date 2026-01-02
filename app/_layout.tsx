@@ -6,6 +6,7 @@ import * as SplashScreenExpo from "expo-splash-screen";
 import React, { useEffect, useState } from "react";
 import Purchases from "react-native-purchases";
 
+import { Platform } from "react-native";
 import { useAuthStore } from "../store/authStore";
 
 const queryClient = new QueryClient();
@@ -17,11 +18,11 @@ export default function RootLayout() {
   const EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY = process.env.EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY || "pk_test_51SHknHI8Xjdh0k1MqhPNksWxi985u7AyKA3cYvmOaFgtB12TaNNKAskfVkjgiEC8UprCHWAeOZEfYxli7IvsZ5ut00GOHlrljC";
 
   // RevenueCat API Keys
-  const REVENUECAT_API_KEY = "test_KdiZCShzAuoJCILJxZEAZvOgriL"
-  // Platform.select({
-  //   // ios: process.env.EXPO_PUBLIC_RC_IOS || "appl_zjAyHXHkAqpVjHokWhDTYlBvwEa", // Add your iOS key here
-  //   // android: process.env.EXPO_PUBLIC_REVENUECAT_GOOGLE_KEY || "goog_placeholder_key", // Add your Android key here
-  // });
+  // const REVENUECAT_API_KEY = "test_KdiZCShzAuoJCILJxZEAZvOgriL"
+  const REVENUECAT_API_KEY = Platform.select({
+    ios: process.env.EXPO_PUBLIC_RC_IOS || "appl_zjAyHXHkAqpVjHokWhDTYlBvwEa", // Add your iOS key here
+    // android: process.env.EXPO_PUBLIC_REVENUECAT_GOOGLE_KEY || "goog_placeholder_key", // Add your Android key here
+  });
 
 
   useEffect(() => {
