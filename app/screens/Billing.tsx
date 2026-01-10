@@ -132,8 +132,19 @@ const BillingScreen = () => {
             const currentUser = useAuthStore.getState().user;
             if (currentUser) {
                 const userId = currentUser.rc_app_user_id ?? currentUser.id.toString();
-                const identifiesResult = await Purchases.logIn(userId);
-                console.log("👤 Identification confirmed for purchase:", identifiesResult.customerInfo.originalAppUserId);
+                console.log(`👤 Identifying user in RevenueCat before purchase: ${userId}`);
+
+                try {
+                    const identifiesResult = await Purchases.logIn(userId);
+                    console.log("✅ RevenueCat identification successful.");
+                    console.log("   - User ID passed:", userId);
+                    console.log("   - RC Original ID:", identifiesResult.customerInfo.originalAppUserId);
+                    console.log("   - RC Current ID:", identifiesResult.customerInfo.managementURL); // managementURL often contains identifiers
+                } catch (rcError) {
+                    console.error("❌ RevenueCat logIn error during upgrade:", rcError);
+                }
+            } else {
+                console.warn("⚠️ No user in store. Cannot identify in RevenueCat.");
             }
 
             const offerings = await Purchases.getOfferings();
@@ -256,9 +267,17 @@ const BillingScreen = () => {
 
     const handleSelectPlan = async (planCode: string) => {
         const isCurrentActive = planCode === currentPlanCode && selectedPeriod === currentPeriod;
-
         if (isCurrentActive) {
             Alert.alert('Current Plan', 'You are already on this plan and period.');
+            return;
+        }
+
+        // 🚨 Safety Check: Prevent downgrade from yearly to monthly
+        if (selectedPeriod === 'monthly' && currentPeriod === 'yearly') {
+            Alert.alert(
+                "Downgrade Restricted",
+                "You are currently on a yearly plan. Downgrades to monthly plans are not supported inside the app."
+            );
             return;
         }
 
@@ -355,13 +374,24 @@ const BillingScreen = () => {
                             style={[
                                 styles.periodToggle,
                                 selectedPeriod === 'monthly' && styles.periodToggleActive,
+                                currentPeriod === 'yearly' && styles.periodToggleDisabled,
                             ]}
-                            onPress={() => setSelectedPeriod('monthly')}
+                            onPress={() => {
+                                if (currentPeriod === 'yearly') {
+                                    Alert.alert(
+                                        "Downgrade Restricted",
+                                        "You are currently on a yearly plan. Downgrades to monthly plans are not supported inside the app."
+                                    );
+                                    return;
+                                }
+                                setSelectedPeriod('monthly');
+                            }}
                         >
                             <Text
                                 style={[
                                     styles.periodToggleText,
                                     selectedPeriod === 'monthly' && styles.periodToggleTextActive,
+                                    currentPeriod === 'yearly' && styles.periodToggleTextDisabled,
                                 ]}
                             >
                                 Monthly
@@ -562,27 +592,6 @@ const BillingScreen = () => {
                 </View>
 
 
-                {/* Footer Info */}
-                <View style={styles.footerInfo}>
-                    <Ionicons name="shield-checkmark" size={24} color="#9A1B2B" />
-                    <Text style={styles.footerText}>
-                        Secure payment processing with 256-bit SSL encryption
-                    </Text>
-                </View>
-
-                {/* Contact Support */}
-                <TouchableOpacity
-                    style={styles.supportButton}
-                    onPress={() =>
-                        Alert.alert(
-                            'Contact Support',
-                            'Need help choosing a plan? Contact our support team at support@renewalert.com'
-                        )
-                    }
-                >
-                    <Ionicons name="chatbubble-ellipses-outline" size={20} color="#9A1B2B" />
-                    <Text style={styles.supportButtonText}>Need help? Contact Support</Text>
-                </TouchableOpacity>
             </ScrollView >
         </View >
     );
@@ -655,6 +664,13 @@ const styles = StyleSheet.create({
     },
     periodToggleTextActive: {
         color: '#FFFFFF',
+    },
+    periodToggleDisabled: {
+        opacity: 0.5,
+        backgroundColor: '#F3F4F6',
+    },
+    periodToggleTextDisabled: {
+        color: '#9CA3AF',
     },
     saveBadge: {
         backgroundColor: '#10B981',

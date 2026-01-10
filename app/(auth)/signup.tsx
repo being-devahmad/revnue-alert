@@ -7,10 +7,10 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";
 import Purchases from "react-native-purchases";
 
+import { Image } from "expo-image";
 import {
   ActivityIndicator,
   Alert,
-  Image,
   Keyboard,
   KeyboardAvoidingView,
   Platform,
@@ -24,17 +24,6 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-interface UserFormData {
-  firstName: string;
-  middleName: string;
-  lastName: string;
-  industry: Industry;
-  companyName: string;
-  email: string;
-  password: string;
-  confirmPassword: string;
-  couponCode: string;
-}
 
 const SignupScreen = () => {
   const router = useRouter();
@@ -46,9 +35,7 @@ const SignupScreen = () => {
   const planCode = params.planCode as string; // home_family, standard, enterprise
   const billingCycle = params.billingCycle as string;
   const price = params.price as string;
-  const currency = params.currency as string;
   const storeProductId = params.storeProductId as string;
-  const trialDays = params.trialDays as string;
 
 
   // Form state
@@ -441,11 +428,19 @@ const SignupScreen = () => {
         <SafeAreaView style={styles.container} edges={["top"]}>
           {/* ===== Fixed Header ===== */}
           <View style={styles.headerContainer}>
+            <TouchableOpacity
+              style={styles.backButton}
+              onPress={() => router.back()}
+              disabled={isProcessing}
+            >
+              <Ionicons name="arrow-back" size={28} color="#FFF" />
+            </TouchableOpacity>
             <View style={styles.logoContainer}>
               <Image
                 source={require("../../assets/icons/logo_transparent.png")}
                 style={styles.logo}
-                resizeMode="contain"
+                contentFit="contain"
+                transition={200}
               />
             </View>
           </View>
@@ -873,6 +868,16 @@ const styles = StyleSheet.create({
     height: 200,
     justifyContent: "center",
     alignItems: "center",
+    position: "relative",
+  },
+  backButton: {
+    position: "absolute",
+    top: 12,
+    left: 16,
+    zIndex: 20,
+    padding: 8,
+    borderRadius: 20,
+    backgroundColor: "rgba(255, 255, 255, 0.15)",
   },
   logoContainer: {
     borderRadius: 60,
@@ -1072,7 +1077,7 @@ const styles = StyleSheet.create({
 
     flexDirection: "row",
     justifyContent: "center",
-    marginBottom: 20,
+    marginVertical: 20,
   },
   loginText: {
     color: "#6B7280",

@@ -1,11 +1,11 @@
 import { useLoginMutation } from "@/api/auth/useLogin";
 import { useAuthStore } from "@/store/authStore";
 import { Ionicons } from "@expo/vector-icons";
+import { Image } from "expo-image";
 import { router } from "expo-router";
 import React, { useState } from "react";
 import {
   Alert,
-  Image,
   Keyboard,
   KeyboardAvoidingView,
   Platform,
@@ -50,11 +50,9 @@ const LoginScreen = () => {
             return;
           }
 
-          storeLogin(token, data?.user, data?.account_type); // Save token in Zustand
+          storeLogin(token, data?.user, data?.account_type);
 
           Alert.alert("Success", "Logged in successfully!");
-
-          // Navigate to tabs (dashboard)
           router.replace("/(tabs)");
         },
         onError: (err: any) => {
@@ -81,7 +79,8 @@ const LoginScreen = () => {
               <Image
                 source={require("../../assets/icons/logo_transparent.png")}
                 style={styles.logo}
-                resizeMode="contain"
+                contentFit="contain"
+                transition={200}
               />
             </View>
           </View>
