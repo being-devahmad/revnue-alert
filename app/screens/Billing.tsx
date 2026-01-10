@@ -403,7 +403,7 @@ const BillingScreen = () => {
                                 <Text style={styles.promoTitle}>Premium Access Granted!</Text>
                                 <Text style={styles.promoSubtitle}>
                                     You're enjoying full access for free via a promotional code.
-                                    All premium features are unlocked for your account.
+                                    Now enjoy a lifetime access!
                                 </Text>
                             </View>
                         </View>
@@ -469,14 +469,24 @@ const BillingScreen = () => {
                                     >
                                         <Text style={styles.planName}>{plan.name}</Text>
                                         <View style={styles.priceContainer}>
+                                            {/* {isPromo ? (
+                                                <Text style={styles.planPrice}>FREE</Text>
+                                            ) : (
+                                                <> */}
                                             <Text style={styles.planPrice}>
                                                 {formatPrice(product.price, product.currency)}
                                             </Text>
                                             <Text style={styles.planPeriod}>
                                                 /{selectedPeriod === 'monthly' ? 'mo' : 'yr'}
                                             </Text>
+                                            {/* </>
+                                            )} */}
                                         </View>
-                                        <Text style={styles.planDescription}>{description}</Text>
+                                        {isPromo ? (
+                                            <Text style={styles.planLifetimeText}>Lifetime Access</Text>
+                                        ) : (
+                                            <Text style={styles.planDescription}>{description}</Text>
+                                        )}
                                         {product.trial_days > 0 && (
                                             <View style={styles.trialBadge}>
                                                 <Text style={styles.trialBadgeText}>
@@ -790,6 +800,17 @@ const styles = StyleSheet.create({
         textAlign: 'center',
         fontWeight: '500',
         marginBottom: 8,
+    },
+    planLifetimeText: {
+        fontSize: 18,
+        color: '#FFFFFF',
+        textAlign: 'center',
+        fontWeight: '700',
+        marginBottom: 8,
+        backgroundColor: 'rgba(255, 255, 255, 0.2)',
+        paddingHorizontal: 12,
+        paddingVertical: 4,
+        borderRadius: 8,
     },
     trialBadge: {
         backgroundColor: 'rgba(255, 255, 255, 0.2)',
