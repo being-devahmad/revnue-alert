@@ -37,6 +37,18 @@ export const useAuthStore = create<AuthState>((set) => ({
       if (subscription) {
         await AsyncStorage.setItem("userSubscription", JSON.stringify(subscription));
       }
+
+      // ✅ Log in to RevenueCat if user exists
+      if (user) {
+        const userId = user.rc_app_user_id ?? user.id.toString();
+        try {
+          console.log(`👤 Identifying in RevenueCat: ${userId}`);
+          await Purchases.logIn(userId);
+        } catch (rcError) {
+          console.warn("⚠️ RevenueCat login error:", rcError);
+        }
+      }
+
       set({ token, user, accountType, subscription, isLoadingAuth: false });
     } catch (err) {
       console.error("AuthStore login error:", err);

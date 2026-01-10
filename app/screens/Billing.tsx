@@ -128,6 +128,14 @@ const BillingScreen = () => {
             console.log("💰 Starting RevenueCat purchase flow for:", storeProductId);
             setIsProcessing(true);
 
+            // ✅ Safety check: Ensure user is logged in to RevenueCat
+            const currentUser = useAuthStore.getState().user;
+            if (currentUser) {
+                const userId = currentUser.rc_app_user_id ?? currentUser.id.toString();
+                const identifiesResult = await Purchases.logIn(userId);
+                console.log("👤 Identification confirmed for purchase:", identifiesResult.customerInfo.originalAppUserId);
+            }
+
             const offerings = await Purchases.getOfferings();
             console.log("🎁 Offerings received:", offerings.current?.availablePackages.map(p => p.product.identifier));
 

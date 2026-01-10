@@ -27,25 +27,6 @@ export default function RootLayout() {
   });
 
   useEffect(() => {
-    Purchases.setLogLevel(LOG_LEVEL.VERBOSE);
-
-    if (Platform.OS === 'ios') {
-      Purchases.configure({ apiKey: 'appl_zjAyHXHkAqpVjHokWhDTYlBvwEa' });
-    } else if (Platform.OS === 'android') {
-      //  Purchases.configure({apiKey: <revenuecat_project_google_api_key>});
-      // OR: if building for Amazon, be sure to follow the installation instructions then:
-      //  Purchases.configure({ apiKey: <revenuecat_project_amazon_api_key>, useAmazon: true });
-    }
-    getCustomerInfo();
-
-  }, []);
-
-  async function getCustomerInfo() {
-    const customerInfo = await Purchases.getCustomerInfo();
-    console.log(customerInfo);
-  }
-
-  useEffect(() => {
     async function prepare() {
       try {
         // Prevent native splash from auto hiding
@@ -57,8 +38,26 @@ export default function RootLayout() {
         // Configure RevenueCat
         if (REVENUECAT_API_KEY) {
           console.log("🛠️ Configuring RevenueCat...");
+          Purchases.setLogLevel(LOG_LEVEL.VERBOSE);
+
           Purchases.configure({ apiKey: REVENUECAT_API_KEY });
+
+          // Login if user exists logic
+          const user = useAuthStore.getState().user;
+          if (user && user.id) {
+            const userId = user.rc_app_user_id || user.id.toString();
+            console.log(`👤 Found logged-in user. Identifying in RevenueCat: ${userId}`);
+            await Purchases.logIn(userId);
+
+            // Only fetch info if identified (to avoid anonymous user spam)
+            console.log("✅ RevenueCat configured & identified. Fetching Info...");
+            await Purchases.getCustomerInfo().then((info) => console.log(info));
+          } else {
+            console.log("ℹ️ User not logged in. Skipping RevenueCat identification & info fetch to prevent anonymous spam.");
+          }
+
           console.log("✅ RevenueCat configured successfully");
+
         } else {
           console.warn("⚠️ RevenueCat API Key missing");
         }
