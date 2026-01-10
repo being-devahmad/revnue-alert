@@ -23,6 +23,7 @@ export interface RegisterUser {
   name: string;
   email: string;
   enterprise: boolean;
+  rc_app_user_id?: string;
 }
 
 export interface RegisterResponse {
@@ -67,6 +68,7 @@ const registerUser = async (data: RegisterRequest): Promise<RegisterResponse> =>
 
     console.log('✅ Registration successful!', {
       userId: response.data.data.user.id,
+      rcUserId: response.data.data.user.rc_app_user_id,
       name: response.data.data.user.name,
     });
 
@@ -167,8 +169,8 @@ export const useRegister = () => {
           console.error("❌ Error saving token to AsyncStorage:", error);
         }
       } else {
-        console.warn("⚠️  No token in API response!");
-        console.log("📋 Response data:", JSON.stringify(data, null, 2));
+        console.log("ℹ️ No token in API response - User will need to login.");
+        // console.log("📋 Response data:", JSON.stringify(data, null, 2));
       }
 
       console.log("✅ Registration & token handling complete!\n");
@@ -183,6 +185,7 @@ export const useRegister = () => {
   return {
     ...mutation,
     register: mutation.mutate,
+    registerAsync: mutation.mutateAsync,
     isLoading: mutation.isPending,
   };
 };

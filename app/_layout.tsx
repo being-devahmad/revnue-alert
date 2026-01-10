@@ -4,7 +4,9 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Stack } from "expo-router";
 import * as SplashScreenExpo from "expo-splash-screen";
 import React, { useEffect, useState } from "react";
-import Purchases from "react-native-purchases";
+// import Purchases from "react-native-purchases";
+import Purchases, { LOG_LEVEL } from 'react-native-purchases';
+
 
 import { Platform } from "react-native";
 import { useAuthStore } from "../store/authStore";
@@ -24,6 +26,24 @@ export default function RootLayout() {
     // android: process.env.EXPO_PUBLIC_REVENUECAT_GOOGLE_KEY || "goog_placeholder_key", // Add your Android key here
   });
 
+  useEffect(() => {
+    Purchases.setLogLevel(LOG_LEVEL.VERBOSE);
+
+    if (Platform.OS === 'ios') {
+      Purchases.configure({ apiKey: 'appl_zjAyHXHkAqpVjHokWhDTYlBvwEa' });
+    } else if (Platform.OS === 'android') {
+      //  Purchases.configure({apiKey: <revenuecat_project_google_api_key>});
+      // OR: if building for Amazon, be sure to follow the installation instructions then:
+      //  Purchases.configure({ apiKey: <revenuecat_project_amazon_api_key>, useAmazon: true });
+    }
+    getCustomerInfo();
+
+  }, []);
+
+  async function getCustomerInfo() {
+    const customerInfo = await Purchases.getCustomerInfo();
+    console.log(customerInfo);
+  }
 
   useEffect(() => {
     async function prepare() {

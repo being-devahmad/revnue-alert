@@ -71,7 +71,7 @@ const SignupScreen = () => {
   const [promoData, setPromoData] = useState<PromoData | null>(null);
 
   // Registration state
-  const { register, isLoading: isRegistering } = useRegister();
+  const { register, registerAsync, isLoading: isRegistering } = useRegister();
 
   // Industries list - from params, NOT hardcoded
   const [industries, setIndustries] = useState<Industry[]>([]);
@@ -82,6 +82,33 @@ const SignupScreen = () => {
 
   // Processing state
   const [isProcessing, setIsProcessing] = useState(false);
+
+  // RevenueCat Package for display
+  const [rcPackage, setRcPackage] = useState<any | null>(null);
+
+  // ============ FETCH REVENUECAT DATA ============
+  useEffect(() => {
+    const fetchOfferingDetails = async () => {
+      if (!storeProductId) return;
+      try {
+        console.log("🔍 Fetching RevenueCat offerings for display...");
+        const offerings = await Purchases.getOfferings();
+        if (offerings.current) {
+          const pkg = offerings.current.availablePackages.find(
+            (p) => p.product.identifier === storeProductId
+          );
+          if (pkg) {
+            console.log("✅ Found matching RevenueCat package:", pkg.product.identifier);
+            console.log("   - Price:", pkg.product.priceString);
+            setRcPackage(pkg);
+          }
+        }
+      } catch (error) {
+        console.warn("⚠️ Error fetching offerings for display:", error);
+      }
+    };
+    fetchOfferingDetails();
+  }, [storeProductId]);
 
   // ============ FETCH INDUSTRIES IF MISSING FROM PARAMS ============
   // Only enable if industries are NOT in params
@@ -316,6 +343,7 @@ const SignupScreen = () => {
     }
   };
 
+
   // ============ HANDLE SIGNUP & PAYMENT ============
   const handleSignup = async () => {
     if (!validateForm()) return;
@@ -323,19 +351,7 @@ const SignupScreen = () => {
     setIsProcessing(true);
 
     try {
-      // 1. Check if we can bypass IAP with promo code
-      const canBypassIAP = isPromoVerified && promoData && !promoData.iap_required;
-
-      if (!canBypassIAP) {
-        // 2. Trigger RevenueCat Purchase
-        const purchaseSuccess = await performPurchase();
-        if (!purchaseSuccess) {
-          setIsProcessing(false);
-          return;
-        }
-      }
-
-      // 3. Register user in our backend
+      // 1. Prepare registration data
       const registrationData: RegisterRequest = {
         first_name: firstName.trim(),
         middle_name: middleName.trim() || undefined,
@@ -357,25 +373,58 @@ const SignupScreen = () => {
         enterprise: registrationData.enterprise
       });
 
-      register(registrationData, {
-        onSuccess: (data) => {
+      // 2. Register user FIRST & await result
+      const registerResponse = await registerAsync(registrationData);
+
+      if (!registerResponse || !registerResponse.status || !registerResponse.data?.user?.id) {
+        throw new Error(registerResponse?.message || "Registration failed to return user ID.");
+      }
+
+      const userId = registerResponse.data.user.id;
+      const rcUserId = registerResponse.data.user.rc_app_user_id;
+      console.log(`rcUserId: ${rcUserId}`);
+      console.log(`✅ User registered successfully. ID: ${userId}, RC ID: ${rcUserId}`);
+
+      // 3. Identify user in RevenueCat
+      const identifyId = rcUserId ? rcUserId : userId.toString();
+      console.log(`👤 Identifying user in RevenueCat: ${identifyId}`);
+      await Purchases.logIn(identifyId);
+      console.log("✅ RevenueCat identification successful");
+
+      // 4. Check if we can bypass IAP with promo code
+      const canBypassIAP = isPromoVerified && promoData && !promoData.iap_required;
+
+      if (!canBypassIAP) {
+        // 5. Trigger RevenueCat Purchase (now associated with the correct user ID)
+        const purchaseSuccess = await performPurchase();
+        if (!purchaseSuccess) {
           setIsProcessing(false);
+          // Note: User is already registered at this point. 
+          // You might want to handle this case (e.g., allow them to login but restrict access)
           Alert.alert(
-            "Welcome!",
-            "Account created successfully. Please verify from email and login to get started.",
-            [{ text: "Login", onPress: () => router.replace("/(auth)/login") }]
+            "Purchase Incomplete",
+            "Your account has been created, but the subscription purchase was not completed. You can login and retry the subscription."
           );
-        },
-        onError: (error) => {
-          setIsProcessing(false);
-          Alert.alert("Registration Error", error.message);
+          router.replace("/(auth)/login");
+          return;
         }
-      });
+      }
+
+      // 6. Success - Navigate to login
+      setIsProcessing(false);
+      Alert.alert(
+        "Welcome!",
+        "Account created successfully. Please verify from email and login to get started.",
+        [{ text: "Login", onPress: () => router.replace("/(auth)/login") }]
+      );
 
     } catch (error: any) {
-      console.error("❌ Refined Signup Error:", error);
-      Alert.alert("Error", "An unexpected error occurred. Please try again.");
+      console.error("❌ Signup Flow Error:", error);
       setIsProcessing(false);
+
+      // If error came from registration, show that message
+      const errorMessage = error.message || "An unexpected error occurred. Please try again.";
+      Alert.alert("Registration Error", errorMessage);
     }
   };
 
@@ -416,7 +465,10 @@ const SignupScreen = () => {
                   <View style={styles.planBadge}>
                     <Ionicons name="checkmark-circle" size={16} color="#10B981" />
                     <Text style={styles.planBadgeText}>
-                      {planName} - ${price}/{billingCycle === "month" ? "mo" : "yr"}
+                      {/* If we have RC data, use that. Otherwise fallback to params */}
+                      {rcPackage ? rcPackage.product.title : planName} -{" "}
+                      {rcPackage ? rcPackage.product.priceString : `$${price}`}
+                      /{billingCycle === "month" ? "mo" : "yr"}
                     </Text>
                   </View>
 
