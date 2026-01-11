@@ -4,19 +4,12 @@ import {
     getYearlyProduct
 } from '@/api/settings/useGetPlansv2';
 import { useGetUserPlan } from '@/api/settings/useGetUserPlan';
-import Purchases from 'react-native-purchases';
-
-
-
 import { TabHeader } from '@/components/TabHeader';
 import { useAuthStore } from '@/store/authStore';
-
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useEffect, useMemo, useState } from 'react';
-
-
 import { useRouter } from 'expo-router';
+import { useEffect, useMemo, useState } from 'react';
 import {
     ActivityIndicator,
     Alert,
@@ -27,6 +20,7 @@ import {
     TouchableOpacity,
     View,
 } from 'react-native';
+import Purchases from 'react-native-purchases';
 
 
 
