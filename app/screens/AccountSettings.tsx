@@ -22,8 +22,9 @@ import {
 import { InvoicesSection } from "@/components/InvoiceSection";
 import { TabHeader } from "@/components/TabHeader";
 import { IndustryBottomSheet } from "@/components/ui/IndustryModal";
+import { useAuthStore } from "@/store/authStore";
 import { Ionicons } from "@expo/vector-icons";
-import { useEffect, useState } from "react"; // Component state and effects
+import { useEffect, useState } from "react";
 
 import {
   ActivityIndicator,
@@ -39,6 +40,9 @@ import {
 // ============ SUBSCRIPTION SIMPLE PICKER ============
 
 const AccountSettingsScreen = () => {
+  const { subscription } = useAuthStore();
+  const isIndustryLocked = subscription?.app_plan_id === 3;
+
   // ============ PERSONAL INFO STATE ============
   const [companyName, setCompanyName] = useState("");
   const [department, setDepartment] = useState("");
@@ -481,14 +485,38 @@ const AccountSettingsScreen = () => {
             <View style={styles.inputGroup}>
               <Text style={styles.label}>Industry</Text>
               <TouchableOpacity
-                style={styles.selectInput}
-                onPress={() => setShowIndustryModal(true)}
+                style={[
+                  styles.selectInput,
+                  isIndustryLocked && styles.selectInputDisabled
+                ]}
+                onPress={() => {
+                  if (isIndustryLocked) {
+                    // Alert.alert(
+                    //   "Industry Locked",
+                    //   "The industry is locked for the Home & Family plan. Please upgrade your plan to change the industry."
+                    // );
+                    return;
+                  }
+                  setShowIndustryModal(true);
+                }}
               >
-                <Text style={styles.selectText}>
+                <Text style={[
+                  styles.selectText,
+                  isIndustryLocked && styles.selectTextDisabled
+                ]}>
                   {industry || "Select Industry"}
                 </Text>
-                <Ionicons name="chevron-down" size={20} color="#9A1B2B" />
+                <Ionicons
+                  name={isIndustryLocked ? "lock-closed" : "chevron-down"}
+                  size={20}
+                  color={isIndustryLocked ? "#9CA3AF" : "#9A1B2B"}
+                />
               </TouchableOpacity>
+              {isIndustryLocked && (
+                <Text style={styles.lockedHint}>
+                  Locked for Home & Family plan
+                </Text>
+              )}
             </View>
 
             <View style={styles.divider} />
@@ -1316,11 +1344,26 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     backgroundColor: "#F9FAFB",
   },
+  selectInputDisabled: {
+    backgroundColor: "#F3F4F6",
+    borderColor: "#D1D5DB",
+    opacity: 0.8,
+  },
   selectText: {
     fontSize: 15,
     color: "#1F2937",
     fontWeight: "600",
     flex: 1,
+  },
+  selectTextDisabled: {
+    color: "#9CA3AF",
+  },
+  lockedHint: {
+    fontSize: 12,
+    color: "#6B7280",
+    marginTop: 4,
+    fontStyle: "italic",
+    marginLeft: 4,
   },
   debugText: {
     fontSize: 11,
