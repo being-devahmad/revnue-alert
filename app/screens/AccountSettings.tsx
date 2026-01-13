@@ -40,8 +40,7 @@ import {
 // ============ SUBSCRIPTION SIMPLE PICKER ============
 
 const AccountSettingsScreen = () => {
-  const { subscription } = useAuthStore();
-  const isIndustryLocked = subscription?.app_plan_id === 3;
+  const { user, subscription } = useAuthStore();
 
   // ============ PERSONAL INFO STATE ============
   const [companyName, setCompanyName] = useState("");
@@ -104,6 +103,8 @@ const AccountSettingsScreen = () => {
     isLoading: isLoadingProfile,
     error: profileError,
   } = useGetUserDetails();
+
+  const isIndustryLocked = profileData?.home_and_family === true;
 
   useIndustries(); // ← populates industriesMapCache automatically
 
@@ -461,11 +462,15 @@ const AccountSettingsScreen = () => {
             <View style={styles.inputGroup}>
               <Text style={styles.label}>Company Name</Text>
               <TextInput
-                style={styles.input}
+                style={[
+                  styles.input,
+                  isIndustryLocked && styles.inputDisabled
+                ]}
                 value={companyName}
                 onChangeText={setCompanyName}
                 placeholder="Enter company name"
                 placeholderTextColor="#D1D5DB"
+                editable={!isIndustryLocked}
               />
             </View>
 
@@ -473,11 +478,15 @@ const AccountSettingsScreen = () => {
             <View style={styles.inputGroup}>
               <Text style={styles.label}>Branch Name / Department</Text>
               <TextInput
-                style={styles.input}
+                style={[
+                  styles.input,
+                  isIndustryLocked && styles.inputDisabled
+                ]}
                 value={department}
                 onChangeText={setDepartment}
                 placeholder="Enter department"
                 placeholderTextColor="#D1D5DB"
+                editable={!isIndustryLocked}
               />
             </View>
 
@@ -1332,6 +1341,11 @@ const styles = StyleSheet.create({
     color: "#1F2937",
     backgroundColor: "#F9FAFB",
     fontWeight: "500",
+  },
+  inputDisabled: {
+    backgroundColor: "#F3F4F6",
+    borderColor: "#D1D5DB",
+    color: "#9CA3AF",
   },
   selectInput: {
     flexDirection: "row",

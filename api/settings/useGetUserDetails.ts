@@ -37,6 +37,7 @@ export interface UserProfile {
 
 export interface UserProfileResponse {
   status: boolean;
+  home_and_family?: boolean;
   user: UserProfile;
 }
 
@@ -65,8 +66,7 @@ export interface FormattedUserProfile {
   subscriptionEndsAt: string | null;
 }
 
-// ============ INDUSTRIES MAP CACHE ============
-// ✅ Module-level cache - reuses data from useIndustries API
+// ============ INDUSTRIES MAP CACHE ==============
 let industriesMapCache: Map<number, string> = new Map();
 
 /**
@@ -106,6 +106,8 @@ const fetchUserProfile = async (): Promise<UserProfileResponse> => {
     const response = await axiosInstance.get<UserProfileResponse>(
       '/user'
     );
+
+    console.log('user--->', response.data);
 
     console.log('✅ User profile fetched:', {
       userId: response.data.user.id,
