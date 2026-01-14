@@ -3,10 +3,6 @@ import {
   getIndustryName,
   useGetUserDetails
 } from "@/api/settings/useGetUserDetails";
-// import {
-//   useChangePlan,
-//   usePlans
-// } from "@/api/settings/usePlans";
 
 import {
   getPasswordStrength,
@@ -22,7 +18,6 @@ import {
 import { InvoicesSection } from "@/components/InvoiceSection";
 import { TabHeader } from "@/components/TabHeader";
 import { IndustryBottomSheet } from "@/components/ui/IndustryModal";
-import { useAuthStore } from "@/store/authStore";
 import { Ionicons } from "@expo/vector-icons";
 import { useEffect, useState } from "react";
 
@@ -40,7 +35,6 @@ import {
 // ============ SUBSCRIPTION SIMPLE PICKER ============
 
 const AccountSettingsScreen = () => {
-  const { user, subscription } = useAuthStore();
 
   // ============ PERSONAL INFO STATE ============
   const [companyName, setCompanyName] = useState("");
@@ -55,29 +49,6 @@ const AccountSettingsScreen = () => {
   const [city, setCity] = useState("");
   const [state, setState] = useState("");
   const [zipCode, setZipCode] = useState("");
-
-  // ============ BILLING STATE (Commented out) ============
-  /*
-  const [subscriptionPlan, setSubscriptionPlan] = useState("");
-  const [subscriptionStatus, setSubscriptionStatus] = useState("");
-  const [cardNumber, setCardNumber] = useState("");
-  const [cvc, setCvc] = useState("");
-  const [cardToken, setCardToken] = useState(""); // For Stripe token
-  const [couponCode, setCouponCode] = useState("");
-  const [isEditingCard, setIsEditingCard] = useState(false);
-  const [isTokenizingCard, setIsTokenizingCard] = useState(false);
-  const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null);
-  const [showPlanConfirm, setShowPlanConfirm] = useState(false);
-  const [cardComplete, setCardComplete] = useState(false);
-  const [cardDetails, setCardDetails] = useState<any>(null);
-  const [isPlansDropdownOpen, setIsPlansDropdownOpen] = useState(false);
-
-  const [savedCard, setSavedCard] = useState({
-    lastFour: "",
-    expiration: "",
-    brand: "",
-  });
-  */
 
   // ============ PASSWORD STATE ============
   const [currentPassword, setCurrentPassword] = useState("");
@@ -94,8 +65,6 @@ const AccountSettingsScreen = () => {
 
   // ============ MODAL STATES ============
   const [showIndustryModal, setShowIndustryModal] = useState(false);
-  // const [showSubscriptionModal, setShowSubscriptionModal] = useState(false);
-
 
   // ============ USER PROFILE API ============
   const {
@@ -114,46 +83,6 @@ const AccountSettingsScreen = () => {
     isSuccess: isProfileUpdateSuccess,
     isError: isProfileUpdateError,
   } = useUpdateUserProfile();
-
-  /*
-  const { data: plansData, isLoading } = usePlans();
-
-  // Filter out duplicate plans (same name + amount + interval)
-  const uniquePlans = useMemo(() => {
-    if (!plansData?.data?.plans) return [];
-
-    const seen = new Set();
-    return plansData.data.plans.filter((plan: any) => {
-      const key = `${plan.name}-${plan.amount}-${plan.interval}`;
-      if (seen.has(key)) return false;
-      seen.add(key);
-      return true;
-    });
-  }, [plansData?.data?.plans]);
-
-  const discountLabel = getDiscountLabel(plansData?.data);
-
-  const currentPlan = useMemo(() => {
-    if (selectedPlanId && plansData?.data?.plans) {
-      const selected = plansData.data.plans.find((p: any) => p.id === selectedPlanId);
-      if (selected) return selected;
-    }
-    return plansData?.data?.current_plan;
-  }, [selectedPlanId, plansData?.data?.plans, plansData?.data?.current_plan]);
-
-  console.log('current-plan-->', currentPlan)
-
-  const formattedPrice = ((currentPlan?.amount ?? 0) / 100).toFixed(2);
-  const currentPlanDisplayName = discountLabel
-    ? `${currentPlan?.name} - $${formattedPrice} (${discountLabel})`
-    : `${currentPlan?.name} - $${formattedPrice}`;
-
-
-
-  const { mutate: changeplanMutate, isPending: isChangingPlan } =
-    useChangePlan();
-  */
-
 
   // ============ API INTEGRATION ============
   const { mutate: updatePasswordMutate, isPending: isUpdatingPassword } =
@@ -199,44 +128,9 @@ const AccountSettingsScreen = () => {
         `✅ Industry loaded: ${industryName} (ID: ${industryIdFromProfile})`
       );
 
-      // Billing Info (Commented out)
-      // const planName = getSubscriptionPlanName(profileData.user.stripe_plan);
-      // setSubscriptionPlan(planName);
-
-      // Custom Subscription Status Logic
-      // let statusDisplay = "Inactive";
-      // if (profileData.user.stripe_active === 1) {
-      //   statusDisplay = "Active";
-      // }
-
-      // const trialEnd = profileData.user.trial_ends_at ? new Date(profileData.user.trial_ends_at) : null;
-      // if (trialEnd && trialEnd > new Date()) {
-      //   const dateStr = trialEnd.toLocaleDateString("en-US", {
-      //     month: "short",
-      //     day: "numeric",
-      //     year: "numeric",
-      //   });
-      //   statusDisplay = `Trial Period (Expires: ${dateStr})`;
-      // }
-
-      // setSubscriptionStatus(statusDisplay);
-
-      // Card Info
-      // const cardFromPlans = plansData?.data?.card;
-      // const lastFour = cardFromPlans?.last4 || profileData.user.last_four || "";
-      // const brand = cardFromPlans?.brand || "";
-
-      // setSavedCard({
-      //   lastFour: lastFour,
-      //   expiration: "**/**",
-      //   brand: brand
-      // });
-
       console.log("✅ Profile data loaded successfully");
     }
   }, [profileData]);
-
-
 
   // Show error message when profile update fails
   useEffect(() => {
@@ -244,9 +138,6 @@ const AccountSettingsScreen = () => {
       console.log("❌ Profile update failed");
     }
   }, [isProfileUpdateError]);
-
-  // ============ SETTINGS DATA ============
-  const subscriptionOptions = ["Free", "Basic", "Standard", "Enterprise"];
 
   // ============ HANDLERS ============
   const handleSavePersonalInfo = () => {
@@ -275,35 +166,6 @@ const AccountSettingsScreen = () => {
       onError: (err: any) => Alert.alert("Error", formatErrorMessage(err)),
     });
   };
-
-  // const handleSaveBilling = () => {
-  //   Alert.alert("Success", "Billing information saved successfully!");
-  //   setIsEditingCard(false);
-  // };
-
-  // const handleSaveCard = () => {
-  //   if (!cardNumber || !cvc || !expirationMonth || !expirationYear) {
-  //     Alert.alert("Error", "Please fill in all card details");
-  //     return;
-  //   }
-  //   Alert.alert("Success", "Payment card updated successfully!");
-  //   setCardNumber("");
-  //   setCvc("");
-  //   setExpirationMonth("");
-  //   setExpirationYear("");
-  //   setIsEditingCard(false);
-  // };
-
-  // const handleCancelSubscription = () => {
-  //   Alert.alert(
-  //     "Cancel Subscription",
-  //     "Are you sure you want to cancel your subscription?",
-  //     [
-  //       { text: "No", style: "cancel" },
-  //       { text: "Yes, Cancel", style: "destructive" },
-  //     ]
-  //   );
-  // };
 
   const handleChangePassword = async () => {
     // Reset error
@@ -422,19 +284,7 @@ const AccountSettingsScreen = () => {
           onClose={() => setShowIndustryModal(false)}
           title="Select Industry"
         />
-
       }
-      {/* Subscription Simple Picker Modal - Commented out */}
-      {/* 
-      <SubscriptionPicker
-        visible={showSubscriptionModal}
-        options={subscriptionOptions}
-        selectedValue={subscriptionPlan}
-        onSelect={setSubscriptionPlan}
-        onClose={() => setShowSubscriptionModal(false)}
-      /> 
-      */}
-
 
       {/* Header with Gradient */}
       <TabHeader
@@ -500,10 +350,6 @@ const AccountSettingsScreen = () => {
                 ]}
                 onPress={() => {
                   if (isIndustryLocked) {
-                    // Alert.alert(
-                    //   "Industry Locked",
-                    //   "The industry is locked for the Home & Family plan. Please upgrade your plan to change the industry."
-                    // );
                     return;
                   }
                   setShowIndustryModal(true);
@@ -660,314 +506,6 @@ const AccountSettingsScreen = () => {
             </TouchableOpacity>
           </View>
         </View>
-
-        {/* Billing Section */}
-        {/* <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <View style={styles.iconCircle}>
-              <Ionicons name="card-outline" size={20} color="#FFFFFF" />
-            </View>
-            <Text style={styles.sectionTitle}>Billing</Text>
-          </View>
-
-          <View style={styles.card}>
-            {isLoadingPlans ? (
-              <View style={{ padding: 20, alignItems: "center" }}>
-                <ActivityIndicator color="#9A1B2B" />
-              </View>
-            ) : (
-              <>
-                <TouchableOpacity
-                  style={styles.dropdownButton}
-                  onPress={() => setIsPlansDropdownOpen(prev => !prev)}
-                >
-                  <Text style={styles.dropdownButtonText}>
-                    {currentPlanDisplayName || "Select Plan"}
-                  </Text>
-                  <Ionicons
-                    name={isPlansDropdownOpen ? "chevron-up" : "chevron-down"}
-                    size={20}
-                    color="#6B7280"
-                  />
-                </TouchableOpacity>
-                {isPlansDropdownOpen && (
-                  <View style={styles.dropdownList}>
-                    {uniquePlans.map((plan: any) => {
-                      const isCurrent = plan.id === profileData?.user?.stripe_plan;
-                      const amount = (plan.amount / 100).toFixed(2);
-
-                      let displayName = `${plan.name} - ${amount} $`;
-
-                      if (plan.on_full_discount) {
-                        displayName += " — 100% off (Forever)";
-                      } else if (plan.discount_ends_at) {
-                        const date = new Date(plan.discount_ends_at).toLocaleDateString();
-                        displayName += ` — ${plan.discount_description || "Discount"} (Expires: ${date})`;
-                      }
-
-                      return (
-                        <TouchableOpacity
-                          key={plan.id}
-                          style={[
-                            styles.planOption,
-                            plan.id === selectedPlanId && styles.planOptionSelected,
-                          ]}
-                          onPress={() => {
-                            setSelectedPlanId(plan.id);
-                            setIsPlansDropdownOpen(false);
-                            // setShowPlanConfirm(true); // Disable API confirmation for now
-                          }}
-                        >
-                          <Text style={styles.planName}>{displayName}</Text>
-                          {isCurrent && (
-                            <Ionicons name="checkmark-circle" size={24} color="#10B981" />
-                          )}
-                        </TouchableOpacity>
-                      );
-                    })}
-                  </View>
-                )}
-
-              </>
-            )}
-
-            <View style={styles.divider} />
-
-            <View style={styles.inputGroup}>
-              <Text style={styles.label}>Subscription Status</Text>
-              <View style={styles.statusContainer}>
-                <View style={styles.statusBadge}>
-                  <Ionicons name="checkmark-circle" size={18} color="#10B981" />
-                  <Text style={styles.statusText}>{subscriptionStatus}</Text>
-                </View>
-                <TouchableOpacity
-                  style={styles.cancelButton}
-                  onPress={() => {
-                    Alert.alert(
-                      "Cancel Subscription",
-                      "This feature is not available in the mobile app. To cancel your subscription, please log in through the web portal",
-                      [{ text: "OK", style: "default" }]
-                    );
-                  }}
-                >
-                  <Text style={styles.cancelButtonText}>Cancel</Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-
-            <View style={styles.divider} />
-            <View style={styles.inputGroup}>
-              <Text style={styles.label}>Payment Method</Text>
-              <View style={styles.cardDisplayContainer}>
-                <Text style={styles.cardDisplayText}>
-                  {savedCard.lastFour
-                    ? `•••• •••• •••• ${savedCard.lastFour}`
-                    : "No card on file"}
-                </Text>
-                <TouchableOpacity
-                  style={styles.editCardButton}
-                  onPress={() => {
-                    Alert.alert(
-                      "Payment Method",
-                      "This feature is currently not available in the mobile app. To update your card information, please log in through the web portal.",
-                      [{ text: "OK", style: "default" }]
-                    );
-                  }}
-                >
-                  <Ionicons name="pencil" size={18} color="#FFFFFF" />
-                </TouchableOpacity>
-              </View>
-            </View>
-
-            <Modal visible={isEditingCard} transparent animationType="slide">
-              <View style={styles.modalOverlay}>
-                <View style={styles.modalContent}>
-                  <Text style={styles.modalTitle}>Update Payment Method</Text>
-
-                  <CardField
-                    postalCodeEnabled={false}
-                    placeholders={{ number: "4242 4242 4242 4242" }}
-                    cardStyle={{
-                      backgroundColor: "#333333",
-                      borderColor: "#E5E7EB",
-                      borderWidth: 1.5,
-                      borderRadius: 12,
-                    }}
-                    style={{
-                      width: "100%",
-                      height: 50,
-                      marginVertical: 20,
-                    }}
-                    onCardChange={(cardDetails) => {
-                      setCardComplete(cardDetails.complete);
-                      setCardDetails(cardDetails);
-                    }}
-                  />
-
-                  <View style={styles.cardActionButtons}>
-                    <TouchableOpacity
-                      style={styles.cancelCardButton}
-                      onPress={() => {
-                        setIsEditingCard(false);
-                        setCardComplete(false);
-                      }}
-                    >
-                      <Text style={styles.cancelCardButtonText}>Cancel</Text>
-                    </TouchableOpacity>
-
-                    <TouchableOpacity
-                      style={[
-                        styles.saveCardButton,
-                        !cardComplete && { opacity: 0.6 },
-                      ]}
-                      disabled={!cardComplete || isChangingPlan}
-                      onPress={async () => {
-                        if (!cardComplete || !cardDetails) return;
-
-                        setIsTokenizingCard(true);
-                        try {
-                          const { token, error } = await createToken({
-                            ...cardDetails,
-                            type: "card",
-                          });
-
-                          if (error) throw error;
-
-                          // Call your update card API
-                          // await updateCard(token.id);
-
-                          Alert.alert("Success", "Card updated successfully!");
-                          setIsEditingCard(false);
-                          // Refresh user data if needed
-                        } catch (err: any) {
-                          Alert.alert(
-                            "Error",
-                            err.message || "Failed to update card"
-                          );
-                        } finally {
-                          setIsTokenizingCard(false);
-                        }
-                      }}
-                    >
-                      {isChangingPlan ? (
-                        <ActivityIndicator color="#FFF" />
-                      ) : (
-                        <Text style={styles.saveCardButtonText}>Save Card</Text>
-                      )}
-                    </TouchableOpacity>
-                  </View>
-                </View>
-              </View>
-            </Modal>
-
-            <View style={styles.divider} />
-
-            <View style={styles.inputGroup}>
-              <View style={styles.labelWithIcon}>
-                <Text style={[styles.label, { marginBottom: 0 }]}>
-                  Coupon Code
-                </Text>
-                <Ionicons
-                  name="information-circle-outline"
-                  size={16}
-                  color="#9A1B2B"
-                />
-              </View>
-              <View style={{ flexDirection: "row", gap: 10 }}>
-                <TextInput
-                  style={[styles.input, { flex: 1 }]}
-                  value={couponCode}
-                  onChangeText={setCouponCode}
-                  placeholder="Enter coupon code"
-                  placeholderTextColor="#D1D5DB"
-                  autoCapitalize="characters"
-                />
-                <TouchableOpacity
-                  style={styles.applyCouponButton}
-                  // onPress={async () => {
-                  //   if (!couponCode) return;
-                  //   // Simulate applying coupon (your backend should validate)
-                  //   Alert.alert("Success", `Coupon "${couponCode}" applied!`);
-                  //   // Refresh plans to show discount
-                  //   // refetchPlans();
-                  // }}
-
-                  onPress={() => {
-                    if (!couponCode) return;
-                    Alert.alert(
-                      "Apply Coupon Code",
-                      "This feature is not available in the mobile app. To apply coupon code, please log in through the web portal",
-                      [{ text: "OK", style: "default" }]
-                    );
-                  }}
-                >
-                  <Text style={styles.applyCouponText}>Apply</Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-
-            <TouchableOpacity
-              style={styles.applyCouponButton}
-              onPress={() => {
-                Alert.alert(
-                  "Chnage Subscription Plan",
-                  "This feature is currently not available in the mobile app. To change your subscription, please log in through the web portal.",
-                  [{ text: "OK", style: "default" }]
-                );
-              }}
-            >
-              <Text style={[styles.applyCouponText, { textAlign: 'center' }]}>Submit</Text>
-            </TouchableOpacity>
-
-            <Modal visible={showPlanConfirm} transparent>
-              <View style={styles.modalOverlay}>
-                <View style={styles.modalContent}>
-                  <Text style={styles.modalTitle}>Confirm Plan Change</Text>
-                  <Text style={{ marginVertical: 20, textAlign: "center" }}>
-                    Switch to this plan now?
-                  </Text>
-                  <View style={styles.cardActionButtons}>
-                    <TouchableOpacity
-                      style={styles.cancelCardButton}
-                      onPress={() => setShowPlanConfirm(false)}
-                    >
-                      <Text style={styles.cancelCardButtonText}>Cancel</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                      style={styles.saveCardButton}
-                      onPress={async () => {
-                        setShowPlanConfirm(false);
-                        changeplanMutate(
-                          {
-                            plan_id: selectedPlanId!,
-                            payment_method_token: cardToken || undefined, // reuse saved or new
-                            coupon: couponCode || undefined,
-                          },
-                          {
-                            onSuccess: () => {
-                              Alert.alert(
-                                "Success",
-                                "Plan updated successfully!"
-                              );
-                            },
-                            onError: (err: any) => {
-                              Alert.alert(
-                                "Error",
-                                err.message || "Failed to change plan"
-                              );
-                            },
-                          }
-                        );
-                      }}
-                    >
-                      <Text style={styles.saveCardButtonText}>Confirm</Text>
-                    </TouchableOpacity>
-                  </View>
-                </View>
-              </View>
-            </Modal>
-          </View>
-        </View> */}
 
         {/* Security Section */}
         <View style={styles.section}>

@@ -8,11 +8,13 @@ export const TabHeader = ({
     subtitle,
     isChild,
     isDelete,
+    rightElement,
 }: {
     title: string;
     subtitle?: string;
     isChild?: boolean;
     isDelete?: boolean;
+    rightElement?: React.ReactNode;
 }) => {
     const router = useRouter();
 
@@ -56,6 +58,13 @@ export const TabHeader = ({
                         {subtitle && <Text style={styles.headerSubtitle}>{subtitle}</Text>}
                     </View>
 
+                    {/* RIGHT ELEMENT (RESTORE, ETC) */}
+                    {rightElement && (
+                        <View style={styles.rightElementContainer}>
+                            {rightElement}
+                        </View>
+                    )}
+
                     {/* DELETE BUTTON */}
                     {isDelete && (
                         <TouchableOpacity
@@ -78,11 +87,14 @@ export const TabHeader = ({
 const styles = StyleSheet.create({
     headerContainer: {
         overflow: "hidden",
+        borderBottomLeftRadius: 30,
+        borderBottomRightRadius: 30,
+        backgroundColor: "#F3F4F6",
     },
     headerGradient: {
-        paddingTop: 60,
-        paddingBottom: 24,
-        paddingHorizontal: 20,
+        paddingTop: 64,
+        paddingBottom: 32,
+        paddingHorizontal: 24,
     },
     headerContent: {
         flexDirection: "row",
@@ -91,49 +103,52 @@ const styles = StyleSheet.create({
     },
 
     backButton: {
-        width: 40,
-        height: 40,
-        borderRadius: 20,
-        backgroundColor: "rgba(255,255,255,0.15)",
+        width: 44,
+        height: 44,
+        borderRadius: 22,
+        backgroundColor: "rgba(255,255,255,0.2)",
         justifyContent: "center",
         alignItems: "center",
         borderWidth: 1,
-        borderColor: "rgba(255,255,255,0.25)",
+        borderColor: "rgba(255,255,255,0.3)",
         shadowColor: "#000",
-        shadowOpacity: 0.2,
-        shadowOffset: { width: 0, height: 2 },
-        shadowRadius: 4,
+        shadowOpacity: 0.15,
+        shadowOffset: { width: 0, height: 4 },
+        shadowRadius: 8,
     },
 
     titleWrapper: {
         flex: 1,
-        marginLeft: 6,
+        marginLeft: 12,
     },
     headerTitle: {
-        fontSize: 32,
-        fontWeight: "800",
+        fontSize: 28,
+        fontWeight: "900",
         color: "#FFFFFF",
         letterSpacing: -0.5,
     },
     headerSubtitle: {
-        fontSize: 15,
-        color: "rgba(255, 255, 255, 0.8)",
+        fontSize: 14,
+        color: "rgba(255, 255, 255, 0.85)",
         marginTop: 4,
+        fontWeight: "500",
         textAlign: "left",
     },
     deleteButton: {
-        width: 40,
-        height: 40,
-        borderRadius: 20,
-        backgroundColor: "rgba(255,255,255,0.15)",
+        width: 44,
+        height: 44,
+        borderRadius: 22,
+        backgroundColor: "rgba(255,255,255,0.2)",
         justifyContent: "center",
         alignItems: "center",
         borderWidth: 1,
-        borderColor: "rgba(255,255,255,0.25)",
+        borderColor: "rgba(255,255,255,0.3)",
         shadowColor: "#000",
-        shadowOpacity: 0.2,
-        shadowOffset: { width: 0, height: 2 },
-        shadowRadius: 4,
+        shadowOpacity: 0.15,
+        shadowOffset: { width: 0, height: 4 },
+        shadowRadius: 8,
     },
-
+    rightElementContainer: {
+        marginLeft: 12,
+    },
 });

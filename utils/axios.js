@@ -3,7 +3,7 @@ import axios from "axios";
 
 // Get API URL from environment
 const API_BASE_URL = process.env.EXPO_PUBLIC_DEVELOPMENT_API_URL
-  || "https://renewalert.com/api";
+  || "https://development.renewalert.com/api";
 
 
 const axiosInstance = axios.create({
@@ -20,8 +20,6 @@ axiosInstance.interceptors.request.use(
     try {
       // Get FULL token from AsyncStorage (including the 26| prefix)
       const token = await AsyncStorage.getItem("authToken");
-
-
 
       // If token exists, add it to headers
       // For Laravel Sanctum: use the FULL token including 26| prefix

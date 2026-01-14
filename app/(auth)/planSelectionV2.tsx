@@ -44,17 +44,64 @@ const PlanSelectionV2Screen = () => {
     // Get sorted plans
     const plans = plansData?.data ? sortPlansByTier(plansData.data) : [];
 
+    // Get plan features based on tier
+    const getPlanFeatures = (code: string): { included: string[]; notIncluded: string[] } => {
+        switch (code) {
+            case 'home_family':
+                return {
+                    included: [
+                        'Personal and household reminder management',
+                        'Track home-related subscriptions (streaming services, utilities, etc.)',
+                        'Bill and renewal reminders',
+                        'Simple, family-friendly usage',
+                        'Individual reminder control',
+                    ],
+                    notIncluded: [
+                        'Business or organizational use',
+                        'Team or multi-user management',
+                        'Enterprise or admin-controlled features',
+                    ],
+                };
+            case 'standard':
+                return {
+                    included: [
+                        'Full core reminder & tracking access',
+                        'Suitable for business use',
+                        'Unlimited reminders',
+                        'Track business deadlines',
+                        'Custom notification schedules',
+                        'Reliable delivery',
+                    ],
+                    notIncluded: [
+                        'Team account management',
+                        'Admin-level controls',
+                    ],
+                };
+            case 'enterprise':
+                return {
+                    included: [
+                        'All core app features',
+                        'Across all industries',
+                        'Centralized reminder management',
+                    ],
+                    notIncluded: [],
+                };
+            default:
+                return { included: [], notIncluded: [] };
+        }
+    };
+
     // Get plan description based on code
     const getPlanDescription = (code: string): string => {
         switch (code) {
             case 'home_family':
-                return 'Perfect for personal use and families';
+                return 'Best for personal and household use';
             case 'standard':
-                return 'Best for professionals and small teams';
+                return 'Best for businesses and professionals';
             case 'enterprise':
-                return 'For large organizations with advanced needs';
+                return 'Best for organizations and teams';
             default:
-                return 'Choose the plan that fits your needs';
+                return '';
         }
     };
 
@@ -325,13 +372,47 @@ const PlanSelectionV2Screen = () => {
                                     </Text>
                                 </View>
 
-                                <View style={styles.priceContainer}>
-                                    <Text style={styles.priceAmount}>
-                                        {formatPrice(product.price, product.currency)}
-                                        <Text style={styles.pricePeriod}>
-                                            {billingCycle === 'monthly' ? '/ month' : '/ year'}
+                                {/* Features List */}
+                                <View style={styles.featuresContainer}>
+                                    <Text style={styles.featureSectionTitle}>What's Included</Text>
+                                    {getPlanFeatures(plan.code).included.map((feature, idx) => (
+                                        <View key={`inc-${idx}`} style={styles.featureRow}>
+                                            <Ionicons name="checkmark-circle" size={14} color="#10B981" />
+                                            <Text style={styles.featureText}>{feature}</Text>
+                                        </View>
+                                    ))}
+
+                                    {getPlanFeatures(plan.code).notIncluded.length > 0 && (
+                                        <>
+                                            <Text style={styles.featureSectionTitle}>What's Not Included</Text>
+                                            {getPlanFeatures(plan.code).notIncluded.map((feature, idx) => (
+                                                <View key={`ni-${idx}`} style={styles.featureRow}>
+                                                    <Ionicons name="close-circle" size={14} color="#9CA3AF" />
+                                                    <Text style={styles.notIncludedText}>{feature}</Text>
+                                                </View>
+                                            ))}
+                                        </>
+                                    )}
+
+                                    {plan.code === 'enterprise' && (
+                                        <Text style={styles.enterpriseNote}>
+                                            Note: Multi-user features may require admin approval.
                                         </Text>
-                                    </Text>
+                                    )}
+                                </View>
+
+                                <View style={styles.priceContainer}>
+                                    <View>
+                                        <Text style={styles.priceAmount}>
+                                            {formatPrice(product.price, product.currency)}
+                                            <Text style={styles.pricePeriod}>
+                                                {billingCycle === 'monthly' ? '/ month' : '/ year'}
+                                            </Text>
+                                        </Text>
+                                        <Text style={styles.validityInfo}>
+                                            Valid till {billingCycle === 'monthly' ? '30 Days' : '12 Months'}
+                                        </Text>
+                                    </View>
                                 </View>
                             </TouchableOpacity>
                         );
@@ -542,6 +623,43 @@ const styles = StyleSheet.create({
         fontWeight: '700',
         color: '#059669',
     },
+    featuresContainer: {
+        marginTop: 12,
+        marginBottom: 16,
+        gap: 8,
+    },
+    featureSectionTitle: {
+        fontSize: 11,
+        fontWeight: '800',
+        color: '#9CA3AF',
+        textTransform: 'uppercase',
+        letterSpacing: 0.5,
+        marginTop: 8,
+        marginBottom: 4,
+    },
+    featureRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 8,
+    },
+    featureText: {
+        fontSize: 13,
+        color: '#4B5563',
+        fontWeight: '500',
+        flex: 1,
+    },
+    notIncludedText: {
+        fontSize: 13,
+        color: '#9CA3AF',
+        fontWeight: '400',
+        flex: 1,
+    },
+    enterpriseNote: {
+        fontSize: 11,
+        color: '#6B7280',
+        fontStyle: 'italic',
+        marginTop: 8,
+    },
     priceContainer: {
         marginBottom: 0,
         paddingTop: 16,
@@ -557,6 +675,12 @@ const styles = StyleSheet.create({
         fontSize: 16,
         fontWeight: '600',
         color: '#6B7280',
+    },
+    validityInfo: {
+        fontSize: 12,
+        color: '#9CA3AF',
+        fontWeight: '600',
+        marginTop: 2,
     },
     continueButton: {
         backgroundColor: '#9A1B2B',

@@ -13,6 +13,7 @@ import { useEffect, useMemo, useState } from 'react';
 import {
     ActivityIndicator,
     Alert,
+    Linking,
     Platform,
     ScrollView,
     StyleSheet,
@@ -186,21 +187,46 @@ const BillingScreen = () => {
         }
     };
 
+    // ============ HANDLE RESTORE PURCHASES ============
+    const handleRestorePurchases = async () => {
+        try {
+            setIsProcessing(true);
+            console.log("🔄 Restoring purchases...");
+            const restore = await Purchases.restorePurchases();
+            console.log("✅ Restore result:", restore);
 
+            // Check if any entitlements are active
+            if (Object.keys(restore.entitlements.active).length > 0) {
+                Alert.alert(
+                    "Success",
+                    "Your purchases have been restored successfully.",
+                    [{ text: "OK", onPress: () => refetchUserPlan() }]
+                );
+            } else {
+                Alert.alert("Restore", "No active subscriptions found for this account.");
+            }
+        } catch (e: any) {
+            console.error("❌ Restore error:", e);
+            Alert.alert("Restore Failed", e.message || "Could not restore purchases");
+        } finally {
+            setIsProcessing(false);
+        }
+    };
 
-
-
+    // Legal link handlers
+    const handleOpenTerms = () => Linking.openURL('https://renewalert.net/support/');
+    const handleOpenPrivacy = () => Linking.openURL('https://renewalert.net/support/');
 
 
     // Plan gradient colors based on tier
     const getPlanGradient = (tierRank: number): readonly [string, string, ...string[]] => {
         switch (tierRank) {
             case 1: // Home & Family
-                return ['#3B82F6', '#2563EB'];
+                return ['#3B82F6', '#1D4ED8']; // Vibrant Blue
             case 2: // Standard
-                return ['#9A1B2B', '#6B1420'];
+                return ['#9A1B2B', '#7F1D1D']; // Deep Crimson
             case 3: // Enterprise
-                return ['#7C3AED', '#6D28D9'];
+                return ['#8B5CF6', '#6D28D9']; // Modern Purple
             default:
                 return ['#6B7280', '#4B5563'];
         }
@@ -208,40 +234,58 @@ const BillingScreen = () => {
 
 
     // Get plan features based on tier
-    const getPlanFeatures = (code: string): string[] => {
+    const getPlanFeatures = (code: string): { included: string[]; notIncluded: string[] } => {
         switch (code) {
             case 'home_family':
-                return [
-                    'Perfect for personal use',
-                    'Unlimited reminders',
-                    'Email notifications',
-                    'Mobile app access',
-                    'Basic analytics',
-                    'Export data (CSV)',
-                ];
+                return {
+                    included: [
+                        'Personal and household reminder management',
+                        'Track home-related subscriptions (e.g., streaming services, utilities, memberships)',
+                        'Bill and renewal reminders',
+                        'Simple, family-friendly usage',
+                        'Individual reminder control',
+                    ],
+                    notIncluded: [
+                        'Business or organizational use',
+                        'Team or multi-user management',
+                        'Enterprise or admin-controlled features',
+                    ],
+                };
             case 'standard':
-                return [
-                    'All Home & Family features',
-                    'Advanced analytics dashboard',
-                    'Priority support',
-                    'Custom categories',
-                    'Team collaboration (up to 3)',
-                    'API access',
-                    'White-label options',
-                ];
+                return {
+                    included: [
+                        'Full access to core reminder and subscription-tracking features',
+                        'Suitable for business use across all industries',
+                        'Create, edit, and manage unlimited reminders',
+                        'Track recurring subscriptions and important business deadlines',
+                        'Custom notification schedules',
+                        'Reliable and consistent reminder delivery',
+                    ],
+                    notIncluded: [
+                        'Team or multi-user account management',
+                        'Sub-account or admin-level controls',
+                        'Enterprise-level organizational workflows',
+                    ],
+                };
             case 'enterprise':
-                return [
-                    'All Standard features',
-                    'Unlimited team members',
-                    'Custom SLA',
-                    'Advanced security',
-                    'SSO integration',
-                    'Dedicated support team',
-                    'Custom training',
-                    'On-premise deployment',
-                ];
+                return {
+                    included: [
+                        'Access to all core app features',
+                        'Designed for organizations across all industries',
+                        'Centralized reminder management',
+                        'Ability to manage reminders for multiple users (team members)',
+                        'Organizational-level usage and workflows',
+                        'Advanced reminder customization',
+                        'Priority support',
+                    ],
+                    notIncluded: [
+                        'No medical, legal, or financial advice',
+                        'No automated decision-making or AI-based recommendations',
+                        'No external account access without user permission',
+                    ],
+                };
             default:
-                return [];
+                return { included: [], notIncluded: [] };
         }
     };
 
@@ -249,11 +293,11 @@ const BillingScreen = () => {
     const getPlanDescription = (code: string): string => {
         switch (code) {
             case 'home_family':
-                return 'Great for individuals and families';
+                return 'Best for personal and household use';
             case 'standard':
-                return 'Best for professionals and small teams';
+                return 'Best for businesses and professionals';
             case 'enterprise':
-                return 'For large organizations';
+                return 'Best for organizations and teams';
             default:
                 return '';
         }
@@ -363,53 +407,55 @@ const BillingScreen = () => {
             >
                 {/* Period Toggle - Hidden for Promo */}
                 {!isPromo && (
-                    <View style={styles.periodToggleContainer}>
-                        <TouchableOpacity
-                            style={[
-                                styles.periodToggle,
-                                selectedPeriod === 'monthly' && styles.periodToggleActive,
-                                currentPeriod === 'yearly' && styles.periodToggleDisabled,
-                            ]}
-                            onPress={() => {
-                                if (currentPeriod === 'yearly') {
-                                    Alert.alert(
-                                        "Downgrade Restricted",
-                                        "You are currently on a yearly plan. Downgrades to monthly plans are not supported inside the app."
-                                    );
-                                    return;
-                                }
-                                setSelectedPeriod('monthly');
-                            }}
-                        >
-                            <Text
+                    <View style={styles.periodToggleOuterContainer}>
+                        <View style={styles.periodToggleContainer}>
+                            <TouchableOpacity
                                 style={[
-                                    styles.periodToggleText,
-                                    selectedPeriod === 'monthly' && styles.periodToggleTextActive,
-                                    currentPeriod === 'yearly' && styles.periodToggleTextDisabled,
+                                    styles.periodToggle,
+                                    selectedPeriod === 'monthly' && styles.periodToggleActive,
+                                    currentPeriod === 'yearly' && styles.periodToggleDisabled,
                                 ]}
+                                onPress={() => {
+                                    if (currentPeriod === 'yearly') {
+                                        Alert.alert(
+                                            "Downgrade Restricted",
+                                            "You are currently on a yearly plan. Downgrades to monthly plans are not supported inside the app."
+                                        );
+                                        return;
+                                    }
+                                    setSelectedPeriod('monthly');
+                                }}
                             >
-                                Monthly
-                            </Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity
-                            style={[
-                                styles.periodToggle,
-                                selectedPeriod === 'yearly' && styles.periodToggleActive,
-                            ]}
-                            onPress={() => setSelectedPeriod('yearly')}
-                        >
-                            <Text
+                                <Text
+                                    style={[
+                                        styles.periodToggleText,
+                                        selectedPeriod === 'monthly' && styles.periodToggleTextActive,
+                                        currentPeriod === 'yearly' && styles.periodToggleTextDisabled,
+                                    ]}
+                                >
+                                    Monthly
+                                </Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity
                                 style={[
-                                    styles.periodToggleText,
-                                    selectedPeriod === 'yearly' && styles.periodToggleTextActive,
+                                    styles.periodToggle,
+                                    selectedPeriod === 'yearly' && styles.periodToggleActive,
                                 ]}
+                                onPress={() => setSelectedPeriod('yearly')}
                             >
-                                Yearly
-                            </Text>
-                            <View style={styles.saveBadge}>
-                                <Text style={styles.saveBadgeText}>Save 17%</Text>
-                            </View>
-                        </TouchableOpacity>
+                                <Text
+                                    style={[
+                                        styles.periodToggleText,
+                                        selectedPeriod === 'yearly' && styles.periodToggleTextActive,
+                                    ]}
+                                >
+                                    Yearly
+                                </Text>
+                                <View style={styles.saveBadge}>
+                                    <Text style={styles.saveBadgeText}>SAVE 17%</Text>
+                                </View>
+                            </TouchableOpacity>
+                        </View>
                     </View>
                 )}
 
@@ -465,13 +511,13 @@ const BillingScreen = () => {
                                 {isPopular && (
                                     <View style={styles.popularBadge}>
                                         <LinearGradient
-                                            colors={['#F59E0B', '#D97706']}
+                                            colors={['#F59E0B', '#FCD34D']}
                                             style={styles.popularBadgeGradient}
                                             start={{ x: 0, y: 0 }}
-                                            end={{ x: 1, y: 0 }}
+                                            end={{ x: 1, y: 1 }}
                                         >
-                                            <Ionicons name="star" size={14} color="#FFFFFF" />
-                                            <Text style={styles.popularBadgeText}>MOST POPULAR</Text>
+                                            <Ionicons name="sparkles" size={14} color="#FFFFFF" />
+                                            <Text style={styles.popularBadgeText}>Best Value</Text>
                                         </LinearGradient>
                                     </View>
                                 )}
@@ -493,19 +539,16 @@ const BillingScreen = () => {
                                     >
                                         <Text style={styles.planName}>{plan.name}</Text>
                                         <View style={styles.priceContainer}>
-                                            {/* {isPromo ? (
-                                                <Text style={styles.planPrice}>FREE</Text>
-                                            ) : (
-                                                <> */}
                                             <Text style={styles.planPrice}>
                                                 {formatPrice(product.price, product.currency)}
                                             </Text>
                                             <Text style={styles.planPeriod}>
                                                 /{selectedPeriod === 'monthly' ? 'mo' : 'yr'}
                                             </Text>
-                                            {/* </>
-                                            )} */}
                                         </View>
+                                        <Text style={styles.validityInfo}>
+                                            Valid till {selectedPeriod === 'monthly' ? '30 Days' : '12 Months'}
+                                        </Text>
                                         {isPromo ? (
                                             <Text style={styles.planLifetimeText}>Lifetime Access</Text>
                                         ) : (
@@ -522,18 +565,46 @@ const BillingScreen = () => {
 
                                     {/* Features List */}
                                     <View style={styles.featuresContainer}>
-                                        {features.map((feature, index) => (
-                                            <View key={index} style={styles.featureRow}>
+                                        <Text style={styles.sectionTitle}>What's Included</Text>
+                                        {features.included.map((feature: string, index: number) => (
+                                            <View key={`inc-${index}`} style={styles.featureRow}>
                                                 <View style={styles.checkIconContainer}>
                                                     <Ionicons
                                                         name="checkmark-circle"
-                                                        size={20}
+                                                        size={18}
                                                         color="#10B981"
                                                     />
                                                 </View>
                                                 <Text style={styles.featureText}>{feature}</Text>
                                             </View>
                                         ))}
+
+                                        {features.notIncluded.length > 0 && (
+                                            <>
+                                                <Text style={[styles.sectionTitle, { marginTop: 12 }]}>What's Not Included</Text>
+                                                {features.notIncluded.map((feature: string, index: number) => (
+                                                    <View key={`ni-${index}`} style={styles.featureRow}>
+                                                        <View style={styles.notIncludedIconContainer}>
+                                                            <Ionicons
+                                                                name="close-circle"
+                                                                size={18}
+                                                                color="#9CA3AF"
+                                                            />
+                                                        </View>
+                                                        <Text style={styles.notIncludedText}>{feature}</Text>
+                                                    </View>
+                                                ))}
+                                            </>
+                                        )}
+
+                                        {plan.code === 'enterprise' && (
+                                            <View style={styles.enterpriseNoteContainer}>
+                                                <Ionicons name="information-circle-outline" size={16} color="#6B7280" />
+                                                <Text style={styles.enterpriseNote}>
+                                                    Note: Multi-user and sub-account management features may require admin approval and may be enabled progressively based on organization needs.
+                                                </Text>
+                                            </View>
+                                        )}
                                     </View>
 
                                     {/* Action Button */}
@@ -585,6 +656,35 @@ const BillingScreen = () => {
                     })}
                 </View>
 
+                {/* Apple Review Compliance Footer */}
+                <View style={styles.complianceFooter}>
+
+
+                    <View style={styles.disclosureContainer}>
+                        <Text style={styles.disclosureTitle}>Subscription Information:</Text>
+                        <Text style={styles.disclosureText}>
+                            • Payment will be charged to your iTunes Account at confirmation of purchase.{"\n"}
+                            • Subscription automatically renews unless auto-renew is turned off at least 24-hours before the end of the current period.{"\n"}
+                            • Your account will be charged for renewal within 24-hours prior to the end of the current period.{"\n"}
+                            • You can manage or turn off auto-renew in your Apple ID Account Settings any time after purchase.{"\n"}
+                            • Any unused portion of a free trial period, if offered, will be forfeited when the user purchases a subscription to that publication, where applicable.
+                        </Text>
+                    </View>
+
+                    <View style={styles.legalLinksContainer}>
+                        <TouchableOpacity onPress={handleOpenTerms}>
+                            <Text style={styles.legalLinkText}>Terms</Text>
+                        </TouchableOpacity>
+                        <View style={styles.legalSeparator} />
+                        <TouchableOpacity onPress={handleOpenPrivacy}>
+                            <Text style={styles.legalLinkText}>Privacy</Text>
+                        </TouchableOpacity>
+                        <View style={styles.legalSeparator} />
+                        <TouchableOpacity onPress={handleRestorePurchases}>
+                            <Text style={styles.legalLinkText}>Restore Purchases</Text>
+                        </TouchableOpacity>
+                    </View>
+                </View>
 
             </ScrollView >
         </View >
@@ -594,29 +694,30 @@ const BillingScreen = () => {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#F8F9FA',
+        backgroundColor: '#F3F4F6',
     },
     centerContainer: {
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
-        padding: 20,
+        padding: 24,
     },
     loadingText: {
-        marginTop: 12,
+        marginTop: 16,
         fontSize: 16,
-        color: '#6B7280',
-        fontWeight: '500',
+        color: '#4B5563',
+        fontWeight: '600',
+        letterSpacing: 0.5,
     },
     errorText: {
-        marginTop: 12,
-        fontSize: 18,
-        color: '#1F2937',
-        fontWeight: '700',
+        marginTop: 16,
+        fontSize: 20,
+        color: '#111827',
+        fontWeight: '800',
     },
     errorSubtext: {
-        marginTop: 4,
-        fontSize: 14,
+        marginTop: 6,
+        fontSize: 15,
         color: '#6B7280',
     },
     scrollView: {
@@ -624,18 +725,24 @@ const styles = StyleSheet.create({
     },
     scrollContent: {
         padding: 20,
-        paddingBottom: 40,
+        paddingBottom: 60,
+    },
+    periodToggleOuterContainer: {
+        alignItems: 'center',
+        marginBottom: 28,
+        paddingHorizontal: 10,
     },
     periodToggleContainer: {
         flexDirection: 'row',
-        backgroundColor: '#FFFFFF',
-        borderRadius: 12,
-        padding: 4,
-        marginBottom: 20,
+        backgroundColor: '#E5E7EB',
+        borderRadius: 20,
+        padding: 6,
+        width: '100%',
+        maxWidth: 340,
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.05,
-        shadowRadius: 4,
+        shadowRadius: 10,
         elevation: 2,
     },
     periodToggle: {
@@ -644,93 +751,108 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
         paddingVertical: 12,
-        paddingHorizontal: 16,
-        borderRadius: 8,
-        gap: 6,
+        borderRadius: 16,
+        gap: 8,
     },
     periodToggleActive: {
-        backgroundColor: '#9A1B2B',
+        backgroundColor: '#FFFFFF',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.1,
+        shadowRadius: 8,
+        elevation: 4,
     },
     periodToggleText: {
-        fontSize: 15,
-        fontWeight: '600',
+        fontSize: 14,
+        fontWeight: '700',
         color: '#6B7280',
+        textTransform: 'uppercase',
+        letterSpacing: 0.5,
     },
     periodToggleTextActive: {
-        color: '#FFFFFF',
+        color: '#9A1B2B',
     },
     periodToggleDisabled: {
         opacity: 0.5,
-        backgroundColor: '#F3F4F6',
     },
     periodToggleTextDisabled: {
         color: '#9CA3AF',
     },
     saveBadge: {
         backgroundColor: '#10B981',
-        paddingHorizontal: 6,
-        paddingVertical: 2,
-        borderRadius: 4,
+        paddingHorizontal: 8,
+        paddingVertical: 3,
+        borderRadius: 8,
     },
     saveBadgeText: {
         fontSize: 10,
-        fontWeight: '700',
+        fontWeight: '800',
         color: '#FFFFFF',
     },
     infoBanner: {
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: '#EFF6FF',
+        backgroundColor: '#FFFFFF',
         padding: 16,
-        borderRadius: 12,
-        marginBottom: 24,
+        borderRadius: 20,
+        marginBottom: 28,
         borderWidth: 1,
-        borderColor: '#BFDBFE',
+        borderColor: '#E5E7EB',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.05,
+        shadowRadius: 10,
+        elevation: 2,
     },
     infoBannerText: {
         flex: 1,
-        marginLeft: 12,
+        marginLeft: 14,
         fontSize: 14,
-        color: '#1E40AF',
-        fontWeight: '500',
+        color: '#4B5563',
+        fontWeight: '600',
+        lineHeight: 20,
     },
     promoBanner: {
-        borderRadius: 16,
-        marginBottom: 24,
-        padding: 2, // For the gradient border feel if nested, but here it's the background
+        borderRadius: 20,
+        marginBottom: 28,
+        overflow: 'hidden',
+        elevation: 8,
+        shadowColor: '#10B981',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.3,
+        shadowRadius: 12,
     },
     promoBannerContent: {
         flexDirection: 'row',
         alignItems: 'center',
-        padding: 20,
-        backgroundColor: 'transparent',
+        padding: 24,
     },
     promoTextContainer: {
         flex: 1,
-        marginLeft: 16,
+        marginLeft: 18,
     },
     promoTitle: {
         color: '#FFFFFF',
-        fontSize: 18,
-        fontWeight: '800',
+        fontSize: 20,
+        fontWeight: '900',
         marginBottom: 4,
+        letterSpacing: 0.5,
     },
     promoSubtitle: {
-        color: 'rgba(255, 255, 255, 0.9)',
-        fontSize: 13,
-        lineHeight: 18,
+        color: 'rgba(255, 255, 255, 0.95)',
+        fontSize: 14,
+        lineHeight: 20,
         fontWeight: '500',
     },
-
     plansContainer: {
-        gap: 20,
+        gap: 24,
     },
     planCardWrapper: {
         position: 'relative',
     },
     popularBadge: {
         position: 'absolute',
-        top: -10,
+        top: -14,
         left: 0,
         right: 0,
         zIndex: 10,
@@ -739,181 +861,260 @@ const styles = StyleSheet.create({
     popularBadgeGradient: {
         flexDirection: 'row',
         alignItems: 'center',
-        paddingHorizontal: 16,
-        paddingVertical: 6,
-        borderRadius: 20,
-        gap: 6,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.2,
-        shadowRadius: 4,
-        elevation: 4,
+        paddingHorizontal: 18,
+        paddingVertical: 8,
+        borderRadius: 25,
+        gap: 8,
+        shadowColor: '#F59E0B',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.4,
+        shadowRadius: 8,
+        elevation: 6,
     },
     popularBadgeText: {
         color: '#FFFFFF',
         fontSize: 12,
-        fontWeight: '700',
-        letterSpacing: 0.5,
+        fontWeight: '900',
+        letterSpacing: 1,
+        textTransform: 'uppercase',
     },
     planCard: {
         backgroundColor: '#FFFFFF',
-        borderRadius: 16,
+        borderRadius: 24,
         overflow: 'hidden',
         shadowColor: '#000',
-        shadowOffset: { width: 0, height: 4 },
+        shadowOffset: { width: 0, height: 10 },
         shadowOpacity: 0.1,
-        shadowRadius: 12,
-        elevation: 5,
-        borderWidth: 2,
-        borderColor: 'transparent',
+        shadowRadius: 20,
+        elevation: 10,
+        borderWidth: 1,
+        borderColor: 'rgba(229, 231, 235, 0.5)',
     },
     planCardPopular: {
         marginTop: 10,
         borderColor: '#F59E0B',
-        shadowOpacity: 0.15,
-        shadowRadius: 16,
+        borderWidth: 2,
     },
     planCardCurrent: {
         borderColor: '#10B981',
         borderWidth: 2,
     },
     planHeader: {
-        padding: 24,
+        padding: 32,
         alignItems: 'center',
     },
     planName: {
-        fontSize: 24,
-        fontWeight: '800',
+        fontSize: 26,
+        fontWeight: '900',
         color: '#FFFFFF',
-        marginBottom: 8,
+        marginBottom: 12,
         letterSpacing: 0.5,
+        textTransform: 'capitalize',
     },
     priceContainer: {
         flexDirection: 'row',
         alignItems: 'baseline',
-        marginBottom: 8,
+        marginBottom: 12,
     },
     planPrice: {
-        fontSize: 40,
+        fontSize: 48,
         fontWeight: '900',
         color: '#FFFFFF',
     },
     planPeriod: {
-        fontSize: 16,
-        color: 'rgba(255, 255, 255, 0.9)',
-        marginLeft: 4,
-        fontWeight: '500',
+        fontSize: 18,
+        color: 'rgba(255, 255, 255, 0.8)',
+        marginLeft: 6,
+        fontWeight: '600',
     },
-    planDescription: {
+    validityInfo: {
         fontSize: 14,
         color: 'rgba(255, 255, 255, 0.95)',
+        fontWeight: '700',
+        marginBottom: 12,
+        backgroundColor: 'rgba(0, 0, 0, 0.1)',
+        paddingHorizontal: 12,
+        paddingVertical: 4,
+        borderRadius: 8,
+        overflow: 'hidden',
+    },
+    planDescription: {
+        fontSize: 15,
+        color: 'rgba(255, 255, 255, 0.9)',
         textAlign: 'center',
-        fontWeight: '500',
-        marginBottom: 8,
+        fontWeight: '600',
+        marginBottom: 12,
+        paddingHorizontal: 10,
     },
     planLifetimeText: {
         fontSize: 18,
         color: '#FFFFFF',
         textAlign: 'center',
-        fontWeight: '700',
-        marginBottom: 8,
-        backgroundColor: 'rgba(255, 255, 255, 0.2)',
-        paddingHorizontal: 12,
-        paddingVertical: 4,
-        borderRadius: 8,
-    },
-    trialBadge: {
-        backgroundColor: 'rgba(255, 255, 255, 0.2)',
-        paddingHorizontal: 12,
+        fontWeight: '800',
+        marginBottom: 12,
+        backgroundColor: 'rgba(255, 255, 255, 0.25)',
+        paddingHorizontal: 16,
         paddingVertical: 6,
         borderRadius: 12,
-        marginTop: 4,
+        overflow: 'hidden',
+    },
+    trialBadge: {
+        backgroundColor: 'rgba(255, 255, 255, 0.3)',
+        paddingHorizontal: 14,
+        paddingVertical: 8,
+        borderRadius: 14,
+        marginTop: 8,
     },
     trialBadgeText: {
-        fontSize: 12,
-        fontWeight: '700',
+        fontSize: 13,
+        fontWeight: '800',
         color: '#FFFFFF',
+        textTransform: 'uppercase',
+        letterSpacing: 0.5,
     },
     featuresContainer: {
-        padding: 24,
-        gap: 14,
+        padding: 32,
+        gap: 18,
     },
     featureRow: {
         flexDirection: 'row',
         alignItems: 'flex-start',
     },
     checkIconContainer: {
-        marginRight: 12,
+        marginRight: 16,
         marginTop: 2,
+        backgroundColor: '#F3F4F6',
+        borderRadius: 10,
+        padding: 4,
     },
     featureText: {
         flex: 1,
         fontSize: 15,
         color: '#374151',
         lineHeight: 22,
+        fontWeight: '600',
+    },
+    sectionTitle: {
+        fontSize: 13,
+        fontWeight: '800',
+        color: '#9CA3AF',
+        textTransform: 'uppercase',
+        letterSpacing: 1,
+        marginBottom: 12,
+    },
+    notIncludedIconContainer: {
+        marginRight: 16,
+        marginTop: 2,
+        backgroundColor: '#F3F4F6',
+        borderRadius: 10,
+        padding: 4,
+    },
+    notIncludedText: {
+        flex: 1,
+        fontSize: 15,
+        color: '#6B7280',
+        lineHeight: 22,
+        fontWeight: '500',
+    },
+    enterpriseNoteContainer: {
+        flexDirection: 'row',
+        backgroundColor: '#F9FAFB',
+        padding: 12,
+        borderRadius: 12,
+        marginTop: 16,
+        gap: 8,
+        borderWidth: 1,
+        borderColor: '#F3F4F6',
+    },
+    enterpriseNote: {
+        flex: 1,
+        fontSize: 12,
+        color: '#6B7280',
+        lineHeight: 18,
         fontWeight: '500',
     },
     selectButton: {
-        margin: 16,
-        marginTop: 8,
-        borderRadius: 12,
+        margin: 24,
+        marginTop: 0,
+        borderRadius: 18,
         overflow: 'hidden',
+        elevation: 8,
         shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 4,
-        elevation: 3,
+        shadowOffset: { width: 0, height: 6 },
+        shadowOpacity: 0.15,
+        shadowRadius: 10,
     },
     selectButtonCurrent: {
-        shadowOpacity: 0.15,
+        shadowColor: '#10B981',
     },
     selectButtonDisabled: {
-        opacity: 0.6,
+        opacity: 0.7,
     },
-
     selectButtonGradient: {
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
-        paddingVertical: 16,
-        gap: 8,
+        paddingVertical: 18,
+        gap: 12,
     },
     selectButtonText: {
-        fontSize: 16,
-        fontWeight: '700',
+        fontSize: 18,
+        fontWeight: '800',
         color: '#FFFFFF',
-        letterSpacing: 0.3,
+        letterSpacing: 0.5,
     },
-    footerInfo: {
+    complianceFooter: {
+        marginTop: 48,
+        paddingHorizontal: 12,
+        paddingBottom: 40,
+        borderTopWidth: 1,
+        borderTopColor: '#E5E7EB',
+        paddingTop: 32,
+    },
+    legalLinksContainer: {
         flexDirection: 'row',
-        alignItems: 'center',
         justifyContent: 'center',
-        marginTop: 32,
-        marginBottom: 16,
-        paddingHorizontal: 20,
+        alignItems: 'center',
+        marginBottom: 24,
     },
-    footerText: {
-        marginLeft: 10,
+    legalLinkText: {
+        fontSize: 14,
+        color: '#2563EB',
+        fontWeight: '700',
+        textDecorationLine: 'underline',
+    },
+    legalSeparator: {
+        width: 4,
+        height: 4,
+        borderRadius: 2,
+        backgroundColor: '#9CA3AF',
+        marginHorizontal: 16,
+    },
+    disclosureContainer: {
+        backgroundColor: '#FFFFFF',
+        padding: 24,
+        borderRadius: 24,
+        borderWidth: 1,
+        borderColor: '#E5E7EB',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.05,
+        shadowRadius: 15,
+        elevation: 3,
+    },
+    disclosureTitle: {
+        fontSize: 15,
+        fontWeight: '800',
+        color: '#111827',
+        marginBottom: 12,
+        textTransform: 'uppercase',
+        letterSpacing: 0.5,
+    },
+    disclosureText: {
         fontSize: 13,
         color: '#6B7280',
-        textAlign: 'center',
-        flex: 1,
-    },
-    supportButton: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'center',
-        backgroundColor: '#FFFFFF',
-        padding: 16,
-        borderRadius: 12,
-        borderWidth: 1.5,
-        borderColor: '#E5E7EB',
-        gap: 8,
-    },
-    supportButtonText: {
-        fontSize: 15,
-        fontWeight: '600',
-        color: '#9A1B2B',
+        lineHeight: 20,
+        fontWeight: '500',
     },
 });
 
