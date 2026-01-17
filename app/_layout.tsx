@@ -4,7 +4,6 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Stack } from "expo-router";
 import * as SplashScreenExpo from "expo-splash-screen";
 import React, { useEffect, useState } from "react";
-import { Platform } from "react-native";
 import Purchases, { LOG_LEVEL } from 'react-native-purchases';
 import { useAuthStore } from "../store/authStore";
 
@@ -17,10 +16,10 @@ export default function RootLayout() {
   const EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY = process.env.EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY || "pk_live_aW0tbVssano9Bn9RE59mnBjm";
 
   // RevenueCat API Keys
-  // const REVENUECAT_API_KEY = "test_KdiZCShzAuoJCILJxZEAZvOgriL"
-  const REVENUECAT_API_KEY = Platform.select({
-    ios: process.env.EXPO_PUBLIC_RC_IOS || "appl_zjAyHXHkAqpVjHokWhDTYlBvwEa",
-  });
+  const REVENUECAT_API_KEY = "test_KdiZCShzAuoJCILJxZEAZvOgriL"
+  // const REVENUECAT_API_KEY = Platform.select({
+    // ios: process.env.EXPO_PUBLIC_RC_IOS || "appl_zjAyHXHkAqpVjHokWhDTYlBvwEa",
+  // });
 
   useEffect(() => {
     async function prepare() {

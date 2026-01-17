@@ -16,7 +16,7 @@ export default function AuthCheck() {
     // Only navigate once loading is complete AND token state is determined
     if (!isLoadingAuth && !routeDecided) {
       setRouteDecided(true);
-      
+
       if (token === null) {
         console.log('No token, navigating to login');
         router.replace("/(auth)/login");

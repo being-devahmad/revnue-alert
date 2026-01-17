@@ -308,19 +308,16 @@ const AccountSettingsScreen = () => {
           </View>
 
           <View style={styles.card}>
-            {/* Company Name */}
+            {/* Company Name / Family Name */}
             <View style={styles.inputGroup}>
-              <Text style={styles.label}>Company Name</Text>
+              <Text style={styles.label}>Company Name / Family Name</Text>
               <TextInput
-                style={[
-                  styles.input,
-                  isIndustryLocked && styles.inputDisabled
-                ]}
+                style={styles.input}
                 value={companyName}
                 onChangeText={setCompanyName}
-                placeholder="Enter company name"
+                placeholder="Enter company or family name"
                 placeholderTextColor="#D1D5DB"
-                editable={!isIndustryLocked}
+                editable={true}
               />
             </View>
 
@@ -328,15 +325,12 @@ const AccountSettingsScreen = () => {
             <View style={styles.inputGroup}>
               <Text style={styles.label}>Branch Name / Department</Text>
               <TextInput
-                style={[
-                  styles.input,
-                  isIndustryLocked && styles.inputDisabled
-                ]}
+                style={styles.input}
                 value={department}
                 onChangeText={setDepartment}
                 placeholder="Enter department"
                 placeholderTextColor="#D1D5DB"
-                editable={!isIndustryLocked}
+                editable={true}
               />
             </View>
 

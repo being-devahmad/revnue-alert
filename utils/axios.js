@@ -3,7 +3,7 @@ import axios from "axios";
 
 // Get API URL from environment
 const API_BASE_URL = process.env.EXPO_PUBLIC_DEVELOPMENT_API_URL
-  || "https://renewalert.com/api";
+  || "https://development.renewalert.com/api";
 
 
 const axiosInstance = axios.create({

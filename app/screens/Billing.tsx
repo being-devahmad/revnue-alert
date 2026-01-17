@@ -240,32 +240,24 @@ const BillingScreen = () => {
                 return {
                     included: [
                         'Personal and household reminder management',
-                        'Track home-related subscriptions (e.g., streaming services, utilities, memberships)',
+                        'Track home-related subscriptions (streaming, utilities, memberships)',
                         'Bill and renewal reminders',
                         'Simple, family-friendly usage',
                         'Individual reminder control',
                     ],
-                    notIncluded: [
-                        'Business or organizational use',
-                        'Team or multi-user management',
-                        'Enterprise or admin-controlled features',
-                    ],
+                    notIncluded: [],
                 };
             case 'standard':
                 return {
                     included: [
-                        'Full access to core reminder and subscription-tracking features',
-                        'Suitable for business use across all industries',
-                        'Create, edit, and manage unlimited reminders',
-                        'Track recurring subscriptions and important business deadlines',
+                        'Individual business use (single user)',
+                        'Full core reminder & tracking access',
+                        'Unlimited reminders',
+                        'Track business deadlines',
                         'Custom notification schedules',
-                        'Reliable and consistent reminder delivery',
+                        'Reliable delivery',
                     ],
-                    notIncluded: [
-                        'Team or multi-user account management',
-                        'Sub-account or admin-level controls',
-                        'Enterprise-level organizational workflows',
-                    ],
+                    notIncluded: [],
                 };
             case 'enterprise':
                 return {
@@ -295,7 +287,7 @@ const BillingScreen = () => {
             case 'home_family':
                 return 'Best for personal and household use';
             case 'standard':
-                return 'Best for businesses and professionals';
+                return 'Best for individual professionals and business owners';
             case 'enterprise':
                 return 'Best for organizations and teams';
             default:
@@ -579,22 +571,13 @@ const BillingScreen = () => {
                                             </View>
                                         ))}
 
-                                        {features.notIncluded.length > 0 && (
-                                            <>
-                                                <Text style={[styles.sectionTitle, { marginTop: 12 }]}>What's Not Included</Text>
-                                                {features.notIncluded.map((feature: string, index: number) => (
-                                                    <View key={`ni-${index}`} style={styles.featureRow}>
-                                                        <View style={styles.notIncludedIconContainer}>
-                                                            <Ionicons
-                                                                name="close-circle"
-                                                                size={18}
-                                                                color="#9CA3AF"
-                                                            />
-                                                        </View>
-                                                        <Text style={styles.notIncludedText}>{feature}</Text>
-                                                    </View>
-                                                ))}
-                                            </>
+                                        {(plan.code === 'standard' || plan.code === 'home_family') && (
+                                            <View style={styles.autoRenewNote}>
+                                                <Ionicons name="information-circle-outline" size={16} color="#6B7280" />
+                                                <Text style={styles.autoRenewText}>
+                                                    Auto-renewable subscription. Cancel anytime in App Store settings.
+                                                </Text>
+                                            </View>
                                         )}
 
                                         {plan.code === 'enterprise' && (
@@ -1032,6 +1015,24 @@ const styles = StyleSheet.create({
         color: '#6B7280',
         lineHeight: 18,
         fontWeight: '500',
+    },
+    autoRenewNote: {
+        flexDirection: 'row',
+        alignItems: 'flex-start',
+        gap: 8,
+        marginTop: 12,
+        padding: 12,
+        backgroundColor: '#F9FAFB',
+        borderRadius: 8,
+        borderWidth: 1,
+        borderColor: '#E5E7EB',
+    },
+    autoRenewText: {
+        flex: 1,
+        fontSize: 12,
+        color: '#6B7280',
+        fontWeight: '500',
+        lineHeight: 18,
     },
     selectButton: {
         margin: 24,

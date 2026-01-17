@@ -13,6 +13,7 @@ import {
   Alert,
   Keyboard,
   KeyboardAvoidingView,
+  Linking,
   Platform,
   ScrollView,
   StyleSheet,
@@ -36,6 +37,7 @@ const SignupScreen = () => {
   const billingCycle = params.billingCycle as string;
   const price = params.price as string;
   const storeProductId = params.storeProductId as string;
+  const trialDays = params.trialDays ? parseInt(params.trialDays as string, 10) : 30;
 
 
   // Form state
@@ -69,6 +71,9 @@ const SignupScreen = () => {
 
   // Processing state
   const [isProcessing, setIsProcessing] = useState(false);
+
+  // Terms & Privacy checkbox state
+  const [termsAccepted, setTermsAccepted] = useState(false);
 
   // RevenueCat Package for display
   const [rcPackage, setRcPackage] = useState<any | null>(null);
@@ -232,6 +237,11 @@ const SignupScreen = () => {
 
     if (!industry) {
       Alert.alert("Validation Error", "Please select an industry");
+      return false;
+    }
+
+    if (!termsAccepted) {
+      Alert.alert("Validation Error", "Please accept the Terms of Use and Privacy Policy to continue");
       return false;
     }
 
@@ -601,9 +611,9 @@ const SignupScreen = () => {
                     )}
                   </View>
 
-                  {/* Company Name */}
+                  {/* Company Name / Family Name */}
                   <View style={styles.inputGroup}>
-                    <Text style={styles.label}>Company Name</Text>
+                    <Text style={styles.label}>Company Name / Family Name</Text>
                     <View
                       style={[
                         styles.inputContainer,
@@ -617,7 +627,7 @@ const SignupScreen = () => {
                       />
                       <TextInput
                         style={styles.input}
-                        placeholder="Enter company name (optional)"
+                        placeholder="Enter company or family name (optional)"
                         placeholderTextColor="#9CA3AF"
                         value={companyName}
                         onChangeText={setCompanyName}
@@ -744,10 +754,9 @@ const SignupScreen = () => {
                   </View>
 
                   {/* ===== PROMO CODE ===== */}
+                  {/* TEMPORARILY HIDDEN - Apple Rejection Prevention */}
                   {/* <View style={styles.sectionDivider} /> */}
-
-                  {/* Coupon Code */}
-                  <View style={styles.inputGroup}>
+                  {/* <View style={styles.inputGroup}>
                     <Text style={styles.label}>Promo or Coupon Code</Text>
                     <View
                       style={[
@@ -790,26 +799,109 @@ const SignupScreen = () => {
                         </View>
                       )}
                     </View>
+                  </View> */}
+
+                  {/* ===== PLAN DETAILS STRUCTURE (BEFORE PURCHASE BUTTON) ===== */}
+                  <View style={styles.sectionDivider} />
+                  <View style={styles.planDetailsContainer}>
+                    <Text style={styles.planDetailsTitle}>Plan Details</Text>
+                    <View style={styles.planDetailsRow}>
+                      <Text style={styles.planDetailsLabel}>Plan Name:</Text>
+                      <Text style={styles.planDetailsValue}>
+                        {(() => {
+                          const baseName = rcPackage ? rcPackage.product.title : planName;
+                          const isMonthly = billingCycle === "month" || billingCycle === "monthly";
+                          const isYearly = billingCycle === "year" || billingCycle === "yearly";
+                          return `${baseName}${isMonthly ? " Monthly" : isYearly ? " Yearly" : ""}`;
+                        })()}
+                      </Text>
+                    </View>
+                    <View style={styles.planDetailsRow}>
+                      <Text style={styles.planDetailsLabel}>Billing:</Text>
+                      <Text style={styles.planDetailsValue}>
+                        {(() => {
+                          const isMonthly = billingCycle === "month" || billingCycle === "monthly";
+                          const isYearly = billingCycle === "year" || billingCycle === "yearly";
+                          if (isMonthly) return "Monthly";
+                          if (isYearly) return "Yearly";
+                          return billingCycle.charAt(0).toUpperCase() + billingCycle.slice(1);
+                        })()}
+                      </Text>
+                    </View>
+                    <View style={styles.planDetailsRow}>
+                      <Text style={styles.planDetailsLabel}>Price:</Text>
+                      <Text style={styles.planDetailsValue}>
+                        {rcPackage ? rcPackage.product.priceString : `$${price}`} / {(billingCycle === "month" || billingCycle === "monthly") ? "month" : "year"}
+                      </Text>
+                    </View>
+                    <View style={styles.planDetailsRow}>
+                      <Text style={styles.planDetailsLabel}>Free Trial:</Text>
+                      <Text style={styles.planDetailsValue}>{trialDays} Days</Text>
+                    </View>
+                    <View style={styles.planDetailsRow}>
+                      <Text style={styles.planDetailsLabel}>Subscription:</Text>
+                      <Text style={styles.planDetailsValue}>Auto-renewable Subscription</Text>
+                    </View>
                   </View>
 
+                  {/* ===== PURCHASE SUMMARY (BEFORE BUTTON) ===== */}
+                  {/* <View style={styles.purchaseSummaryContainer}>
+                    <Text style={styles.purchaseSummaryTitle}>You are purchasing:</Text>
+                    <Text style={styles.purchaseSummaryText}>
+                      {rcPackage ? rcPackage.product.title : planName}
+                      {billingCycle === "month" ? " Monthly" : billingCycle === "year" ? " Yearly" : ""}
+                    </Text>
+                    <Text style={styles.purchaseSummaryText}>
+                      {rcPackage ? rcPackage.product.priceString : `$${price}`} per {billingCycle === "month" ? "month" : "year"}
+                    </Text>
+                    <Text style={styles.purchaseSummaryText}>
+                      {trialDays}-day free trial
+                    </Text>
+                    <Text style={styles.purchaseSummaryText}>
+                      Auto-renews {billingCycle === "month" ? "monthly" : "yearly"} unless canceled
+                    </Text>
+                  </View> */}
 
-                  {/* Terms & Conditions */}
-                  {/* <View style={styles.termsContainer}>
-                <Text style={styles.termsText}>
-                  By continuing, you agree to our{" "}
-                  <Text style={styles.termsLink}>Terms of Service</Text> and{" "}
-                  <Text style={styles.termsLink}>Privacy Policy</Text>
-                </Text>
-              </View> */}
+                  {/* ===== TERMS & PRIVACY CHECKBOX (REQUIRED) ===== */}
+                  <View style={styles.termsContainer}>
+                    <TouchableOpacity
+                      style={styles.checkboxContainer}
+                      onPress={() => setTermsAccepted(!termsAccepted)}
+                      disabled={isProcessing}
+                    >
+                      <View style={[styles.checkbox, termsAccepted && styles.checkboxChecked]}>
+                        {termsAccepted && (
+                          <Ionicons name="checkmark" size={16} color="#FFF" />
+                        )}
+                      </View>
+                      <Text style={styles.termsText}>
+                        By signing up, you agree to our{" "}
+                        <Text
+                          style={styles.termsLink}
+                          onPress={() => Linking.openURL("https://www.apple.com/legal/internet-services/itunes/dev/stdeula/")}
+                        >
+                          Terms of Use
+                        </Text>
+                        {" "}and acknowledge that you have read our{" "}
+                        <Text
+                          style={styles.termsLink}
+                          onPress={() => Linking.openURL("https://renewalert.net/privacy-policy")}
+                        >
+                          Privacy Policy
+                        </Text>
+                        .
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
 
                   {/* Create Account Button */}
                   <TouchableOpacity
                     style={[
                       styles.createAccountButton,
-                      (isProcessing || isRegistering) && styles.createAccountButtonDisabled,
+                      (isProcessing || isRegistering || !termsAccepted) && styles.createAccountButtonDisabled,
                     ]}
                     onPress={handleSignup}
-                    disabled={isProcessing || isRegistering}
+                    disabled={isProcessing || isRegistering || !termsAccepted}
                   >
                     {isProcessing || isRegistering ? (
                       <>
@@ -1059,19 +1151,89 @@ const styles = StyleSheet.create({
     fontWeight: "500",
     flex: 1,
   },
+  planDetailsContainer: {
+    backgroundColor: "#F9FAFB",
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 20,
+    borderWidth: 1,
+    borderColor: "#E5E7EB",
+  },
+  planDetailsTitle: {
+    fontSize: 16,
+    fontWeight: "700",
+    color: "#1F2937",
+    marginBottom: 12,
+  },
+  planDetailsRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginBottom: 8,
+  },
+  planDetailsLabel: {
+    fontSize: 14,
+    color: "#6B7280",
+    fontWeight: "600",
+  },
+  planDetailsValue: {
+    fontSize: 14,
+    color: "#1F2937",
+    fontWeight: "700",
+  },
+  purchaseSummaryContainer: {
+    backgroundColor: "#FFF8F5",
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 20,
+    borderWidth: 1.5,
+    borderColor: "#800000",
+  },
+  purchaseSummaryTitle: {
+    fontSize: 15,
+    fontWeight: "800",
+    color: "#1F2937",
+    marginBottom: 12,
+  },
+  purchaseSummaryText: {
+    fontSize: 14,
+    color: "#374151",
+    fontWeight: "600",
+    marginBottom: 6,
+    lineHeight: 20,
+  },
   termsContainer: {
-    paddingVertical: 16,
-    marginBottom: 24,
+    marginBottom: 20,
+  },
+  checkboxContainer: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: 12,
+  },
+  checkbox: {
+    width: 24,
+    height: 24,
+    borderRadius: 6,
+    borderWidth: 2,
+    borderColor: "#D1D5DB",
+    backgroundColor: "#FFF",
+    alignItems: "center",
+    justifyContent: "center",
+    marginTop: 2,
+  },
+  checkboxChecked: {
+    backgroundColor: "#800000",
+    borderColor: "#800000",
   },
   termsText: {
+    flex: 1,
     fontSize: 13,
-    color: "#6B7280",
+    color: "#374151",
     lineHeight: 20,
-    textAlign: "center",
   },
   termsLink: {
     color: "#800000",
     fontWeight: "700",
+    textDecorationLine: "underline",
   },
   loginContainer: {
 

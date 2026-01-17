@@ -51,31 +51,24 @@ const PlanSelectionV2Screen = () => {
                 return {
                     included: [
                         'Personal and household reminder management',
-                        'Track home-related subscriptions (streaming services, utilities, etc.)',
+                        'Track home-related subscriptions (streaming, utilities, memberships)',
                         'Bill and renewal reminders',
                         'Simple, family-friendly usage',
                         'Individual reminder control',
                     ],
-                    notIncluded: [
-                        'Business or organizational use',
-                        'Team or multi-user management',
-                        'Enterprise or admin-controlled features',
-                    ],
+                    notIncluded: [],
                 };
             case 'standard':
                 return {
                     included: [
+                        'Individual business use (single user)',
                         'Full core reminder & tracking access',
-                        'Suitable for business use',
                         'Unlimited reminders',
                         'Track business deadlines',
                         'Custom notification schedules',
                         'Reliable delivery',
                     ],
-                    notIncluded: [
-                        'Team account management',
-                        'Admin-level controls',
-                    ],
+                    notIncluded: [],
                 };
             case 'enterprise':
                 return {
@@ -97,7 +90,7 @@ const PlanSelectionV2Screen = () => {
             case 'home_family':
                 return 'Best for personal and household use';
             case 'standard':
-                return 'Best for businesses and professionals';
+                return 'Best for individual professionals and business owners';
             case 'enterprise':
                 return 'Best for organizations and teams';
             default:
@@ -382,16 +375,13 @@ const PlanSelectionV2Screen = () => {
                                         </View>
                                     ))}
 
-                                    {getPlanFeatures(plan.code).notIncluded.length > 0 && (
-                                        <>
-                                            <Text style={styles.featureSectionTitle}>What's Not Included</Text>
-                                            {getPlanFeatures(plan.code).notIncluded.map((feature, idx) => (
-                                                <View key={`ni-${idx}`} style={styles.featureRow}>
-                                                    <Ionicons name="close-circle" size={14} color="#9CA3AF" />
-                                                    <Text style={styles.notIncludedText}>{feature}</Text>
-                                                </View>
-                                            ))}
-                                        </>
+                                    {(plan.code === 'standard' || plan.code === 'home_family') && (
+                                        <View style={styles.autoRenewNote}>
+                                            <Ionicons name="information-circle-outline" size={14} color="#6B7280" />
+                                            <Text style={styles.autoRenewText}>
+                                                Auto-renewable subscription. Cancel anytime in App Store settings.
+                                            </Text>
+                                        </View>
                                     )}
 
                                     {plan.code === 'enterprise' && (
@@ -659,6 +649,24 @@ const styles = StyleSheet.create({
         color: '#6B7280',
         fontStyle: 'italic',
         marginTop: 8,
+    },
+    autoRenewNote: {
+        flexDirection: 'row',
+        alignItems: 'flex-start',
+        gap: 8,
+        marginTop: 12,
+        padding: 12,
+        backgroundColor: '#F9FAFB',
+        borderRadius: 8,
+        borderWidth: 1,
+        borderColor: '#E5E7EB',
+    },
+    autoRenewText: {
+        flex: 1,
+        fontSize: 12,
+        color: '#6B7280',
+        fontWeight: '500',
+        lineHeight: 18,
     },
     priceContainer: {
         marginBottom: 0,
