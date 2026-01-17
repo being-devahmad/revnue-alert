@@ -314,13 +314,11 @@ const AccountSettingsScreen = () => {
               <TextInput
                 style={[
                   styles.input,
-                  isIndustryLocked && styles.inputDisabled
                 ]}
                 value={companyName}
                 onChangeText={setCompanyName}
                 placeholder="Enter company name"
                 placeholderTextColor="#D1D5DB"
-                editable={!isIndustryLocked}
               />
             </View>
 
@@ -330,13 +328,11 @@ const AccountSettingsScreen = () => {
               <TextInput
                 style={[
                   styles.input,
-                  isIndustryLocked && styles.inputDisabled
                 ]}
                 value={department}
                 onChangeText={setDepartment}
                 placeholder="Enter department"
                 placeholderTextColor="#D1D5DB"
-                editable={!isIndustryLocked}
               />
             </View>
 

@@ -7,6 +7,7 @@ import { useGetUserPlan } from '@/api/settings/useGetUserPlan';
 import { TabHeader } from '@/components/TabHeader';
 import { useAuthStore } from '@/store/authStore';
 import { Ionicons } from '@expo/vector-icons';
+import dayjs from 'dayjs';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
@@ -81,7 +82,7 @@ const BillingScreen = () => {
 
     // Fetch user-specific plan from API
     const { data: userPlanResponse, isLoading, error, refetch: refetchUserPlan } = useGetUserPlan(user?.id);
-
+    console.log("userPlanResponse", userPlanResponse);
     const [isProcessing, setIsProcessing] = useState(false);
 
 
@@ -115,6 +116,15 @@ const BillingScreen = () => {
                 setCurrentPeriod(sub.period); // e.g., "forever"
             }
         }
+    }, [userPlanResponse]);
+
+    // Calculate trial remaining days
+    const trialRemainingDays = useMemo(() => {
+        if (!userPlanResponse?.message?.trial_ends_at) return null;
+        const trialEnd = dayjs(userPlanResponse.message.trial_ends_at);
+        const now = dayjs();
+        const diffDays = Math.ceil(trialEnd.diff(now, 'day', true));
+        return diffDays > 0 ? diffDays : null;
     }, [userPlanResponse]);
 
     // ============ HANDLE REVENUECAT PURCHASE ============
@@ -214,8 +224,8 @@ const BillingScreen = () => {
     };
 
     // Legal link handlers
-    const handleOpenTerms = () => Linking.openURL('https://renewalert.net/support/');
-    const handleOpenPrivacy = () => Linking.openURL('https://renewalert.net/support/');
+    const handleOpenTerms = () => Linking.openURL('https://www.apple.com/legal/internet-services/itunes/dev/stdeula/');
+    const handleOpenPrivacy = () => Linking.openURL('https://renewalert.net/privacy-policy');
 
 
     // Plan gradient colors based on tier
@@ -240,49 +250,36 @@ const BillingScreen = () => {
                 return {
                     included: [
                         'Personal and household reminder management',
-                        'Track home-related subscriptions (e.g., streaming services, utilities, memberships)',
+                        'Track home-related subscriptions (streaming, utilities, memberships)',
                         'Bill and renewal reminders',
                         'Simple, family-friendly usage',
                         'Individual reminder control',
                     ],
-                    notIncluded: [
-                        'Business or organizational use',
-                        'Team or multi-user management',
-                        'Enterprise or admin-controlled features',
-                    ],
+                    notIncluded: [],
                 };
             case 'standard':
                 return {
                     included: [
-                        'Full access to core reminder and subscription-tracking features',
-                        'Suitable for business use across all industries',
-                        'Create, edit, and manage unlimited reminders',
-                        'Track recurring subscriptions and important business deadlines',
+                        'Individual business use (single user)',
+                        'Full core reminder & tracking access',
+                        'Unlimited reminders',
+                        'Track business deadlines',
                         'Custom notification schedules',
-                        'Reliable and consistent reminder delivery',
+                        'Reliable delivery',
                     ],
-                    notIncluded: [
-                        'Team or multi-user account management',
-                        'Sub-account or admin-level controls',
-                        'Enterprise-level organizational workflows',
-                    ],
+                    notIncluded: [],
                 };
             case 'enterprise':
                 return {
                     included: [
-                        'Access to all core app features',
-                        'Designed for organizations across all industries',
-                        'Centralized reminder management',
-                        'Ability to manage reminders for multiple users (team members)',
-                        'Organizational-level usage and workflows',
-                        'Advanced reminder customization',
-                        'Priority support',
+                        'Individual business use (single user)',
+                        'Full core reminder & tracking access',
+                        'Unlimited reminders',
+                        'Track business deadlines',
+                        'Custom notification schedules',
+                        'Reliable delivery',
                     ],
-                    notIncluded: [
-                        'No medical, legal, or financial advice',
-                        'No automated decision-making or AI-based recommendations',
-                        'No external account access without user permission',
-                    ],
+                    notIncluded: [],
                 };
             default:
                 return { included: [], notIncluded: [] };
@@ -504,6 +501,8 @@ const BillingScreen = () => {
                         const features = getPlanFeatures(plan.code);
                         const description = getPlanDescription(plan.code);
                         const isCurrentActive = currentPlanCode === plan.code && selectedPeriod === currentPeriod;
+                        console.log("isCurrentActive", isCurrentActive);
+                        console.log("trialRemainingDays", trialRemainingDays);
 
                         return (
                             <View key={plan.id} style={styles.planCardWrapper}>
@@ -558,6 +557,15 @@ const BillingScreen = () => {
                                             <View style={styles.trialBadge}>
                                                 <Text style={styles.trialBadgeText}>
                                                     {product.trial_days}-day free trial
+                                                </Text>
+                                            </View>
+                                        )}
+
+                                        {/* Active Trial Info */}
+                                        {isCurrentActive && trialRemainingDays !== null && (
+                                            <View style={styles.activeTrialBadge}>
+                                                <Text style={styles.activeTrialBadgeText}>
+                                                    Trial active: {trialRemainingDays} {trialRemainingDays === 1 ? 'day' : 'days'} left
                                                 </Text>
                                             </View>
                                         )}
@@ -673,7 +681,7 @@ const BillingScreen = () => {
 
                     <View style={styles.legalLinksContainer}>
                         <TouchableOpacity onPress={handleOpenTerms}>
-                            <Text style={styles.legalLinkText}>Terms</Text>
+                            <Text style={styles.legalLinkText}>Terms </Text>
                         </TouchableOpacity>
                         <View style={styles.legalSeparator} />
                         <TouchableOpacity onPress={handleOpenPrivacy}>
@@ -972,6 +980,27 @@ const styles = StyleSheet.create({
         textTransform: 'uppercase',
         letterSpacing: 0.5,
     },
+    activeTrialBadge: {
+        backgroundColor: 'rgba(255, 255, 255, 0.25)',
+        paddingHorizontal: 16,
+        paddingVertical: 10,
+        borderRadius: 16,
+        marginTop: 12,
+        borderWidth: 1,
+        borderColor: 'rgba(255, 255, 255, 0.4)',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+        elevation: 2,
+    },
+    activeTrialBadgeText: {
+        fontSize: 14,
+        fontWeight: '900',
+        color: '#FFFFFF',
+        textAlign: 'center',
+        letterSpacing: 0.5,
+    },
     featuresContainer: {
         padding: 32,
         gap: 18,
@@ -1076,6 +1105,7 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
         marginBottom: 24,
+        marginTop: 24,
     },
     legalLinkText: {
         fontSize: 14,

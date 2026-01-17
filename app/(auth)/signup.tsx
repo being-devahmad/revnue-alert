@@ -1,18 +1,21 @@
 import { RegisterRequest, useRegister } from "@/api/auth/useRegister";
-import { PromoData, useVerifyPromo } from "@/api/auth/useVerifyPromo";
 import { useGetAllIndustries } from "@/api/settings/useGetIndustries";
 import { Industry, SearchableIndustryDropdown } from "@/components/ui/IndustryDropdown";
+import { useAuthStore } from "@/store/authStore";
 import { Ionicons } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";
 import Purchases from "react-native-purchases";
 
+
+import { PromoData, useVerifyPromo } from "@/api/auth/useVerifyPromo";
 import { Image } from "expo-image";
 import {
   ActivityIndicator,
   Alert,
   Keyboard,
   KeyboardAvoidingView,
+  Linking,
   Platform,
   ScrollView,
   StyleSheet,
@@ -27,6 +30,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 const SignupScreen = () => {
   const router = useRouter();
+  const { login: storeLogin } = useAuthStore();
   const params = useLocalSearchParams();
 
   // Plan data from route params
@@ -36,6 +40,7 @@ const SignupScreen = () => {
   const billingCycle = params.billingCycle as string;
   const price = params.price as string;
   const storeProductId = params.storeProductId as string;
+  const trialDays = params.trialDays ? parseInt(params.trialDays as string, 10) : 30;
 
 
   // Form state
@@ -69,6 +74,9 @@ const SignupScreen = () => {
 
   // Processing state
   const [isProcessing, setIsProcessing] = useState(false);
+
+  // Terms & Privacy checkbox state
+  const [termsAccepted, setTermsAccepted] = useState(false);
 
   // RevenueCat Package for display
   const [rcPackage, setRcPackage] = useState<any | null>(null);
@@ -235,6 +243,11 @@ const SignupScreen = () => {
       return false;
     }
 
+    if (!termsAccepted) {
+      Alert.alert("Validation Error", "Please accept the Terms of Use and Privacy Policy to continue");
+      return false;
+    }
+
     return true;
   };
 
@@ -363,12 +376,10 @@ const SignupScreen = () => {
       // 2. Register user FIRST & await result
       const registerResponse = await registerAsync(registrationData);
 
-      if (!registerResponse || !registerResponse.status || !registerResponse.data?.user?.id) {
-        throw new Error(registerResponse?.message || "Registration failed to return user ID.");
-      }
+      const userId = registerResponse.user.id;
+      const rcUserId = registerResponse.rc_app_user_id;
+      const token = registerResponse.token;
 
-      const userId = registerResponse.data.user.id;
-      const rcUserId = registerResponse.data.user.rc_app_user_id;
       console.log(`rcUserId: ${rcUserId}`);
       console.log(`✅ User registered successfully. ID: ${userId}, RC ID: ${rcUserId}`);
 
@@ -381,29 +392,54 @@ const SignupScreen = () => {
       // 4. Check if we can bypass IAP with promo code
       const canBypassIAP = isPromoVerified && promoData && !promoData.iap_required;
 
+      let purchaseErrorOccurred = false;
       if (!canBypassIAP) {
         // 5. Trigger RevenueCat Purchase (now associated with the correct user ID)
         const purchaseSuccess = await performPurchase();
         if (!purchaseSuccess) {
-          setIsProcessing(false);
-          // Note: User is already registered at this point. 
-          // You might want to handle this case (e.g., allow them to login but restrict access)
-          Alert.alert(
-            "Purchase Incomplete",
-            "Your account has been created, but the subscription purchase was not completed. You can login and retry the subscription."
-          );
-          router.replace("/(auth)/login");
-          return;
+          purchaseErrorOccurred = true;
+          // If we don't have a token, we must go to login
+          if (!token) {
+            setIsProcessing(false);
+            Alert.alert(
+              "Purchase Incomplete",
+              "Your account has been created, but the subscription purchase was not completed. Please login and retry.",
+              [{ text: "Login", onPress: () => router.replace("/(auth)/login") }]
+            );
+            return;
+          }
+          // If we HAVE a token, we'll show an alert but still try to navigate to dashboard
+          console.warn("⚠️ Purchase failed but user has session token. Allowing entry to dashboard.");
         }
       }
 
-      // 6. Success - Navigate to login
+      // 6. Success / Authentication - Navigate to Dashboard
       setIsProcessing(false);
-      Alert.alert(
-        "Welcome!",
-        "Account created successfully. Please verify from email and login to get started.",
-        [{ text: "Login", onPress: () => router.replace("/(auth)/login") }]
-      );
+
+      if (token) {
+        console.log("🔑 Session token found, authenticating...");
+        await storeLogin(token, registerResponse.user, registerResponse.account_type);
+
+        if (purchaseErrorOccurred) {
+          Alert.alert(
+            "Account Created",
+            "Your account was created successfully, but there was an issue with the subscription purchase. You can try subscribing again from the settings.",
+            [{ text: "Go to Dashboard", onPress: () => router.replace("/(tabs)") }]
+          );
+        } else {
+          Alert.alert(
+            "Welcome!",
+            "Account created successfully.",
+            [{ text: "Go to Dashboard", onPress: () => router.replace("/(tabs)") }]
+          );
+        }
+      } else {
+        Alert.alert(
+          "Welcome!",
+          "Account created successfully. Please verify from email and login to get started.",
+          [{ text: "Login", onPress: () => router.replace("/(auth)/login") }]
+        );
+      }
 
     } catch (error: any) {
       console.error("❌ Signup Flow Error:", error);
@@ -456,16 +492,6 @@ const SignupScreen = () => {
             >
               <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
                 <View style={styles.formContainer}>
-                  {/* Plan Summary Badge */}
-                  <View style={styles.planBadge}>
-                    <Ionicons name="checkmark-circle" size={16} color="#10B981" />
-                    <Text style={styles.planBadgeText}>
-                      {/* If we have RC data, use that. Otherwise fallback to params */}
-                      {rcPackage ? rcPackage.product.title : planName} -{" "}
-                      {rcPackage ? rcPackage.product.priceString : `$${price}`}
-                      /{billingCycle === "month" ? "mo" : "yr"}
-                    </Text>
-                  </View>
 
                   {/* Form Title */}
                   <Text style={styles.formTitle}>Complete Your Profile</Text>
@@ -563,7 +589,7 @@ const SignupScreen = () => {
 
                   {/* ===== COMPANY INFORMATION ===== */}
                   <View style={styles.sectionDivider} />
-                  <Text style={styles.sectionTitle}>Company Information</Text>
+                  <Text style={styles.sectionTitle}>Profile Details</Text>
 
                   {/* Industry Dropdown */}
                   <View style={styles.inputGroup}>
@@ -601,9 +627,9 @@ const SignupScreen = () => {
                     )}
                   </View>
 
-                  {/* Company Name */}
+                  {/* Company Name / Family Name */}
                   <View style={styles.inputGroup}>
-                    <Text style={styles.label}>Company Name</Text>
+                    <Text style={styles.label}>Company Name / Family Name</Text>
                     <View
                       style={[
                         styles.inputContainer,
@@ -617,7 +643,7 @@ const SignupScreen = () => {
                       />
                       <TextInput
                         style={styles.input}
-                        placeholder="Enter company name (optional)"
+                        placeholder="Enter company / family name (optional)"
                         placeholderTextColor="#9CA3AF"
                         value={companyName}
                         onChangeText={setCompanyName}
@@ -744,10 +770,9 @@ const SignupScreen = () => {
                   </View>
 
                   {/* ===== PROMO CODE ===== */}
+                  {/* TEMPORARILY HIDDEN - Apple Rejection Prevention */}
                   {/* <View style={styles.sectionDivider} /> */}
-
-                  {/* Coupon Code */}
-                  <View style={styles.inputGroup}>
+                  {/* <View style={styles.inputGroup}>
                     <Text style={styles.label}>Promo or Coupon Code</Text>
                     <View
                       style={[
@@ -790,26 +815,109 @@ const SignupScreen = () => {
                         </View>
                       )}
                     </View>
+                  </View> */}
+
+                  {/* ===== PLAN DETAILS STRUCTURE (BEFORE PURCHASE BUTTON) ===== */}
+                  <View style={styles.sectionDivider} />
+                  <View style={styles.planDetailsContainer}>
+                    <Text style={styles.planDetailsTitle}>Plan Details</Text>
+                    <View style={styles.planDetailsRow}>
+                      <Text style={styles.planDetailsLabel}>Plan Name:</Text>
+                      <Text style={styles.planDetailsValue}>
+                        {(() => {
+                          const baseName = rcPackage ? rcPackage.product.title : planName;
+                          const isMonthly = billingCycle === "month" || billingCycle === "monthly";
+                          const isYearly = billingCycle === "year" || billingCycle === "yearly";
+                          return `${baseName}${isMonthly ? " Monthly" : isYearly ? " Yearly" : ""}`;
+                        })()}
+                      </Text>
+                    </View>
+                    <View style={styles.planDetailsRow}>
+                      <Text style={styles.planDetailsLabel}>Billing:</Text>
+                      <Text style={styles.planDetailsValue}>
+                        {(() => {
+                          const isMonthly = billingCycle === "month" || billingCycle === "monthly";
+                          const isYearly = billingCycle === "year" || billingCycle === "yearly";
+                          if (isMonthly) return "Monthly";
+                          if (isYearly) return "Yearly";
+                          return billingCycle.charAt(0).toUpperCase() + billingCycle.slice(1);
+                        })()}
+                      </Text>
+                    </View>
+                    <View style={styles.planDetailsRow}>
+                      <Text style={styles.planDetailsLabel}>Price:</Text>
+                      <Text style={styles.planDetailsValue}>
+                        {rcPackage ? rcPackage.product.priceString : `$${price}`} / {(billingCycle === "month" || billingCycle === "monthly") ? "month" : "year"}
+                      </Text>
+                    </View>
+                    <View style={styles.planDetailsRow}>
+                      <Text style={styles.planDetailsLabel}>Free Trial:</Text>
+                      <Text style={styles.planDetailsValue}>{trialDays} Days</Text>
+                    </View>
+                    <View style={styles.planDetailsRow}>
+                      <Text style={styles.planDetailsLabel}>Subscription:</Text>
+                      <Text style={styles.planDetailsValue}>Auto-renewable Subscription</Text>
+                    </View>
                   </View>
 
+                  {/* ===== PURCHASE SUMMARY (BEFORE BUTTON) ===== */}
+                  {/* <View style={styles.purchaseSummaryContainer}>
+                    <Text style={styles.purchaseSummaryTitle}>You are purchasing:</Text>
+                    <Text style={styles.purchaseSummaryText}>
+                      {rcPackage ? rcPackage.product.title : planName}
+                      {billingCycle === "month" ? " Monthly" : billingCycle === "year" ? " Yearly" : ""}
+                    </Text>
+                    <Text style={styles.purchaseSummaryText}>
+                      {rcPackage ? rcPackage.product.priceString : `$${price}`} per {billingCycle === "month" ? "month" : "year"}
+                    </Text>
+                    <Text style={styles.purchaseSummaryText}>
+                      {trialDays}-day free trial
+                    </Text>
+                    <Text style={styles.purchaseSummaryText}>
+                      Auto-renews {billingCycle === "month" ? "monthly" : "yearly"} unless canceled
+                    </Text>
+                  </View> */}
 
-                  {/* Terms & Conditions */}
-                  {/* <View style={styles.termsContainer}>
-                <Text style={styles.termsText}>
-                  By continuing, you agree to our{" "}
-                  <Text style={styles.termsLink}>Terms of Service</Text> and{" "}
-                  <Text style={styles.termsLink}>Privacy Policy</Text>
-                </Text>
-              </View> */}
+                  {/* ===== TERMS & PRIVACY CHECKBOX (REQUIRED) ===== */}
+                  <View style={styles.termsContainer}>
+                    <TouchableOpacity
+                      style={styles.checkboxContainer}
+                      onPress={() => setTermsAccepted(!termsAccepted)}
+                      disabled={isProcessing}
+                    >
+                      <View style={[styles.checkbox, termsAccepted && styles.checkboxChecked]}>
+                        {termsAccepted && (
+                          <Ionicons name="checkmark" size={16} color="#FFF" />
+                        )}
+                      </View>
+                      <Text style={styles.termsText}>
+                        By signing up, you agree to our{" "}
+                        <Text
+                          style={styles.termsLink}
+                          onPress={() => Linking.openURL("https://www.apple.com/legal/internet-services/itunes/dev/stdeula/")}
+                        >
+                          Terms of Use (EULA)
+                        </Text>
+                        {" "}and acknowledge that you have read our{" "}
+                        <Text
+                          style={styles.termsLink}
+                          onPress={() => Linking.openURL("https://renewalert.net/privacy-policy")}
+                        >
+                          Privacy Policy
+                        </Text>
+                        .
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
 
                   {/* Create Account Button */}
                   <TouchableOpacity
                     style={[
                       styles.createAccountButton,
-                      (isProcessing || isRegistering) && styles.createAccountButtonDisabled,
+                      (isProcessing || isRegistering || !termsAccepted) && styles.createAccountButtonDisabled,
                     ]}
                     onPress={handleSignup}
-                    disabled={isProcessing || isRegistering}
+                    disabled={isProcessing || isRegistering || !termsAccepted}
                   >
                     {isProcessing || isRegistering ? (
                       <>
@@ -1059,19 +1167,89 @@ const styles = StyleSheet.create({
     fontWeight: "500",
     flex: 1,
   },
+  planDetailsContainer: {
+    backgroundColor: "#F9FAFB",
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 20,
+    borderWidth: 1,
+    borderColor: "#E5E7EB",
+  },
+  planDetailsTitle: {
+    fontSize: 16,
+    fontWeight: "700",
+    color: "#1F2937",
+    marginBottom: 12,
+  },
+  planDetailsRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginBottom: 8,
+  },
+  planDetailsLabel: {
+    fontSize: 14,
+    color: "#6B7280",
+    fontWeight: "600",
+  },
+  planDetailsValue: {
+    fontSize: 14,
+    color: "#1F2937",
+    fontWeight: "700",
+  },
+  purchaseSummaryContainer: {
+    backgroundColor: "#FFF8F5",
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 20,
+    borderWidth: 1.5,
+    borderColor: "#800000",
+  },
+  purchaseSummaryTitle: {
+    fontSize: 15,
+    fontWeight: "800",
+    color: "#1F2937",
+    marginBottom: 12,
+  },
+  purchaseSummaryText: {
+    fontSize: 14,
+    color: "#374151",
+    fontWeight: "600",
+    marginBottom: 6,
+    lineHeight: 20,
+  },
   termsContainer: {
-    paddingVertical: 16,
-    marginBottom: 24,
+    marginBottom: 20,
+  },
+  checkboxContainer: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: 12,
+  },
+  checkbox: {
+    width: 24,
+    height: 24,
+    borderRadius: 6,
+    borderWidth: 2,
+    borderColor: "#D1D5DB",
+    backgroundColor: "#FFF",
+    alignItems: "center",
+    justifyContent: "center",
+    marginTop: 2,
+  },
+  checkboxChecked: {
+    backgroundColor: "#800000",
+    borderColor: "#800000",
   },
   termsText: {
+    flex: 1,
     fontSize: 13,
-    color: "#6B7280",
+    color: "#374151",
     lineHeight: 20,
-    textAlign: "center",
   },
   termsLink: {
     color: "#800000",
     fontWeight: "700",
+    textDecorationLine: "underline",
   },
   loginContainer: {
 

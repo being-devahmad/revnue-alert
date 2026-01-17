@@ -15,6 +15,7 @@ import React, { useState } from 'react';
 import {
     ActivityIndicator,
     Alert,
+    Linking,
     ScrollView,
     StyleSheet,
     Text,
@@ -51,31 +52,23 @@ const PlanSelectionV2Screen = () => {
                 return {
                     included: [
                         'Personal and household reminder management',
-                        'Track home-related subscriptions (streaming services, utilities, etc.)',
+                        'Track home-related subscriptions (streaming, utilities, memberships)',
                         'Bill and renewal reminders',
                         'Simple, family-friendly usage',
                         'Individual reminder control',
                     ],
-                    notIncluded: [
-                        'Business or organizational use',
-                        'Team or multi-user management',
-                        'Enterprise or admin-controlled features',
-                    ],
+                    notIncluded: [],
                 };
             case 'standard':
                 return {
                     included: [
+                        'Supports all industries',
                         'Full core reminder & tracking access',
-                        'Suitable for business use',
                         'Unlimited reminders',
                         'Track business deadlines',
                         'Custom notification schedules',
-                        'Reliable delivery',
                     ],
-                    notIncluded: [
-                        'Team account management',
-                        'Admin-level controls',
-                    ],
+                    notIncluded: [],
                 };
             case 'enterprise':
                 return {
@@ -97,14 +90,13 @@ const PlanSelectionV2Screen = () => {
             case 'home_family':
                 return 'Best for personal and household use';
             case 'standard':
-                return 'Best for businesses and professionals';
+                return 'Best for individual professionals and business owners';
             case 'enterprise':
                 return 'Best for organizations and teams';
             default:
                 return '';
         }
     };
-
     // ============ HANDLE CONTINUE ============
     const handleContinue = () => {
         if (!selectedPlanCode) {
@@ -382,6 +374,15 @@ const PlanSelectionV2Screen = () => {
                                         </View>
                                     ))}
 
+                                    {(plan.code === 'standard' || plan.code === 'home_family') && (
+                                        <View style={styles.autoRenewNote}>
+                                            <Ionicons name="information-circle-outline" size={14} color="#6B7280" />
+                                            <Text style={styles.autoRenewText}>
+                                                Auto-renewable subscription. Cancel anytime in App Store settings.
+                                            </Text>
+                                        </View>
+                                    )}
+
                                     {getPlanFeatures(plan.code).notIncluded.length > 0 && (
                                         <>
                                             <Text style={styles.featureSectionTitle}>What's Not Included</Text>
@@ -439,6 +440,30 @@ const PlanSelectionV2Screen = () => {
                     You won't be charged until your free trial ends.{'\n'}
                     Cancel anytime before then at no cost.
                 </Text>
+
+                {/* Apple Review Compliance Footer */}
+                <View style={styles.complianceFooter}>
+                    <View style={styles.disclosureContainer}>
+                        <Text style={styles.disclosureTitle}>Subscription Information:</Text>
+                        <Text style={styles.disclosureText}>
+                            • Payment will be charged to your iTunes Account at confirmation of purchase.{"\n"}
+                            • Subscription automatically renews unless auto-renew is turned off at least 24-hours before the end of the current period.{"\n"}
+                            • Your account will be charged for renewal within 24-hours prior to the end of the current period.{"\n"}
+                            • You can manage or turn off auto-renew in your Apple ID Account Settings any time after purchase.{"\n"}
+                            • Any unused portion of a free trial period, if offered, will be forfeited when the user purchases a subscription to that publication, where applicable.
+                        </Text>
+                    </View>
+
+                    <View style={styles.legalLinksContainer}>
+                        <TouchableOpacity onPress={() => Linking.openURL('https://www.apple.com/legal/internet-services/itunes/dev/stdeula/')}>
+                            <Text style={styles.legalLinkText}>Terms of Use (EULA)</Text>
+                        </TouchableOpacity>
+                        <View style={styles.legalSeparator} />
+                        <TouchableOpacity onPress={() => Linking.openURL('https://renewalert.net/privacy-policy')}>
+                            <Text style={styles.legalLinkText}>Privacy Policy</Text>
+                        </TouchableOpacity>
+                    </View>
+                </View>
 
                 <View style={styles.bottomSpacing} />
             </ScrollView>
@@ -660,6 +685,24 @@ const styles = StyleSheet.create({
         fontStyle: 'italic',
         marginTop: 8,
     },
+    autoRenewNote: {
+        flexDirection: 'row',
+        alignItems: 'flex-start',
+        gap: 8,
+        marginTop: 12,
+        padding: 12,
+        backgroundColor: '#F9FAFB',
+        borderRadius: 8,
+        borderWidth: 1,
+        borderColor: '#E5E7EB',
+    },
+    autoRenewText: {
+        flex: 1,
+        fontSize: 12,
+        color: '#6B7280',
+        fontWeight: '500',
+        lineHeight: 18,
+    },
     priceContainer: {
         marginBottom: 0,
         paddingTop: 16,
@@ -759,5 +802,51 @@ const styles = StyleSheet.create({
     },
     bottomSpacing: {
         height: 40,
+    },
+    complianceFooter: {
+        marginTop: 24,
+        paddingBottom: 20,
+        borderTopWidth: 1,
+        borderTopColor: '#E5E7EB',
+        paddingTop: 24,
+    },
+    legalLinksContainer: {
+        flexDirection: 'row',
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginTop: 16,
+    },
+    legalLinkText: {
+        fontSize: 12,
+        color: '#2563EB',
+        fontWeight: '600',
+        textDecorationLine: 'underline',
+    },
+    legalSeparator: {
+        width: 3,
+        height: 3,
+        borderRadius: 2,
+        backgroundColor: '#9CA3AF',
+        marginHorizontal: 12,
+    },
+    disclosureContainer: {
+        backgroundColor: '#FFFFFF',
+        padding: 16,
+        borderRadius: 16,
+        borderWidth: 1,
+        borderColor: '#E5E7EB',
+    },
+    disclosureTitle: {
+        fontSize: 13,
+        fontWeight: '700',
+        color: '#111827',
+        marginBottom: 8,
+        textTransform: 'uppercase',
+    },
+    disclosureText: {
+        fontSize: 11,
+        color: '#6B7280',
+        lineHeight: 16,
+        fontWeight: '500',
     },
 });
