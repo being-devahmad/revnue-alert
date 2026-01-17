@@ -1,12 +1,14 @@
 import { RegisterRequest, useRegister } from "@/api/auth/useRegister";
-import { PromoData, useVerifyPromo } from "@/api/auth/useVerifyPromo";
 import { useGetAllIndustries } from "@/api/settings/useGetIndustries";
 import { Industry, SearchableIndustryDropdown } from "@/components/ui/IndustryDropdown";
+import { useAuthStore } from "@/store/authStore";
 import { Ionicons } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";
 import Purchases from "react-native-purchases";
 
+
+import { PromoData, useVerifyPromo } from "@/api/auth/useVerifyPromo";
 import { Image } from "expo-image";
 import {
   ActivityIndicator,
@@ -28,6 +30,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 const SignupScreen = () => {
   const router = useRouter();
+  const { login: storeLogin } = useAuthStore();
   const params = useLocalSearchParams();
 
   // Plan data from route params
@@ -83,15 +86,12 @@ const SignupScreen = () => {
     const fetchOfferingDetails = async () => {
       if (!storeProductId) return;
       try {
-        console.log("🔍 Fetching RevenueCat offerings for display...");
         const offerings = await Purchases.getOfferings();
         if (offerings.current) {
           const pkg = offerings.current.availablePackages.find(
             (p) => p.product.identifier === storeProductId
           );
           if (pkg) {
-            console.log("✅ Found matching RevenueCat package:", pkg.product.identifier);
-            console.log("   - Price:", pkg.product.priceString);
             setRcPackage(pkg);
           }
         }
@@ -373,12 +373,10 @@ const SignupScreen = () => {
       // 2. Register user FIRST & await result
       const registerResponse = await registerAsync(registrationData);
 
-      if (!registerResponse || !registerResponse.status || !registerResponse.data?.user?.id) {
-        throw new Error(registerResponse?.message || "Registration failed to return user ID.");
-      }
+      const userId = registerResponse.user.id;
+      const rcUserId = registerResponse.rc_app_user_id;
+      const token = registerResponse.token;
 
-      const userId = registerResponse.data.user.id;
-      const rcUserId = registerResponse.data.user.rc_app_user_id;
       console.log(`rcUserId: ${rcUserId}`);
       console.log(`✅ User registered successfully. ID: ${userId}, RC ID: ${rcUserId}`);
 
@@ -391,29 +389,54 @@ const SignupScreen = () => {
       // 4. Check if we can bypass IAP with promo code
       const canBypassIAP = isPromoVerified && promoData && !promoData.iap_required;
 
+      let purchaseErrorOccurred = false;
       if (!canBypassIAP) {
         // 5. Trigger RevenueCat Purchase (now associated with the correct user ID)
         const purchaseSuccess = await performPurchase();
         if (!purchaseSuccess) {
-          setIsProcessing(false);
-          // Note: User is already registered at this point. 
-          // You might want to handle this case (e.g., allow them to login but restrict access)
-          Alert.alert(
-            "Purchase Incomplete",
-            "Your account has been created, but the subscription purchase was not completed. You can login and retry the subscription."
-          );
-          router.replace("/(auth)/login");
-          return;
+          purchaseErrorOccurred = true;
+          // If we don't have a token, we must go to login
+          if (!token) {
+            setIsProcessing(false);
+            Alert.alert(
+              "Purchase Incomplete",
+              "Your account has been created, but the subscription purchase was not completed. Please login and retry.",
+              [{ text: "Login", onPress: () => router.replace("/(auth)/login") }]
+            );
+            return;
+          }
+          // If we HAVE a token, we'll show an alert but still try to navigate to dashboard
+          console.warn("⚠️ Purchase failed but user has session token. Allowing entry to dashboard.");
         }
       }
 
-      // 6. Success - Navigate to login
+      // 6. Success / Authentication - Navigate to Dashboard
       setIsProcessing(false);
-      Alert.alert(
-        "Welcome!",
-        "Account created successfully. Please verify from email and login to get started.",
-        [{ text: "Login", onPress: () => router.replace("/(auth)/login") }]
-      );
+
+      if (token) {
+        console.log("🔑 Session token found, authenticating...");
+        await storeLogin(token, registerResponse.user, registerResponse.account_type);
+
+        if (purchaseErrorOccurred) {
+          Alert.alert(
+            "Account Created",
+            "Your account was created successfully, but there was an issue with the subscription purchase. You can try subscribing again from the settings.",
+            [{ text: "Go to Dashboard", onPress: () => router.replace("/(tabs)") }]
+          );
+        } else {
+          Alert.alert(
+            "Welcome!",
+            "Account created successfully.",
+            [{ text: "Go to Dashboard", onPress: () => router.replace("/(tabs)") }]
+          );
+        }
+      } else {
+        Alert.alert(
+          "Welcome!",
+          "Account created successfully. Please verify from email and login to get started.",
+          [{ text: "Login", onPress: () => router.replace("/(auth)/login") }]
+        );
+      }
 
     } catch (error: any) {
       console.error("❌ Signup Flow Error:", error);
@@ -466,16 +489,6 @@ const SignupScreen = () => {
             >
               <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
                 <View style={styles.formContainer}>
-                  {/* Plan Summary Badge */}
-                  <View style={styles.planBadge}>
-                    <Ionicons name="checkmark-circle" size={16} color="#10B981" />
-                    <Text style={styles.planBadgeText}>
-                      {/* If we have RC data, use that. Otherwise fallback to params */}
-                      {rcPackage ? rcPackage.product.title : planName} -{" "}
-                      {rcPackage ? rcPackage.product.priceString : `$${price}`}
-                      /{billingCycle === "month" ? "mo" : "yr"}
-                    </Text>
-                  </View>
 
                   {/* Form Title */}
                   <Text style={styles.formTitle}>Complete Your Profile</Text>
@@ -573,7 +586,7 @@ const SignupScreen = () => {
 
                   {/* ===== COMPANY INFORMATION ===== */}
                   <View style={styles.sectionDivider} />
-                  <Text style={styles.sectionTitle}>Company Information</Text>
+                  <Text style={styles.sectionTitle}>Profile Details</Text>
 
                   {/* Industry Dropdown */}
                   <View style={styles.inputGroup}>
@@ -627,7 +640,7 @@ const SignupScreen = () => {
                       />
                       <TextInput
                         style={styles.input}
-                        placeholder="Enter company or family name (optional)"
+                        placeholder="Enter company / family name (optional)"
                         placeholderTextColor="#9CA3AF"
                         value={companyName}
                         onChangeText={setCompanyName}
@@ -810,9 +823,13 @@ const SignupScreen = () => {
                       <Text style={styles.planDetailsValue}>
                         {(() => {
                           const baseName = rcPackage ? rcPackage.product.title : planName;
+                          console.log("rcPackage", rcPackage);
+                          console.log("planName", planName);
                           const isMonthly = billingCycle === "month" || billingCycle === "monthly";
                           const isYearly = billingCycle === "year" || billingCycle === "yearly";
-                          return `${baseName}${isMonthly ? " Monthly" : isYearly ? " Yearly" : ""}`;
+
+                          // Trust the planName from params and append cycle
+                          return `${planName} ${isMonthly ? "Monthly" : isYearly ? "Yearly" : ""}`;
                         })()}
                       </Text>
                     </View>
@@ -880,7 +897,7 @@ const SignupScreen = () => {
                           style={styles.termsLink}
                           onPress={() => Linking.openURL("https://www.apple.com/legal/internet-services/itunes/dev/stdeula/")}
                         >
-                          Terms of Use
+                          Terms of Use (EULA)
                         </Text>
                         {" "}and acknowledge that you have read our{" "}
                         <Text

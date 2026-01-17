@@ -15,6 +15,7 @@ import React, { useState } from 'react';
 import {
     ActivityIndicator,
     Alert,
+    Linking,
     ScrollView,
     StyleSheet,
     Text,
@@ -61,12 +62,11 @@ const PlanSelectionV2Screen = () => {
             case 'standard':
                 return {
                     included: [
-                        'Individual business use (single user)',
+                        'Supports all industries',
                         'Full core reminder & tracking access',
                         'Unlimited reminders',
                         'Track business deadlines',
                         'Custom notification schedules',
-                        'Reliable delivery',
                     ],
                     notIncluded: [],
                 };
@@ -97,7 +97,6 @@ const PlanSelectionV2Screen = () => {
                 return '';
         }
     };
-
     // ============ HANDLE CONTINUE ============
     const handleContinue = () => {
         if (!selectedPlanCode) {
@@ -384,6 +383,18 @@ const PlanSelectionV2Screen = () => {
                                         </View>
                                     )}
 
+                                    {getPlanFeatures(plan.code).notIncluded.length > 0 && (
+                                        <>
+                                            <Text style={styles.featureSectionTitle}>What's Not Included</Text>
+                                            {getPlanFeatures(plan.code).notIncluded.map((feature, idx) => (
+                                                <View key={`ni-${idx}`} style={styles.featureRow}>
+                                                    <Ionicons name="close-circle" size={14} color="#9CA3AF" />
+                                                    <Text style={styles.notIncludedText}>{feature}</Text>
+                                                </View>
+                                            ))}
+                                        </>
+                                    )}
+
                                     {plan.code === 'enterprise' && (
                                         <Text style={styles.enterpriseNote}>
                                             Note: Multi-user features may require admin approval.
@@ -429,6 +440,30 @@ const PlanSelectionV2Screen = () => {
                     You won't be charged until your free trial ends.{'\n'}
                     Cancel anytime before then at no cost.
                 </Text>
+
+                {/* Apple Review Compliance Footer */}
+                <View style={styles.complianceFooter}>
+                    <View style={styles.disclosureContainer}>
+                        <Text style={styles.disclosureTitle}>Subscription Information:</Text>
+                        <Text style={styles.disclosureText}>
+                            • Payment will be charged to your iTunes Account at confirmation of purchase.{"\n"}
+                            • Subscription automatically renews unless auto-renew is turned off at least 24-hours before the end of the current period.{"\n"}
+                            • Your account will be charged for renewal within 24-hours prior to the end of the current period.{"\n"}
+                            • You can manage or turn off auto-renew in your Apple ID Account Settings any time after purchase.{"\n"}
+                            • Any unused portion of a free trial period, if offered, will be forfeited when the user purchases a subscription to that publication, where applicable.
+                        </Text>
+                    </View>
+
+                    <View style={styles.legalLinksContainer}>
+                        <TouchableOpacity onPress={() => Linking.openURL('https://www.apple.com/legal/internet-services/itunes/dev/stdeula/')}>
+                            <Text style={styles.legalLinkText}>Terms of Use (EULA)</Text>
+                        </TouchableOpacity>
+                        <View style={styles.legalSeparator} />
+                        <TouchableOpacity onPress={() => Linking.openURL('https://renewalert.net/privacy-policy')}>
+                            <Text style={styles.legalLinkText}>Privacy Policy</Text>
+                        </TouchableOpacity>
+                    </View>
+                </View>
 
                 <View style={styles.bottomSpacing} />
             </ScrollView>
@@ -767,5 +802,51 @@ const styles = StyleSheet.create({
     },
     bottomSpacing: {
         height: 40,
+    },
+    complianceFooter: {
+        marginTop: 24,
+        paddingBottom: 20,
+        borderTopWidth: 1,
+        borderTopColor: '#E5E7EB',
+        paddingTop: 24,
+    },
+    legalLinksContainer: {
+        flexDirection: 'row',
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginTop: 16,
+    },
+    legalLinkText: {
+        fontSize: 12,
+        color: '#2563EB',
+        fontWeight: '600',
+        textDecorationLine: 'underline',
+    },
+    legalSeparator: {
+        width: 3,
+        height: 3,
+        borderRadius: 2,
+        backgroundColor: '#9CA3AF',
+        marginHorizontal: 12,
+    },
+    disclosureContainer: {
+        backgroundColor: '#FFFFFF',
+        padding: 16,
+        borderRadius: 16,
+        borderWidth: 1,
+        borderColor: '#E5E7EB',
+    },
+    disclosureTitle: {
+        fontSize: 13,
+        fontWeight: '700',
+        color: '#111827',
+        marginBottom: 8,
+        textTransform: 'uppercase',
+    },
+    disclosureText: {
+        fontSize: 11,
+        color: '#6B7280',
+        lineHeight: 16,
+        fontWeight: '500',
     },
 });

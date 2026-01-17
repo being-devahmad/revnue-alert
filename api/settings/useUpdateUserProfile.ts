@@ -155,7 +155,7 @@ export const getChangedFields = (
 
   (Object.keys(newData) as (keyof UpdateProfileRequest)[]).forEach((key) => {
     if (oldData[key] !== newData[key]) {
-      changed[key] = newData[key];
+      (changed as any)[key] = newData[key];
     }
   });
 

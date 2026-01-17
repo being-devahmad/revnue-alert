@@ -20,19 +20,31 @@ export interface RegisterRequest {
 
 export interface RegisterUser {
   id: number;
-  name: string;
+  first_name: string;
+  middle_name?: string;
+  last_name: string;
   email: string;
-  enterprise: boolean;
+  company?: string;
+  industry_id: number;
   rc_app_user_id?: string;
+  is_mobile_user?: boolean;
+  mobile_platform?: string;
+  created_at?: string;
+  updated_at?: string;
 }
 
 export interface RegisterResponse {
   status: boolean;
   message: string;
-  data: {
-    user: RegisterUser;
-    token?: string;
-    access_token?: string;
+  verified?: boolean;
+  enterprise?: boolean;
+  account_type?: string;
+  token?: string;
+  rc_app_user_id?: string;
+  user: RegisterUser;
+  user_subscription?: any;
+  data?: {
+    has_promo?: boolean;
   };
 }
 
@@ -62,14 +74,14 @@ const registerUser = async (data: RegisterRequest): Promise<RegisterResponse> =>
       throw new Error(response.data.message || 'Registration failed');
     }
 
-    if (!response.data.data?.user) {
+    if (!response.data.user) {
       throw new Error('Invalid response structure');
     }
 
     console.log('✅ Registration successful!', {
-      userId: response.data.data.user.id,
-      rcUserId: response.data.data.user.rc_app_user_id,
-      name: response.data.data.user.name,
+      userId: response.data.user.id,
+      rcUserId: response.data.rc_app_user_id,
+      name: `${response.data.user.first_name} ${response.data.user.last_name}`,
     });
 
     return response.data;
@@ -124,7 +136,7 @@ const registerUser = async (data: RegisterRequest): Promise<RegisterResponse> =>
  *   },
  *   {
  *     onSuccess: (data) => {
- *       console.log("User registered:", data.data.user);
+ *       console.log("User registered:", data.user);
  *     },
  *     onError: (error) => {
  *       Alert.alert("Error", error.message);
@@ -139,14 +151,14 @@ export const useRegister = () => {
     onSuccess: async (data) => {
       console.log('🎯 useRegister mutation success:', {
         message: data.message,
-        userId: data.data.user.id,
+        userId: data.user.id,
       });
 
       // ⭐ CRITICAL: Save token to AsyncStorage
       console.log("\n🔐 ===== TOKEN HANDLING =====");
 
-      // Extract token (could be 'token' or 'access_token')
-      const token = data.data.token || data.data.access_token;
+      // Extract token
+      const token = data.token;
 
       if (token) {
         console.log("✅ Token found in response!");
