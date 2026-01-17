@@ -110,7 +110,7 @@ const LoginScreen = () => {
                     />
                     <TextInput
                       style={styles.input}
-                      placeholder="demo@email.com"
+                      placeholder="Enter your email"
                       placeholderTextColor="#9CA3AF"
                       value={email}
                       onChangeText={setEmail}
@@ -163,7 +163,7 @@ const LoginScreen = () => {
                 </View>
 
                 {/* Forgot */}
-                <View style={styles.rowBetween}>
+                {/* <View style={styles.rowBetween}>
                   <View />
                   <TouchableOpacity
                     disabled={isPending}
@@ -171,7 +171,7 @@ const LoginScreen = () => {
                   >
                     <Text style={styles.forgotText}>Forgot Password?</Text>
                   </TouchableOpacity>
-                </View>
+                </View> */}
 
                 {/* Login */}
                 <TouchableOpacity

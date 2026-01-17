@@ -86,15 +86,12 @@ const SignupScreen = () => {
     const fetchOfferingDetails = async () => {
       if (!storeProductId) return;
       try {
-        console.log("🔍 Fetching RevenueCat offerings for display...");
         const offerings = await Purchases.getOfferings();
         if (offerings.current) {
           const pkg = offerings.current.availablePackages.find(
             (p) => p.product.identifier === storeProductId
           );
           if (pkg) {
-            console.log("✅ Found matching RevenueCat package:", pkg.product.identifier);
-            console.log("   - Price:", pkg.product.priceString);
             setRcPackage(pkg);
           }
         }
@@ -826,9 +823,13 @@ const SignupScreen = () => {
                       <Text style={styles.planDetailsValue}>
                         {(() => {
                           const baseName = rcPackage ? rcPackage.product.title : planName;
+                          console.log("rcPackage", rcPackage);
+                          console.log("planName", planName);
                           const isMonthly = billingCycle === "month" || billingCycle === "monthly";
                           const isYearly = billingCycle === "year" || billingCycle === "yearly";
-                          return `${baseName}${isMonthly ? " Monthly" : isYearly ? " Yearly" : ""}`;
+
+                          // Trust the planName from params and append cycle
+                          return `${planName} ${isMonthly ? "Monthly" : isYearly ? "Yearly" : ""}`;
                         })()}
                       </Text>
                     </View>
