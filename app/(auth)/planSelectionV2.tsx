@@ -459,7 +459,7 @@ const PlanSelectionV2Screen = () => {
                             <Text style={styles.legalLinkText}>Terms of Use (EULA)</Text>
                         </TouchableOpacity>
                         <View style={styles.legalSeparator} />
-                        <TouchableOpacity onPress={() => Linking.openURL('https://renewalert.net/privacy-policy')}>
+                        <TouchableOpacity onPress={() => Linking.openURL('https://renewalert.com/privacy-policy')}>
                             <Text style={styles.legalLinkText}>Privacy Policy</Text>
                         </TouchableOpacity>
                     </View>

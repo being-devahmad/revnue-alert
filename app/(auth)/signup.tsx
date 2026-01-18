@@ -902,7 +902,7 @@ const SignupScreen = () => {
                         {" "}and acknowledge that you have read our{" "}
                         <Text
                           style={styles.termsLink}
-                          onPress={() => Linking.openURL("https://renewalert.net/privacy-policy")}
+                          onPress={() => Linking.openURL("https://renewalert.com/privacy-policy")}
                         >
                           Privacy Policy
                         </Text>

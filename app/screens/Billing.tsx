@@ -225,7 +225,7 @@ const BillingScreen = () => {
 
     // Legal link handlers
     const handleOpenTerms = () => Linking.openURL('https://www.apple.com/legal/internet-services/itunes/dev/stdeula/');
-    const handleOpenPrivacy = () => Linking.openURL('https://renewalert.net/privacy-policy');
+    const handleOpenPrivacy = () => Linking.openURL('https://renewalert.com/privacy-policy');
 
 
     // Plan gradient colors based on tier
