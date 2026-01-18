@@ -16,10 +16,10 @@ export default function RootLayout() {
   const EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY = process.env.EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY || "pk_live_aW0tbVssano9Bn9RE59mnBjm";
 
   // RevenueCat API Keys
-  const REVENUECAT_API_KEY = "test_KdiZCShzAuoJCILJxZEAZvOgriL"
-  // const REVENUECAT_API_KEY = Platform.select({
-    // ios: process.env.EXPO_PUBLIC_RC_IOS || "appl_zjAyHXHkAqpVjHokWhDTYlBvwEa",
-  // });
+  // const REVENUECAT_API_KEY = "test_KdiZCShzAuoJCILJxZEAZvOgriL"
+  const REVENUECAT_API_KEY = Platform.select({
+    ios: process.env.EXPO_PUBLIC_RC_IOS || "appl_zjAyHXHkAqpVjHokWhDTYlBvwEa",
+  });
 
   useEffect(() => {
     async function prepare() {
