@@ -4,6 +4,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Stack } from "expo-router";
 import * as SplashScreenExpo from "expo-splash-screen";
 import React, { useEffect, useState } from "react";
+import { Platform } from "react-native";
 import Purchases, { LOG_LEVEL } from 'react-native-purchases';
 import { useAuthStore } from "../store/authStore";
 
