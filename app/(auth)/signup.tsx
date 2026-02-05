@@ -1,3 +1,4 @@
+import { useDeleteAbandonedAccount } from "@/api/auth/useDeleteAbandonedAccount";
 import { RegisterRequest, useRegister } from "@/api/auth/useRegister";
 import { useGetAllIndustries } from "@/api/settings/useGetIndustries";
 import { Industry, SearchableIndustryDropdown } from "@/components/ui/IndustryDropdown";
@@ -64,6 +65,7 @@ const SignupScreen = () => {
 
   // Registration state
   const { register, registerAsync, isLoading: isRegistering } = useRegister();
+  const { mutateAsync: deleteAbandoned } = useDeleteAbandonedAccount();
 
   // Industries list - from params, NOT hardcoded
   const [industries, setIndustries] = useState<Industry[]>([]);
@@ -289,7 +291,7 @@ const SignupScreen = () => {
   }, [couponCode]);
 
   // ============ HANDLE REVENUECAT PURCHASE ============
-  const performPurchase = async (): Promise<boolean> => {
+  const performPurchase = async (): Promise<{ success: boolean; isCancelled: boolean }> => {
     try {
       console.log("💰 Starting RevenueCat purchase flow for:", storeProductId);
 
@@ -319,24 +321,25 @@ const SignupScreen = () => {
       // Check if user has active entitlement
       if (customerInfo && typeof customerInfo.entitlements.active[planCode] !== "undefined") {
         console.log("✅ Purchase successful!");
-        return true;
+        return { success: true, isCancelled: false };
       }
 
       // Some apps might use a single "premium" entitlement for all plans
       if (customerInfo && Object.keys(customerInfo.entitlements.active).length > 0) {
         console.log("✅ Purchase successful (any entitlement)!");
-        return true;
+        return { success: true, isCancelled: false };
       }
 
 
       console.warn("⚠️ Purchase completed but no active entitlement found.");
-      return true; // We'll let the server verify the receipt if needed
+      return { success: true, isCancelled: false }; // We'll let the server verify the receipt if needed
     } catch (e: any) {
-      if (!e.userCancelled) {
+      const isCancelled = !!e.userCancelled;
+      if (!isCancelled) {
         console.error("❌ Purchase error:", e);
         Alert.alert("Purchase Failed", e.message || "Could not complete purchase");
       }
-      return false;
+      return { success: false, isCancelled };
     }
   };
 
@@ -392,8 +395,28 @@ const SignupScreen = () => {
       let purchaseErrorOccurred = false;
       if (!canBypassIAP) {
         // 5. Trigger RevenueCat Purchase (now associated with the correct user ID)
-        const purchaseSuccess = await performPurchase();
-        if (!purchaseSuccess) {
+        const purchaseResult = await performPurchase();
+
+        if (!purchaseResult.success) {
+          // CHECK FOR CANCELLATION
+          if (purchaseResult.isCancelled) {
+            console.log("⚠️ Purchase cancelled by user. Deleting abandoned account...");
+            try {
+              // Determine user ID (should be number)
+              const uidToDelete = typeof userId === 'string' ? parseInt(userId, 10) : userId;
+              await deleteAbandoned(uidToDelete);
+              console.log("✅ Abandoned account deleted.");
+            } catch (delErr) {
+              console.error("❌ Failed to delete abandoned account:", delErr);
+            }
+
+            setIsProcessing(false);
+            // Inform user and stop
+            Alert.alert("Signup Cancelled", "Payment was cancelled. You have not been charged and your account has been removed.");
+            return;
+          }
+
+          // If NOT cancelled (generic error), proceed with existing error handling logic
           purchaseErrorOccurred = true;
           // If we don't have a token, we must go to login
           if (!token) {
