@@ -5,6 +5,15 @@ export const useReminderTemplate = (
   contractForm: any,
   onContractChange: (field: string, value: any) => void
 ) => {
+  // Format date in local time so notes match the date shown in the form (avoids UTC off-by-one day)
+  const formatDateLocal = (date: Date | null) => {
+    if (!date) return "";
+    const y = date.getFullYear();
+    const m = String(date.getMonth() + 1).padStart(2, "0");
+    const d = String(date.getDate()).padStart(2, "0");
+    return `${y}-${m}-${d}`;
+  };
+
   const handleAddReminderTemplate = () => {
     console.log("[v0] Template button clicked");
     
@@ -17,9 +26,7 @@ export const useReminderTemplate = (
     }<br><b>Payment Interval:</b> ${
       contractForm.paymentInterval || ""
     }<br><b>Expiration Date:</b> ${
-      contractForm.expirationDate
-        ? contractForm.expirationDate.toISOString().split("T")[0]
-        : ""
+      formatDateLocal(contractForm.expirationDate)
     }<br><b>Category:</b> ${contractForm.category}<br><b>Description:</b> ${
       contractForm.description
     }<br><b>Website / Email:</b> ${
@@ -27,9 +34,7 @@ export const useReminderTemplate = (
     }<br><b>Phone Number:</b> ${
       contractForm.phone
     }<br><b>Non-Renew Sent Date:</b> ${
-      contractForm.nonRenewDate
-        ? contractForm.nonRenewDate.toISOString().split("T")[0]
-        : ""
+      formatDateLocal(contractForm.nonRenewDate)
     }<br>`;
 
     const templatePattern = /<b>Reminder Name:<\/b>[\s\S]*?(<br><br>|$)/;
