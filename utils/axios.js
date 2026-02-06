@@ -2,7 +2,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import axios from "axios";
 
 // Get API URL from environment
-const API_BASE_URL = process.env.EXPO_PUBLIC_DEVELOPMENT_API_URL
+export const API_BASE_URL = process.env.EXPO_PUBLIC_DEVELOPMENT_API_URL
   || "https://development.renewalert.com/api";
 
 
