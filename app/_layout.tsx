@@ -1,14 +1,17 @@
 import SplashScreen from "@/components/SplashScreen";
 import { StripeProvider } from "@stripe/stripe-react-native";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import Constants from "expo-constants";
 import { Stack } from "expo-router";
 import * as SplashScreenExpo from "expo-splash-screen";
 import * as Tracking from "expo-tracking-transparency";
 import React, { useEffect, useState } from "react";
 import Purchases, { LOG_LEVEL } from 'react-native-purchases';
 import { Platform } from "react-native";
-import { Settings } from "react-native-fbsdk-next";
 import { useAuthStore } from "../store/authStore";
+
+// Meta/Facebook SDK uses native modules — only load in dev/production builds, not in Expo Go
+const isExpoGo = Constants.appOwnership === "expo";
 
 const queryClient = new QueryClient();
 
@@ -34,16 +37,20 @@ export default function RootLayout() {
         await loadToken();
 
         // Meta SDK: initialize so Ads Manager can receive app events (activation, etc.)
-        try {
-          Settings.initializeSDK();
-          if (Platform.OS === "ios") {
-            const { status } = await Tracking.requestTrackingPermissionsAsync();
-            if (status === "granted") {
-              await Settings.setAdvertiserTrackingEnabled(true);
+        // Skip in Expo Go — react-native-fbsdk-next requires native modules
+        if (!isExpoGo) {
+          try {
+            const { Settings } = require("react-native-fbsdk-next");
+            Settings.initializeSDK();
+            if (Platform.OS === "ios") {
+              const { status } = await Tracking.requestTrackingPermissionsAsync();
+              if (status === "granted") {
+                await Settings.setAdvertiserTrackingEnabled(true);
+              }
             }
+          } catch (metaErr) {
+            console.warn("Meta SDK init:", metaErr);
           }
-        } catch (metaErr) {
-          console.warn("Meta SDK init:", metaErr);
         }
 
         // Configure RevenueCat
