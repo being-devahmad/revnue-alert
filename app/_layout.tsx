@@ -1,7 +1,7 @@
 import SplashScreen from "@/components/SplashScreen";
 import { StripeProvider } from "@stripe/stripe-react-native";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import Constants from "expo-constants";
+import Constants, { ExecutionEnvironment } from "expo-constants";
 import { Stack } from "expo-router";
 import * as SplashScreenExpo from "expo-splash-screen";
 import * as Tracking from "expo-tracking-transparency";
@@ -11,7 +11,7 @@ import { Platform } from "react-native";
 import { useAuthStore } from "../store/authStore";
 
 // Meta/Facebook SDK uses native modules — only load in dev/production builds, not in Expo Go
-const isExpoGo = Constants.appOwnership === "expo";
+const isExpoGo = Constants.executionEnvironment === ExecutionEnvironment.StoreClient;
 
 const queryClient = new QueryClient();
 
