@@ -208,7 +208,7 @@ const TimelineTab: React.FC<TimelineTabProps> = ({
                 {contract.interval ? `${contract.interval} Payment` : "Payment"}
               </Text>
               <Text style={styles.keyInfoValue}>
-                ${contract.amount.toFixed(2)}
+                ${contract.amount?.toFixed(2) ?? '0.00'}
               </Text>
             </View>
             <View style={styles.keyInfoDivider} />
@@ -354,7 +354,7 @@ const TimelineTab: React.FC<TimelineTabProps> = ({
             )}.`}
         </Text>
       </View>
-    </ScrollView>
+    </ScrollView >
   );
 };
 

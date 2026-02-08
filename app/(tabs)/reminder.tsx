@@ -273,7 +273,7 @@ const ReminderScreen: React.FC = () => {
         accountNumber: reminder.account_number,
         inceptionDate: reminder.started_at,
         expirationDate: reminder.expired_at,
-        paymentAmount: reminder.amount.toString(),
+        paymentAmount: reminder.amount?.toString() || "0",
         paymentInterval: reminder.interval,
         lastPaymentDate: reminder.last_payment_at,
         category: reminder.category.name,

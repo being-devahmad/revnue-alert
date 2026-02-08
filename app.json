@@ -20,10 +20,17 @@
         "NSAppTransportSecurity": {
           "NSAllowsArbitraryLoads": true
         },
+        "NSUserTrackingUsageDescription": "This identifier will be used to deliver personalized ads and measure ad performance for the Renew Alert app.",
         "SKAdNetworkItems": [
-          { "SKAdNetworkIdentifier": "v9wttpbfk9.skadnetwork" },
-          { "SKAdNetworkIdentifier": "n38lu8286q.skadnetwork" },
-          { "SKAdNetworkIdentifier": "v9t59v4e4.skadnetwork" }
+          {
+            "SKAdNetworkIdentifier": "v9wttpbfk9.skadnetwork"
+          },
+          {
+            "SKAdNetworkIdentifier": "n38lu8286q.skadnetwork"
+          },
+          {
+            "SKAdNetworkIdentifier": "v9t59v4e4.skadnetwork"
+          }
         ]
       },
       "icon": "./assets/icons/Ios-logo.png"
@@ -36,8 +43,7 @@
       "icon": "./assets/icons/andriod.png",
       "package": "com.devahmad41.renewalert",
       "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false,
-      "usesCleartextTraffic": true
+      "predictiveBackGestureEnabled": false
     },
     "web": {
       "output": "static",
