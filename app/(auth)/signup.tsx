@@ -364,7 +364,7 @@ const SignupScreen = () => {
         enterprise: planCode === "enterprise",
         platform: Platform.OS as 'ios' | 'android',
         promo_code: isPromoVerified ? couponCode.trim() : undefined,
-        app_plan_id: isPromoVerified ? 1 : undefined, // Currently hardcoded to 1 as per instruction
+        app_plan_id: planId && !isNaN(parseInt(planId, 10)) ? parseInt(planId, 10) : (isPromoVerified ? 1 : undefined),
       };
 
       console.log("📤 Sending registration to backend:", {

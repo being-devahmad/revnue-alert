@@ -208,13 +208,11 @@ export const ContractDetails: React.FC<ContractDetailsProps> = ({
       }<br><b>Account Number:</b> ${contractForm.accountNumber?.trim()
       }<br><b>Payment Amount:</b> ${contractForm.paymentAmount
       }<br><b>Payment Interval:</b> ${contractForm.paymentInterval?.trim()
-      }<br><b>Expiration Date:</b> ${(contractForm.expirationDate
-        && contractForm.expirationDate.toISOString().split("T")[0]) || ""
+      }<br><b>Expiration Date:</b> ${formatDate(contractForm.expirationDate) !== "YYYY-MM-DD" ? formatDate(contractForm.expirationDate) : ""
       }<br><b>Category:</b> ${selectedCategoryName}<br><b>Description:</b> ${contractForm.description?.trim()
       }<br><b>Website / Email:</b> ${contractForm.emailWebsite?.trim()
       }<br><b>Phone Number:</b> ${contractForm.phone?.trim()
-      }<br><b>Non-Renew Sent Date:</b> ${(contractForm.nonRenewDate
-        && contractForm.nonRenewDate.toISOString().split("T")[0]) || ""
+      }<br><b>Non-Renew Sent Date:</b> ${formatDate(contractForm.nonRenewDate) !== "YYYY-MM-DD" ? formatDate(contractForm.nonRenewDate) : ""
       }<br>`;
 
     // Regex explanation:

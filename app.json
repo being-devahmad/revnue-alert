@@ -19,7 +19,19 @@
         "NSPhotoLibraryAddUsageDescription": "We need permission to save images to your photo library.",
         "NSAppTransportSecurity": {
           "NSAllowsArbitraryLoads": true
-        }
+        },
+        "NSUserTrackingUsageDescription": "This identifier will be used to deliver personalized ads and measure ad performance for the Renew Alert app.",
+        "SKAdNetworkItems": [
+          {
+            "SKAdNetworkIdentifier": "v9wttpbfk9.skadnetwork"
+          },
+          {
+            "SKAdNetworkIdentifier": "n38lu8286q.skadnetwork"
+          },
+          {
+            "SKAdNetworkIdentifier": "v9t59v4e4.skadnetwork"
+          }
+        ]
       },
       "icon": "./assets/icons/Ios-logo.png"
     },
@@ -31,15 +43,27 @@
       "icon": "./assets/icons/andriod.png",
       "package": "com.devahmad41.renewalert",
       "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false,
-      "usesCleartextTraffic": true
+      "predictiveBackGestureEnabled": false
     },
     "web": {
       "output": "static",
       "favicon": "./assets/icons/logo.png"
     },
     "plugins": [
-      "expo-router"
+      "expo-router",
+      [
+        "react-native-fbsdk-next",
+        {
+          "appID": "917327644166678",
+          "clientToken": "757e3c5a6e54b37e670eaa5332f55a27",
+          "displayName": "Renew Alert",
+          "scheme": "fb917327644166678",
+          "advertiserIDCollectionEnabled": true,
+          "autoLogAppEventsEnabled": true,
+          "isAutoInitEnabled": true,
+          "iosUserTrackingPermission": "This identifier will be used to deliver personalized ads and measure ad performance for the Renew Alert app."
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,

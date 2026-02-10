@@ -94,15 +94,16 @@ const registerUser = async (data: RegisterRequest): Promise<RegisterResponse> =>
     });
 
     // Handle specific error messages
-    if (error.response?.data?.message) {
-      throw new Error(error.response.data.message);
-    }
-
+    // Handle specific error messages
     if (error.response?.data?.errors) {
       const errorMessages = Object.values(error.response.data.errors)
         .flat()
         .join(', ');
       throw new Error(errorMessages);
+    }
+
+    if (error.response?.data?.message) {
+      throw new Error(error.response.data.message);
     }
 
     throw error;

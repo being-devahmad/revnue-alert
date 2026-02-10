@@ -1,19 +1,24 @@
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
-import { Alert, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { ActivityIndicator, Alert, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 export const TabHeader = ({
     title,
     subtitle,
     isChild,
     isDelete,
+    onDelete,
+    isDeleting,
     rightElement,
 }: {
     title: string;
     subtitle?: string;
     isChild?: boolean;
     isDelete?: boolean;
+    /** When provided, delete icon triggers this (e.g. after confirmation). Same rules as web API. */
+    onDelete?: () => void;
+    isDeleting?: boolean;
     rightElement?: React.ReactNode;
 }) => {
     const router = useRouter();
@@ -68,14 +73,25 @@ export const TabHeader = ({
                     {/* DELETE BUTTON */}
                     {isDelete && (
                         <TouchableOpacity
-                            onPress={() => Alert.alert(
-                                "Not available on mobile",
-                                "This feature isn’t available in the mobile app yet.\nTo delete your reminder, please log in to the web portal."
-                            )}
+                            onPress={() => {
+                                if (onDelete) {
+                                    onDelete();
+                                } else {
+                                    Alert.alert(
+                                        "Not available on mobile",
+                                        "This feature isn’t available in the mobile app yet.\nTo delete your reminder, please log in to the web portal."
+                                    );
+                                }
+                            }}
                             activeOpacity={0.7}
                             style={styles.deleteButton}
+                            disabled={isDeleting}
                         >
-                            <Ionicons name="trash-outline" size={22} color="#fff" />
+                            {isDeleting ? (
+                                <ActivityIndicator size="small" color="#fff" />
+                            ) : (
+                                <Ionicons name="trash-outline" size={22} color="#fff" />
+                            )}
                         </TouchableOpacity>
                     )}
                 </View>

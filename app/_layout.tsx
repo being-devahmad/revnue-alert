@@ -1,12 +1,17 @@
 import SplashScreen from "@/components/SplashScreen";
 import { StripeProvider } from "@stripe/stripe-react-native";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import Constants, { ExecutionEnvironment } from "expo-constants";
 import { Stack } from "expo-router";
 import * as SplashScreenExpo from "expo-splash-screen";
+import * as Tracking from "expo-tracking-transparency";
 import React, { useEffect, useState } from "react";
 import { Platform } from "react-native";
 import Purchases, { LOG_LEVEL } from 'react-native-purchases';
 import { useAuthStore } from "../store/authStore";
+
+// Meta/Facebook SDK uses native modules — only load in dev/production builds, not in Expo Go
+const isExpoGo = Constants.executionEnvironment === ExecutionEnvironment.StoreClient;
 
 const queryClient = new QueryClient();
 
@@ -31,8 +36,30 @@ export default function RootLayout() {
         // Load token or any initial data
         await loadToken();
 
+        // Meta SDK: initialize so Ads Manager can receive app events (activation, etc.)
+        // Skip in Expo Go — react-native-fbsdk-next requires native modules
+        if (!isExpoGo) {
+          try {
+            const { Settings } = require("react-native-fbsdk-next");
+            Settings.initializeSDK();
+            Settings.setAdvertiserIDCollectionEnabled(true);
+            if (Platform.OS === "ios") {
+              const { status } = await Tracking.requestTrackingPermissionsAsync();
+              if (status === "granted") {
+                await Settings.setAdvertiserTrackingEnabled(true);
+              }
+            }
+          } catch (metaErr) {
+            console.warn("Meta SDK init:", metaErr);
+          }
+        }
+
+
         // Configure RevenueCat
-        if (REVENUECAT_API_KEY) {
+        // TODO: Set to true after configuring products in RevenueCat dashboard to avoid "Configuration is not valid" errors
+        const ENABLE_REVENUECAT = true;
+
+        if (REVENUECAT_API_KEY && ENABLE_REVENUECAT) {
           console.log("🛠️ Configuring RevenueCat...");
           Purchases.setLogLevel(LOG_LEVEL.VERBOSE);
 

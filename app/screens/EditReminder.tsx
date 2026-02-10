@@ -1,3 +1,7 @@
+import {
+  getDeleteContractErrorMessage,
+  useDeleteContract,
+} from "@/api/reminders/timeline-details/useDeleteContract";
 import { useFetchContractById } from "@/api/reminders/timeline-details/useGetContractById";
 import { useGetEnterpriseAccounts } from "@/api/reminders/timeline-details/useGetEnterpriseAccounts";
 import { useFetchReminderById } from "@/api/reminders/timeline-details/useGetReminderById";
@@ -61,6 +65,7 @@ const EditReminder = () => {
   // API Mutations
   const { mutate: updateContract, isPending: isUpdatingContract } = useUpdateContract();
   const { mutate: updateReminder, isPending: isUpdatingReminder } = useUpdateReminder();
+  const { mutateAsync: deleteContract, isPending: isDeletingContract } = useDeleteContract();
 
   const currentCategory = contractData?.category?.name
 
@@ -425,6 +430,37 @@ const EditReminder = () => {
     ]);
   };
 
+  const handleDeleteContract = () => {
+    const id = contractId != null ? parseInt(String(contractId), 10) : NaN;
+    if (!contractData?.id && isNaN(id)) {
+      Alert.alert("Error", "Contract ID is missing.");
+      return;
+    }
+    const contractIdToDelete = contractData?.id ?? id;
+
+    Alert.alert(
+      "Delete contract",
+      "Are you sure you want to delete this contract? This action cannot be undone.",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              await deleteContract(contractIdToDelete);
+              Alert.alert("Deleted", "Contract has been deleted.", [
+                { text: "OK", onPress: () => router.replace("/(tabs)/reminder") },
+              ]);
+            } catch (error: any) {
+              Alert.alert("Error", getDeleteContractErrorMessage(error));
+            }
+          },
+        },
+      ]
+    );
+  };
+
   if (isLoadingContract || isLoadingReminder) {
     return (
       <View style={styles.loadingContainer}>
@@ -443,6 +479,8 @@ const EditReminder = () => {
           subtitle={contractName as string || ""}
           isChild={true}
           isDelete={true}
+          onDelete={handleDeleteContract}
+          isDeleting={isDeletingContract}
         />
 
         {/* Tab Navigation */}
@@ -450,7 +488,7 @@ const EditReminder = () => {
           <TouchableOpacity
             style={[styles.tab, activeTab === "details" && styles.tabActive]}
             onPress={() => setActiveTab("details")}
-            disabled={isUpdatingContract || isUpdatingReminder}
+            disabled={isUpdatingContract || isUpdatingReminder || isDeletingContract}
           >
             <Text
               style={[
@@ -464,7 +502,7 @@ const EditReminder = () => {
           <TouchableOpacity
             style={[styles.tab, activeTab === "reminder" && styles.tabActive]}
             onPress={() => setActiveTab("reminder")}
-            disabled={isUpdatingContract || isUpdatingReminder}
+            disabled={isUpdatingContract || isUpdatingReminder || isDeletingContract}
           >
             <Text
               style={[
@@ -509,11 +547,15 @@ const EditReminder = () => {
         )}
 
         {/* Loading Overlay */}
-        {(isUpdatingContract || isUpdatingReminder) && (
+        {(isUpdatingContract || isUpdatingReminder || isDeletingContract) && (
           <View style={styles.loadingOverlay}>
             <ActivityIndicator size="large" color="#9A1B2B" />
             <Text style={styles.loadingText}>
-              {isUpdatingContract ? "Updating contract..." : "Updating reminder..."}
+              {isDeletingContract
+                ? "Deleting contract..."
+                : isUpdatingContract
+                  ? "Updating contract..."
+                  : "Updating reminder..."}
             </Text>
           </View>
         )}
