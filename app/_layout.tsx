@@ -22,10 +22,10 @@ export default function RootLayout() {
   const EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY = process.env.EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY || "pk_live_aW0tbVssano9Bn9RE59mnBjm";
 
   // RevenueCat API Keys
-  const REVENUECAT_API_KEY = "test_KdiZCShzAuoJCILJxZEAZvOgriL"
-  // const REVENUECAT_API_KEY = Platform.select({
-  //   ios: process.env.EXPO_PUBLIC_RC_IOS || "appl_zjAyHXHkAqpVjHokWhDTYlBvwEa",
-  // });
+  // const REVENUECAT_API_KEY = "test_KdiZCShzAuoJCILJxZEAZvOgriL"
+  const REVENUECAT_API_KEY = Platform.select({
+    ios: process.env.EXPO_PUBLIC_RC_IOS || "appl_zjAyHXHkAqpVjHokWhDTYlBvwEa",
+  });
 
   useEffect(() => {
     async function prepare() {
@@ -43,7 +43,6 @@ export default function RootLayout() {
             const { Settings } = require("react-native-fbsdk-next");
             Settings.initializeSDK();
             Settings.setAdvertiserIDCollectionEnabled(true);
-            console.log("✅ Meta SDK initialized");
             if (Platform.OS === "ios") {
               const { status } = await Tracking.requestTrackingPermissionsAsync();
               if (status === "granted") {
@@ -58,7 +57,7 @@ export default function RootLayout() {
 
         // Configure RevenueCat
         // TODO: Set to true after configuring products in RevenueCat dashboard to avoid "Configuration is not valid" errors
-        const ENABLE_REVENUECAT = false;
+        const ENABLE_REVENUECAT = true;
 
         if (REVENUECAT_API_KEY && ENABLE_REVENUECAT) {
           console.log("🛠️ Configuring RevenueCat...");
