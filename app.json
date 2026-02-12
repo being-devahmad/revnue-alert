@@ -3,15 +3,18 @@
     "name": "Renew Alert",
     "slug": "renew-alert",
     "owner": "beingahmadowais",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "orientation": "portrait",
     "icon": "./assets/icons/logo.png",
     "scheme": "renewalert",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
+
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.beingahmadowais.renewalert",
+      "buildNumber": "2",
+      "icon": "./assets/icons/Ios-logo.png",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false,
         "NSCameraUsageDescription": "We need camera access to let you upload images if required.",
@@ -32,23 +35,26 @@
             "SKAdNetworkIdentifier": "v9t59v4e4.skadnetwork"
           }
         ]
-      },
-      "icon": "./assets/icons/Ios-logo.png"
+      }
     },
+
     "android": {
+      "package": "com.devahmad41.renewalert",
+      "versionCode": 2,
       "adaptiveIcon": {
         "foregroundImage": "./assets/icons/logo.png",
         "backgroundColor": "#5C1428"
       },
       "icon": "./assets/icons/andriod.png",
-      "package": "com.devahmad41.renewalert",
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false
     },
+
     "web": {
       "output": "static",
       "favicon": "./assets/icons/logo.png"
     },
+
     "plugins": [
       "expo-router",
       [
@@ -65,10 +71,12 @@
         }
       ]
     ],
+
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
     },
+
     "extra": {
       "router": {},
       "eas": {
